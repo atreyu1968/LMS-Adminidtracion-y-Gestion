@@ -1476,3 +1476,380 @@ def admin_private_keys(
     if not db.get(Module, module_id):
         raise HTTPException(status_code=404, detail="Módulo no encontrado")
     return _load_private_keys(db, module_id, payload)
+
+
+
+@router.put("/modules/{module_id}/learning-results/{learning_result_id}/exam-bank")
+def teacher_exam_bank(
+    module_id: int,
+    learning_result_id: int,
+    payload: ExamBankIn,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    _module_editor(db, module_id, int(session["sub"]))
+    return _load_exam_bank(db, module_id, learning_result_id, payload)
+
+
+@router.put(
+    "/admin/modules/{module_id}/learning-results/{learning_result_id}/exam-bank",
+    dependencies=[Depends(require_admin)],
+)
+def admin_exam_bank(
+    module_id: int,
+    learning_result_id: int,
+    payload: ExamBankIn,
+    db: Session = Depends(get_db),
+) -> dict:
+    return _load_exam_bank(db, module_id, learning_result_id, payload)
+
+
+def _exam_public(session: ExamSession) -> dict:
+    public_questions = []
+    for question in session.question_snapshot_json or []:
+        if not isinstance(question, dict):
+            continue
+        public_questions.append(
+            {
+                "id": question.get("id"),
+                "item_key": question.get("item_key"),
+                "ce": question.get("ce"),
+                "type": question.get("type"),
+                "q": question.get("q"),
+                "options": question.get("options") or [],
+            }
+        )
+    payload = session.response_json or {}
+    return {
+        "exam_session_id": session.id,
+        "attempt_no": session.attempt_no,
+        "status": session.status,
+        "started_at": session.started_at,
+        "deadline_at": session.deadline_at,
+        "questions": public_questions,
+        "saved_answers": payload.get("draft_answers") or {},
+        "security_events": len(session.security_events_json or []),
+        "config": payload.get("config") or {},
+        "resumed": True,
+    }
+
+
+def _exam_items_for_lr(
+    db: Session,
+    learning_result_id: int,
+) -> dict[str, list[tuple[AssessmentItem, AssessmentKey]]]:
+    rows = db.execute(
+        select(AssessmentItem, AssessmentKey, AssessmentCriterion)
+        .join(
+            AssessmentCriterion,
+            AssessmentCriterion.id == AssessmentItem.criterion_id,
+        )
+        .join(
+            AssessmentKey,
+            AssessmentKey.item_id == AssessmentItem.id,
+        )
+        .where(
+            AssessmentCriterion.learning_result_id == learning_result_id,
+            AssessmentItem.instrument == "exam",
+            AssessmentItem.active.is_(True),
+            AssessmentItem.evaluable.is_(True),
+            AssessmentKey.active.is_(True),
+        )
+        .order_by(AssessmentCriterion.position, AssessmentItem.position, AssessmentItem.id)
+    ).all()
+    by_ce: dict[str, list[tuple[AssessmentItem, AssessmentKey]]] = {}
+    for item, key, criterion in rows:
+        by_ce.setdefault(criterion.code, []).append((item, key))
+    return by_ce
+
+
+@router.post(
+    "/course-modules/{course_module_id}/learning-results/{learning_result_id}/exam/start"
+)
+def start_exam(
+    course_module_id: int,
+    learning_result_id: int,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    course_module, _ = _course_module_access(db, course_module_id, user_id)
+    lr = db.get(LearningResult, learning_result_id)
+    if not lr or lr.module_id != course_module.module_id or not lr.active:
+        raise HTTPException(status_code=404, detail="RA no encontrado")
+
+    config = _effective_config(db, course_module)
+    if not config["exam_enabled"]:
+        raise HTTPException(status_code=403, detail="El examen no está habilitado")
+
+    active = db.scalar(
+        select(ExamSession)
+        .where(
+            ExamSession.course_module_id == course_module_id,
+            ExamSession.user_id == user_id,
+            ExamSession.learning_result_id == learning_result_id,
+            ExamSession.status == "started",
+        )
+        .order_by(ExamSession.attempt_no.desc())
+    )
+    if active:
+        return _exam_public(active)
+
+    used = db.scalar(
+        select(func.count(ExamSession.id)).where(
+            ExamSession.course_module_id == course_module_id,
+            ExamSession.user_id == user_id,
+            ExamSession.learning_result_id == learning_result_id,
+        )
+    ) or 0
+    if used >= int(config["exam_max_attempts"]):
+        raise HTTPException(status_code=409, detail="No quedan intentos de examen")
+
+    bank = _exam_items_for_lr(db, learning_result_id)
+    criteria = list(
+        db.scalars(
+            select(AssessmentCriterion)
+            .where(
+                AssessmentCriterion.learning_result_id == learning_result_id,
+                AssessmentCriterion.active.is_(True),
+            )
+            .order_by(AssessmentCriterion.position, AssessmentCriterion.id)
+        )
+    )
+    per_ce = int(config["exam_questions_per_ce"])
+    shortages = {
+        criterion.code: len(bank.get(criterion.code, []))
+        for criterion in criteria
+        if len(bank.get(criterion.code, [])) < per_ce
+    }
+    if shortages:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Banco de examen incompleto",
+                "required_per_ce": per_ce,
+                "available": shortages,
+            },
+        )
+
+    attempt_no = int(used) + 1
+    seed_raw = f"{user_id}|{course_module_id}|{learning_result_id}|{attempt_no}"
+    seed = int(hashlib.sha256(seed_raw.encode("utf-8")).hexdigest()[:16], 16)
+    rnd = random.Random(seed)
+    chosen: list[dict] = []
+
+    for criterion in criteria:
+        pool = list(bank.get(criterion.code, []))
+        rnd.shuffle(pool)
+        for item, key in pool[:per_ce]:
+            options = list(item.options_json or [])
+            expected = _unwrap_answer(key)
+            remapped = expected
+            if item.item_type in {"choice", "multi"}:
+                indexed = list(enumerate(options))
+                rnd.shuffle(indexed)
+                options = [value for _, value in indexed]
+                new_index = {old: new for new, (old, _) in enumerate(indexed)}
+                if item.item_type == "choice":
+                    remapped = new_index[int(expected)]
+                else:
+                    remapped = sorted(new_index[int(index)] for index in expected)
+            chosen.append(
+                {
+                    "id": item.id,
+                    "item_key": item.item_key,
+                    "ce": criterion.code,
+                    "type": item.item_type,
+                    "q": item.prompt,
+                    "options": options,
+                    "correct": remapped,
+                }
+            )
+    rnd.shuffle(chosen)
+    started = _now()
+    deadline = started + timedelta(minutes=int(config["exam_minutes"]))
+    exam = ExamSession(
+        course_module_id=course_module_id,
+        user_id=user_id,
+        learning_result_id=learning_result_id,
+        attempt_no=attempt_no,
+        status="started",
+        question_ids_json=[int(q["id"]) for q in chosen],
+        question_snapshot_json=chosen,
+        response_json={
+            "draft_answers": {},
+            "config": config,
+        },
+        security_events_json=[],
+        started_at=started,
+        deadline_at=deadline,
+    )
+    db.add(exam)
+    db.commit()
+    db.refresh(exam)
+    result = _exam_public(exam)
+    result["resumed"] = False
+    return result
+
+
+@router.put("/exam-sessions/{exam_session_id}/draft")
+def save_exam_draft(
+    exam_session_id: int,
+    payload: ExamDraftIn,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    exam = db.get(ExamSession, exam_session_id)
+    if not exam or exam.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Examen no encontrado")
+    if exam.status != "started":
+        raise HTTPException(status_code=409, detail="El examen ya no está abierto")
+    _course_module_access(db, exam.course_module_id, user_id)
+    current = dict(exam.response_json or {})
+    current["draft_answers"] = payload.answers or {}
+    current["draft_saved_at"] = _now().isoformat()
+    exam.response_json = current
+    db.commit()
+    return {
+        "ok": True,
+        "exam_session_id": exam.id,
+        "saved_at": current["draft_saved_at"],
+    }
+
+
+@router.post("/exam-sessions/{exam_session_id}/events")
+def record_exam_event(
+    exam_session_id: int,
+    payload: ExamEventIn,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    exam = db.get(ExamSession, exam_session_id)
+    if not exam or exam.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Examen no encontrado")
+    if exam.status != "started":
+        raise HTTPException(status_code=409, detail="El examen ya no está abierto")
+    course_module, _ = _course_module_access(db, exam.course_module_id, user_id)
+    config = dict((exam.response_json or {}).get("config") or _effective_config(db, course_module))
+
+    events = list(exam.security_events_json or [])
+    if len(events) < 300:
+        events.append(
+            {
+                "event": payload.event,
+                "detail": payload.detail or {},
+                "at": _now().isoformat(),
+            }
+        )
+    exam.security_events_json = events
+
+    incident_events = {
+        "blur",
+        "visibility-hidden",
+        "fullscreen-exit",
+        "copy",
+        "paste",
+        "contextmenu",
+    }
+    incidents = sum(1 for event in events if event.get("event") in incident_events)
+    limit = int(config.get("exam_incident_limit", 3))
+    force_submit = bool(
+        config.get("exam_integrity_enabled", True)
+        and config.get("exam_incident_policy", "submit") == "submit"
+        and limit >= 0
+        and incidents >= limit
+    )
+    db.commit()
+    return {
+        "ok": True,
+        "incidents": incidents,
+        "limit": limit,
+        "force_submit": force_submit,
+    }
+
+
+@router.post("/exam-sessions/{exam_session_id}/submit")
+def submit_exam(
+    exam_session_id: int,
+    payload: ExamSubmitIn,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    exam = db.get(ExamSession, exam_session_id)
+    if not exam or exam.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Examen no encontrado")
+    if exam.status != "started":
+        raise HTTPException(status_code=409, detail="El examen ya no está abierto")
+    _course_module_access(db, exam.course_module_id, user_id)
+
+    now = _now()
+    if exam.deadline_at and now > exam.deadline_at + timedelta(seconds=30) and not payload.timeout:
+        raise HTTPException(status_code=410, detail="El tiempo del examen ha finalizado")
+
+    current = dict(exam.response_json or {})
+    answers = payload.answers or current.get("draft_answers") or {}
+    by_ce: dict[str, dict] = {}
+    correct_total = 0
+    question_count = 0
+
+    for question in exam.question_snapshot_json or []:
+        if not isinstance(question, dict):
+            continue
+        question_count += 1
+        qid = str(question.get("id"))
+        given = answers.get(qid)
+        if given is None:
+            given = answers.get(question.get("item_key"))
+        expected = question.get("correct")
+        kind = str(question.get("type") or "choice")
+        if kind == "multi":
+            ok = (
+                isinstance(given, list)
+                and sorted(map(str, given)) == sorted(map(str, expected or []))
+            )
+        else:
+            ok = given == expected
+        correct_total += int(ok)
+        ce = str(question.get("ce") or "")
+        row = by_ce.setdefault(ce, {"ok": 0, "n": 0})
+        row["n"] += 1
+        row["ok"] += int(ok)
+
+    score = round(correct_total / max(1, question_count) * 100.0, 2)
+    current.update(
+        {
+            "answers": answers,
+            "draft_answers": answers,
+            "by_ce": by_ce,
+            "answered": len(answers),
+            "total": question_count,
+            "submitted_at": now.isoformat(),
+            "timeout": bool(payload.timeout),
+            "integrity": {
+                "events": len(exam.security_events_json or []),
+            },
+        }
+    )
+    exam.response_json = current
+    exam.score = score
+    exam.status = "submitted"
+    exam.submitted_at = now
+
+    progress = recompute_learning_result(
+        db,
+        exam.course_module_id,
+        user_id,
+        exam.learning_result_id,
+    )
+    db.commit()
+    return {
+        "exam_session_id": exam.id,
+        "score": score,
+        "answered": len(answers),
+        "total": question_count,
+        "by_ce": by_ce,
+        "progress": progress,
+    }
