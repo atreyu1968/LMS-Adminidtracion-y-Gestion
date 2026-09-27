@@ -31,6 +31,9 @@ for (const rel of files) {
 
   const htmlMarkup = html.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi, "");
   const ids = [...htmlMarkup.matchAll(/\sid=["']([^"']+)["']/g)].map(m => m[1]);
+  const declaredAnywhere = new Set(
+    [...html.matchAll(/\bid=["']([A-Za-z][A-Za-z0-9_-]*)["']/g)].map(m => m[1])
+  );
   const seen = new Set();
   for (const id of ids) {
     if (seen.has(id)) {
@@ -57,8 +60,8 @@ for (const rel of files) {
     ...html.matchAll(/getElementById\(["']([A-Za-z][A-Za-z0-9_-]*)["']\)/g),
   ].map(m => m[1]);
   for (const id of new Set(literalSelectors)) {
-    if (!seen.has(id)) {
-      console.error(`${rel}: JavaScript referencia #${id}, pero ese id no existe`);
+    if (!declaredAnywhere.has(id)) {
+      console.error(`${rel}: JavaScript referencia #${id}, pero ese id no se declara ni estática ni dinámicamente`);
       failed = true;
     }
   }
