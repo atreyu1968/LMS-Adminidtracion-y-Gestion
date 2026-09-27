@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel docente · LMS Administración y Gestión</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb;--ink:#10233f;--line:#dfe6ef;--muted:#64748b;--brand:#18508f}
+*{box-sizing:border-box}body{margin:0}.top{background:var(--ink);color:#fff;padding:18px 5vw;display:flex;align-items:center;justify-content:space-between;gap:18px}.top h1{margin:0;font-size:1.45rem}.top small{color:#cbd6e5}
+.wrap{max-width:1320px;margin:26px auto;padding:0 18px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 7px 25px rgba(28,48,77,.06)}.card h2,.card h3{margin-top:0}.muted{color:var(--muted)}.badge{display:inline-block;background:#edf3fb;color:#23528b;border-radius:999px;padding:5px 9px;font-size:.78rem;font-weight:700}.badge.local{background:#ecfdf5;color:#166534}.badge.lti{background:#eff6ff;color:#1d4ed8}
+form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea,select{width:100%;border:1px solid #cfd9e6;border-radius:10px;padding:10px 11px;font:inherit;background:#fff}textarea{min-height:80px;resize:vertical}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.btn{border:0;border-radius:10px;background:var(--brand);color:#fff;padding:10px 14px;font-weight:750;cursor:pointer}.btn.secondary{background:#e9eef5;color:#203652}.btn.danger{background:#a52b32}.btn:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:12px;padding:14px}.item strong{display:block}.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);gap:18px}@media(max-width:920px){.split{grid-template-columns:1fr}}.hidden{display:none!important}.notice{padding:12px 14px;border-radius:12px;background:#eef6ff;color:#23466f;margin-bottom:12px}.error{background:#fff1f2;color:#9f1239}.ok{background:#ecfdf5;color:#166534}.tiny{font-size:.82rem}.drop{border:2px dashed #cbd5e1;border-radius:14px;padding:18px;text-align:center;background:#f8fafc}.group-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.group-title h3{margin-bottom:4px}.metric{font-size:1.55rem;font-weight:800}.member{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.member small{display:block;color:var(--muted)}.scorm{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}.empty{color:var(--muted);padding:14px 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <div><h1>Panel docente</h1><small>LMS Administración y Gestión</small></div>
+  <div style="text-align:right"><strong id="teacherName">Cargando…</strong><br><small id="currentContext"></small></div>
+</header>
+
+<main class="wrap">
+  <div id="flash"></div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="groups">Mis grupos</button>
+    <button class="tab" data-tab="modules">Mis módulos</button>
+    <button class="tab" data-tab="library">Mi biblioteca SCORM</button>
+    <button class="tab" data-tab="shared">SCORM compartidos</button>
+  </nav>
+
+  <section id="panel-groups" class="panel active">
+    <div class="split">
+      <div>
+        <div class="card">
+          <h2>Mis grupos</h2>
+          <p class="muted">Aquí aparecen tanto tus grupos propios como los cursos que llegan desde CAMPUS.</p>
+          <div id="groupsList" class="list"></div>
+        </div>
+      </div>
+      <aside>
+        <div class="card">
+          <h3>Crear grupo local</h3>
+          <form id="createGroupForm">
+            <label>Nombre del grupo<input name="title" required placeholder="1.º Gestión Administrativa A"></label>
+            <div class="row">
+              <label>Etiqueta<input name="label" placeholder="1GA-A"></label>
+              <label>Curso académico<input name="academic_year" placeholder="2026/2027"></label>
+            </div>
+            <label>Descripción<textarea name="description" placeholder="Observaciones del grupo"></textarea></label>
+            <button class="btn">Crear grupo</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+
+    <div id="groupWorkspace" class="card hidden" style="margin-top:18px">
+      <div class="group-title">
+        <div><h2 id="groupName"></h2><div id="groupMeta" class="muted"></div></div>
+        <div class="actions"><button id="activateGroupBtn" class="btn secondary">Activar grupo</button><button id="syncCampusBtn" class="btn secondary hidden">Sincronizar CAMPUS</button></div>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <div>
+          <h3>Miembros</h3>
+          <div id="membersList" class="list"></div>
+        </div>
+        <div>
+          <h3>Añadir alumno o profesor</h3>
+          <form id="addMemberForm">
+            <input type="hidden" name="group_id">
+            <label>Nombre<input name="display_name" placeholder="Nombre y apellidos"></label>
+            <label>Correo<input name="email" type="email" placeholder="usuario@..."></label>
+            <label>Rol<select name="role"><option value="student">Alumno/a</option><option value="teacher">Profesor/a colaborador/a</option></select></label>
+            <button class="btn">Añadir al grupo</button>
+          </form>
+          <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+          <form id="csvRosterForm">
+            <input type="hidden" name="group_id">
+            <label>Importar listado CSV<input name="file" type="file" accept=".csv,text/csv" required></label>
+            <small class="muted">Columnas admitidas: nombre/display_name, email/correo y rol/role.</small>
+            <button class="btn secondary">Importar CSV</button>
+          </form>
+        </div>
+        <div>
+          <h3>Módulos asignados</h3>
+          <div id="groupModules" class="list"></div>
+          <form id="assignModuleForm" style="margin-top:12px">
+            <input type="hidden" name="group_id">
+            <label>Añadir módulo<select name="module_id" required></select></label>
+            <button class="btn">Asignar módulo</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="panel-modules" class="panel">
+    <div class="split">
+      <div class="card"><h2>Mis módulos</h2><div id="modulesList" class="list"></div></div>
+      <aside class="card">
+        <h3>Crear módulo</h3>
+        <form id="createModuleForm">
+          <label>Título<input name="title" required placeholder="Tratamiento de la documentación contable"></label>
+          <div class="row">
+            <label>Código<input name="code" placeholder="0443"></label>
+            <label>Identificador<input name="slug" required placeholder="tdc-0443"></label>
+          </div>
+          <label>Descripción<textarea name="description"></textarea></label>
+          <button class="btn">Crear módulo</button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
+  <section id="panel-library" class="panel">
+    <div class="split">
+      <div class="card">
+        <h2>Mi biblioteca SCORM</h2>
+        <div id="libraryList" class="list"></div>
+      </div>
+      <aside class="card">
+        <h3>Importar SCORM</h3>
+        <form id="uploadScormForm" enctype="multipart/form-data">
+          <label>Paquete ZIP<input name="file" type="file" accept=".zip,application/zip" required></label>
+          <label>Título opcional<input name="title" placeholder="Se usará el título del manifiesto"></label>
+          <label>Descripción<textarea name="description"></textarea></label>
+          <label>Visibilidad<select name="visibility"><option value="private">Privado</option><option value="shared">Compartido con otros profesores</option></select></label>
+          <button class="btn">Importar a mi biblioteca</button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
+  <section id="panel-shared" class="panel">
+    <div class="card">
+      <h2>SCORM compartidos por otros profesores</h2>
+      <p class="muted">Puedes reutilizarlos en un módulo propio; el fichero no se duplica.</p>
+      <div id="sharedList" class="list"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[];
+
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
+async function api(url,options={}){
+  const r=await fetch(url,{credentials:"include",...options});
+  const ct=r.headers.get("content-type")||"";
+  const data=ct.includes("json")?await r.json():await r.text();
+  if(!r.ok) throw new Error(data?.detail||data||("HTTP "+r.status));
+  return data;
+}
+function json(method,body){return{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}}
+
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");document.querySelector("#panel-"+b.dataset.tab).classList.add("active");
+}));
+
+async function boot(){
+  try{
+    me=await api("/api/me");
+    if(!["teacher","admin"].includes(me.role)) throw new Error("Esta zona está reservada al profesorado.");
+    document.querySelector("#teacherName").textContent=me.user.display_name;
+    document.querySelector("#currentContext").textContent=me.course?"Contexto activo: "+me.course.title:"Sin grupo activo";
+    await refreshAll();
+  }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+async function refreshAll(){
+  [groups,modules,myLibrary,sharedLibrary]=await Promise.all([
+    api("/api/groups"),api("/api/modules/mine"),api("/api/scorm-library?scope=mine"),api("/api/scorm-library?scope=shared")
+  ]);
+  renderGroups();renderModules();renderLibrary();renderShared();refreshModuleSelects();
+}
+function renderGroups(){
+  const root=document.querySelector("#groupsList");
+  root.innerHTML=groups.length?groups.map(g=>`<article class="item">
+    <div class="group-title"><div><strong>${esc(g.title)}</strong><span class="badge ${g.source_type==="local"?"local":"lti"}">${g.source_type==="local"?"Local":"CAMPUS"}</span></div><span class="badge">${g.owned?"Propietario":esc(g.role)}</span></div>
+    <div class="muted tiny">${esc(g.label||"")} ${g.academic_year?"· "+esc(g.academic_year):""}</div>
+    ${g.join_code?'<div class="tiny">Código de grupo: <strong>'+esc(g.join_code)+'</strong></div>':""}
+    <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGroup(${g.id})">Gestionar</button></div>
+  </article>`).join(""):'<div class="empty">Todavía no tienes grupos.</div>';
+}
+function renderModules(){
+  const root=document.querySelector("#modulesList");
+  root.innerHTML=modules.length?modules.map(m=>`<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · ${esc(m.permission)}</div><p>${esc(m.description||"")}</p><div class="actions"><button class="btn secondary" onclick="showModuleScorms(${m.id},'${esc(m.title).replace(/'/g,"&#39;")}')">Ver SCORM</button></div><div id="module-scorm-${m.id}"></div></article>`).join(""):'<div class="empty">Aún no has creado módulos.</div>';
+}
+function packageCard(p,shared=false){
+  const moduleOptions=modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
+  return `<article class="item scorm"><div><strong>${esc(p.title)}</strong><div class="muted tiny">${esc(p.original_filename||"")} · ${esc(p.standard)} · ${esc(p.visibility)}</div><p>${esc(p.description||"")}</p></div>
+  <div style="min-width:220px"><select id="pkg-module-${p.id}"><option value="">Asignar a módulo…</option>${moduleOptions}</select><div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="attachPackage(${p.id})">Asignar</button>${!shared?'<button class="btn secondary" onclick="toggleVisibility('+p.id+',\''+(p.visibility==="shared"?"private":"shared")+'\')">'+(p.visibility==="shared"?"Hacer privado":"Compartir")+"</button>":""}</div></div></article>`;
+}
+function renderLibrary(){document.querySelector("#libraryList").innerHTML=myLibrary.length?myLibrary.map(p=>packageCard(p,false)).join(""):'<div class="empty">Tu biblioteca está vacía.</div>'}
+function renderShared(){document.querySelector("#sharedList").innerHTML=sharedLibrary.length?sharedLibrary.map(p=>packageCard(p,true)).join(""):'<div class="empty">No hay SCORM compartidos por otros profesores.</div>'}
+function refreshModuleSelects(){
+  const sel=document.querySelector("#assignModuleForm select[name=module_id]");
+  sel.innerHTML='<option value="">Selecciona…</option>'+modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
+}
+async function openGroup(id){
+  try{
+    activeGroup=await api("/api/groups/"+id);
+    const [members,gmods]=await Promise.all([api("/api/groups/"+id+"/members"),api("/api/groups/"+id+"/modules")]);
+    document.querySelector("#groupWorkspace").classList.remove("hidden");
+    document.querySelector("#groupName").textContent=activeGroup.title;
+    document.querySelector("#groupMeta").textContent=(activeGroup.source_type==="local"?"Grupo local":"Curso CAMPUS")+(activeGroup.academic_year?" · "+activeGroup.academic_year:"");
+    document.querySelectorAll("#addMemberForm input[name=group_id],#csvRosterForm input[name=group_id],#assignModuleForm input[name=group_id]").forEach(x=>x.value=id);
+    document.querySelector("#syncCampusBtn").classList.toggle("hidden",activeGroup.source_type!=="lti");
+    document.querySelector("#membersList").innerHTML=members.map(m=>`<div class="item member"><div><strong>${esc(m.display_name)}</strong><small>${esc(m.email||"")} · ${esc(m.role)}</small></div>${m.user_id===me.user.id?"":'<button class="btn danger" onclick="removeMember('+id+','+m.user_id+')">Quitar</button>'}</div>`).join("")||'<div class="empty">Sin miembros.</div>';
+    document.querySelector("#groupModules").innerHTML=gmods.map(m=>`<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")}</small><div class="actions" style="margin-top:8px"><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`).join("")||'<div class="empty">Sin módulos asignados.</div>';
+    document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){flash(e.message,"error")}
+}
+document.querySelector("#createGroupForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget);
+  try{await api("/api/groups",json("POST",{title:f.get("title"),label:f.get("label")||null,academic_year:f.get("academic_year")||null,description:f.get("description")||""}));e.currentTarget.reset();groups=await api("/api/groups");renderGroups();flash("Grupo creado.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#addMemberForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget),gid=Number(f.get("group_id"));
+  try{await api("/api/groups/"+gid+"/members",json("POST",{display_name:f.get("display_name")||null,email:f.get("email")||null,role:f.get("role")}));e.currentTarget.reset();e.currentTarget.querySelector("[name=group_id]").value=gid;await openGroup(gid);flash("Miembro añadido.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#csvRosterForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget),gid=Number(f.get("group_id")),fd=new FormData();fd.append("file",f.get("file"));
+  try{const r=await api("/api/groups/"+gid+"/members/import-csv",{method:"POST",body:fd});await openGroup(gid);flash("CSV importado: "+r.imported+" registros.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#assignModuleForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget),gid=Number(f.get("group_id")),mid=Number(f.get("module_id"));
+  try{await api("/api/groups/"+gid+"/modules/"+mid,json("POST",{settings:{}}));await openGroup(gid);flash("Módulo asignado al grupo.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#createModuleForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget);
+  try{await api("/api/modules",json("POST",{title:f.get("title"),slug:f.get("slug"),code:f.get("code")||null,description:f.get("description")||"",module_type:"scorm"}));e.currentTarget.reset();modules=await api("/api/modules/mine");renderModules();refreshModuleSelects();renderLibrary();renderShared();flash("Módulo creado.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#uploadScormForm").addEventListener("submit",async e=>{
+  e.preventDefault();const fd=new FormData(e.currentTarget);
+  try{await api("/api/scorm-library",{method:"POST",body:fd});e.currentTarget.reset();myLibrary=await api("/api/scorm-library?scope=mine");renderLibrary();flash("SCORM importado en tu biblioteca.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#activateGroupBtn").addEventListener("click",async()=>{
+  if(!activeGroup)return;try{const r=await api("/api/groups/"+activeGroup.id+"/activate",{method:"POST"});document.querySelector("#currentContext").textContent="Contexto activo: "+r.title;flash("Grupo activado.")}catch(e){flash(e.message,"error")}
+});
+document.querySelector("#syncCampusBtn").addEventListener("click",async()=>{
+  if(!activeGroup)return;try{await api("/api/groups/"+activeGroup.id+"/activate",{method:"POST"});const r=await api("/api/lti/courses/"+activeGroup.id+"/sync-memberships",{method:"POST"});await openGroup(activeGroup.id);flash("CAMPUS sincronizado: "+r.members_received+" participantes recibidos.")}catch(e){flash(e.message,"error")}
+});
+async function removeMember(gid,uid){try{await api("/api/groups/"+gid+"/members/"+uid,{method:"DELETE"});await openGroup(gid);flash("Miembro retirado.")}catch(e){flash(e.message,"error")}}
+async function unassignModule(gid,mid){try{await api("/api/groups/"+gid+"/modules/"+mid,{method:"DELETE"});await openGroup(gid);flash("Módulo retirado del grupo.")}catch(e){flash(e.message,"error")}}
+async function attachPackage(pid){
+  const sel=document.querySelector("#pkg-module-"+pid),mid=Number(sel.value);if(!mid){flash("Selecciona primero un módulo.","error");return}
+  try{await api("/api/modules/"+mid+"/scorm-packages/"+pid,json("POST",{position:0,required:true,weight:1,settings:{}}));flash("SCORM asignado al módulo.");await showModuleScorms(mid,modules.find(x=>x.id===mid)?.title||"Módulo")}catch(e){flash(e.message,"error")}
+}
+async function toggleVisibility(pid,visibility){try{await api("/api/scorm-library/"+pid,json("PATCH",{visibility}));[myLibrary,sharedLibrary]=await Promise.all([api("/api/scorm-library?scope=mine"),api("/api/scorm-library?scope=shared")]);renderLibrary();renderShared();flash(visibility==="shared"?"SCORM compartido.":"SCORM marcado como privado.")}catch(e){flash(e.message,"error")}}
+async function showModuleScorms(mid,title){
+  try{const rows=await api("/api/modules/"+mid+"/scorm-packages");const root=document.querySelector("#module-scorm-"+mid);root.innerHTML='<div class="notice" style="margin-top:10px"><strong>'+esc(title)+'</strong><div class="tiny">'+(rows.length?rows.map(x=>esc(x.title)).join("<br>"):"Sin SCORM asignados")+'</div></div>'}catch(e){flash(e.message,"error")}
+}
+boot();
+</script>
+</body>
+</html>
