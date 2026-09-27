@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router as api_router
 from .db import init_db
-from .lti import router as lti_router
+from .lti import router as lti_router\nfrom .scorm import router as scorm_router
 from .lti_keys import ensure_private_key
 from .settings import get_settings
 
@@ -35,4 +35,4 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
-app.include_router(lti_router)
+app.include_router(lti_router)\napp.include_router(scorm_router)
