@@ -704,13 +704,20 @@ def deep_link_select(
         "url": f"{settings.base_url}/lti/launch",
         "custom": custom_claims,
     }
-    if learning_result:
-        content_item["lineItem"] = {
-            "scoreMaximum": 100,
-            "label": item_title,
-            "resourceId": f"module:{module.slug}:ra:{learning_result.code}",
-            "tag": f"lms-{learning_result.code.lower()}",
-        }
+    content_item["lineItem"] = {
+        "scoreMaximum": 100,
+        "label": item_title,
+        "resourceId": (
+            f"module:{module.slug}:ra:{learning_result.code}"
+            if learning_result
+            else f"module:{module.slug}"
+        ),
+        "tag": (
+            f"lms-{learning_result.code.lower()}"
+            if learning_result
+            else "lms-module"
+        ),
+    }
 
     response_claims = {
         "iss": platform.client_id,
