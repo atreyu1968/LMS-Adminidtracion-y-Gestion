@@ -24,6 +24,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
   <nav class="tabs">
     <button class="tab active" data-tab="groups">Mis grupos</button>
     <button class="tab" data-tab="modules">Mis módulos</button>
+    <button class="tab" data-tab="catalog">Catálogo oficial</button>
     <button class="tab" data-tab="library">Mi biblioteca SCORM</button>
     <button class="tab" data-tab="shared">SCORM compartidos</button>
     <button class="tab" data-tab="media">Biblioteca multimedia</button>
@@ -134,6 +135,14 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
     </div>
   </section>
 
+  <section id="panel-catalog" class="panel">
+    <div class="card">
+      <h2>Catálogo oficial</h2>
+      <p class="muted">Módulos de referencia mantenidos por la instalación. Puedes incorporarlos a tu espacio y asignarlos a tus grupos sin modificar el original.</p>
+      <div id="catalogList" class="list"></div>
+    </div>
+  </section>
+
   <section id="panel-library" class="panel">
     <div class="split">
       <div class="card">
@@ -227,7 +236,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
 </main>
 
 <script>
-let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null;
+let me=null, groups=[], modules=[], catalogModules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null;
 
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
@@ -256,15 +265,16 @@ async function boot(){
   }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 async function refreshAll(){
-  [groups,modules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
+  [groups,modules,catalogModules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
     api("/api/groups"),
     api("/api/modules/mine"),
+    api("/api/catalog/modules"),
     api("/api/scorm-library?scope=mine"),
     api("/api/scorm-library?scope=shared"),
     api("/api/media-library?scope=mine"),
     api("/api/ai/settings")
   ]);
-  renderGroups();renderModules();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
+  renderGroups();renderModules();renderCatalog();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
 }
 function renderGroups(){
   const root=document.querySelector("#groupsList");
@@ -286,6 +296,31 @@ function packageCard(p,shared=false){
     : '<button class="btn secondary" onclick="editScorm('+p.id+')">Editar</button><a class="btn secondary" href="/api/scorm-library/'+p.id+'/export">Exportar ZIP</a><button class="btn secondary" onclick="toggleVisibility('+p.id+',\''+(p.visibility==="shared"?"private":"shared")+'\')">'+(p.visibility==="shared"?"Hacer privado":"Compartir")+'</button>';
   return `<article class="item scorm"><div><strong>${esc(p.title)}</strong><div class="muted tiny">${esc(p.original_filename||"")} · ${esc(p.standard)} · revisión ${esc(p.revision_number||1)} · ${esc(p.visibility)}</div><p>${esc(p.description||"")}</p></div>
   <div style="min-width:250px"><select id="pkg-module-${p.id}"><option value="">Asignar a módulo…</option>${moduleOptions}</select><div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="attachPackage(${p.id})">Asignar</button>${ownershipActions}</div></div></article>`;
+}
+function renderCatalog(){
+  const root=document.querySelector("#catalogList");if(!root)return;
+  root.innerHTML=catalogModules.length?catalogModules.map(m=>`<article class="item">
+    <div class="group-title"><div><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · versión ${esc(m.version||"")}</div></div><span class="badge">${m.installed?"Añadido":"Disponible"}</span></div>
+    <p>${esc(m.description||"")}</p>
+    <div class="tiny muted">Fuente: ${esc(m.metadata?.source_repository||"catálogo local")} ${m.metadata?.source_ref?"· "+esc(String(m.metadata.source_ref).slice(0,12)):""}</div>
+    <div class="actions" style="margin-top:10px">
+      ${m.installed?'<button class="btn secondary" onclick="removeCatalogModule('+m.id+')">Quitar de mis módulos</button>':'<button class="btn" onclick="installCatalogModule('+m.id+')">Añadir a mis módulos</button>'}
+    </div>
+  </article>`).join(""):'<div class="empty">El administrador todavía no ha aprovisionado módulos oficiales.</div>';
+}
+async function installCatalogModule(mid){
+  try{
+    await api("/api/catalog/modules/"+mid+"/install",{method:"POST"});
+    [modules,catalogModules]=await Promise.all([api("/api/modules/mine"),api("/api/catalog/modules")]);
+    renderModules();renderCatalog();refreshModuleSelects();flash("Módulo oficial añadido a tu espacio.");
+  }catch(e){flash(e.message,"error")}
+}
+async function removeCatalogModule(mid){
+  try{
+    await api("/api/catalog/modules/"+mid+"/install",{method:"DELETE"});
+    [modules,catalogModules]=await Promise.all([api("/api/modules/mine"),api("/api/catalog/modules")]);
+    renderModules();renderCatalog();refreshModuleSelects();flash("Módulo retirado de tu espacio.");
+  }catch(e){flash(e.message,"error")}
 }
 function renderLibrary(){document.querySelector("#libraryList").innerHTML=myLibrary.length?myLibrary.map(p=>packageCard(p,false)).join(""):'<div class="empty">Tu biblioteca está vacía.</div>'}
 function renderShared(){document.querySelector("#sharedList").innerHTML=sharedLibrary.length?sharedLibrary.map(p=>packageCard(p,true)).join(""):'<div class="empty">No hay SCORM compartidos por otros profesores.</div>'}
