@@ -490,3 +490,20 @@ class RecoveryPlan(Base):
     status: Mapped[str] = mapped_column(String(40), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class TeacherAISettings(Base):
+    __tablename__ = "teacher_ai_settings"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_teacher_ai_settings_user"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    provider: Mapped[str] = mapped_column(String(80), default="openai-compatible")
+    base_url: Mapped[str] = mapped_column(String(1000), default="")
+    model: Mapped[str] = mapped_column(String(200), default="")
+    encrypted_api_key: Mapped[str] = mapped_column(Text, default="")
+    confidence_threshold: Mapped[float] = mapped_column(Float, default=0.75)
+    auto_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
+    default_rubric: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
