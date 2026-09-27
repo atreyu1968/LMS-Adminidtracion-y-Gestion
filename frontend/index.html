@@ -51,7 +51,10 @@
         const launch=scorms.length&&x.course_module_id
           ? "<div>"+scorms.map(p=>"<button class='btn' onclick='launchScorm("+Number(x.course_module_id)+","+Number(p.id)+",this)'>Abrir "+escapeHtml(p.title)+"</button>").join(" ")+"</div>"
           : "";
-        return "<article class='module'><strong>"+escapeHtml(x.title)+"</strong><div class='muted'>"+escapeHtml(x.code||"")+" · "+escapeHtml(x.version)+"</div><p>"+escapeHtml(x.description||"")+"</p>"+launch+"</article>";
+        const evaluation=x.course_module_id
+          ? "<a class='btn' href='/evaluation-student.html?course_module="+Number(x.course_module_id)+"'>Actividades y evaluación</a>"
+          : "";
+        return "<article class='module'><strong>"+escapeHtml(x.title)+"</strong><div class='muted'>"+escapeHtml(x.code||"")+" · "+escapeHtml(x.version)+"</div><p>"+escapeHtml(x.description||"")+"</p>"+launch+evaluation+"</article>";
       }));
       modules.innerHTML=cards.join("");
     }
