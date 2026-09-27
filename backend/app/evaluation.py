@@ -2088,6 +2088,7 @@ def submit_exam(
     exam.score = score
     exam.status = "submitted"
     exam.submitted_at = now
+    db.flush()
 
     progress = recompute_learning_result(
         db,
