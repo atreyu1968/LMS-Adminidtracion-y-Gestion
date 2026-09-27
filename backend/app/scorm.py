@@ -272,6 +272,8 @@ async def _store_scorm(
             active=True,
         )
         db.add(package)
+        db.flush()
+        package.lineage_root_id = package.id
         db.commit()
         db.refresh(package)
         return package, False
@@ -348,7 +350,10 @@ def scorm_library(
     db: Session = Depends(get_db),
 ) -> list[dict]:
     user_id = int(session["sub"])
-    stmt = select(ScormPackage).where(ScormPackage.active.is_(True))
+    stmt = select(ScormPackage).where(
+        ScormPackage.active.is_(True),
+        ScormPackage.is_current.is_(True),
+    )
     if scope == "mine":
         stmt = stmt.where(ScormPackage.owner_user_id == user_id)
     elif scope == "shared":
@@ -562,14 +567,38 @@ def launch_scorm(
     if not attached and not legacy_match:
         raise HTTPException(status_code=400, detail="SCORM package is not assigned to this module")
 
-    registration = db.scalar(
-        select(ScormRegistration).where(
-            ScormRegistration.course_module_id == course_module.id,
-            ScormRegistration.package_id == package.id,
-            ScormRegistration.user_id == user_id,
+    lineage_root = int(package.lineage_root_id or package.id)
+    family_ids = list(
+        db.scalars(
+            select(ScormPackage.id).where(
+                ScormPackage.owner_user_id == package.owner_user_id,
+                __import__("sqlalchemy").or_(
+                    ScormPackage.lineage_root_id == lineage_root,
+                    ScormPackage.id == lineage_root,
+                ),
+            )
         )
     )
-    if not registration:
+    if package.id not in family_ids:
+        family_ids.append(package.id)
+
+    registration = db.scalar(
+        select(ScormRegistration)
+        .where(
+            ScormRegistration.course_module_id == course_module.id,
+            ScormRegistration.user_id == user_id,
+            ScormRegistration.package_id.in_(family_ids),
+        )
+        .order_by(ScormRegistration.updated_at.desc(), ScormRegistration.id.desc())
+    )
+    effective_package = package
+    pinned_to_existing_revision = False
+    if registration:
+        previous_package = db.get(ScormPackage, registration.package_id)
+        if previous_package:
+            effective_package = previous_package
+            pinned_to_existing_revision = previous_package.id != package.id
+    else:
         registration = ScormRegistration(
             course_module_id=course_module.id,
             package_id=package.id,
@@ -580,8 +609,8 @@ def launch_scorm(
         db.refresh(registration)
 
     token = create_scorm_token(registration.id, user_id)
-    split = urlsplit(package.entrypoint)
-    content_url = f"{settings.content_base_url}/{package.storage_path}/{quote(split.path, safe='/%')}"
+    split = urlsplit(effective_package.entrypoint)
+    content_url = f"{settings.content_base_url}/{effective_package.storage_path}/{quote(split.path, safe='/%')}"
     if split.query:
         content_url += "?" + split.query
     if split.fragment:
@@ -600,7 +629,13 @@ def launch_scorm(
             "lms_token": token,
         }
     )
-    return {"registration_id": registration.id, "url": url}
+    return {
+        "registration_id": registration.id,
+        "url": url,
+        "package_id": effective_package.id,
+        "revision_number": effective_package.revision_number,
+        "pinned_to_existing_revision": pinned_to_existing_revision,
+    }
 
 
 def _runtime_auth(
@@ -734,6 +769,11 @@ def _package_dict(package: ScormPackage, deduplicated: bool | None = None) -> di
         "description": package.description,
         "original_filename": package.original_filename,
         "version": package.version,
+        "revision_number": package.revision_number,
+        "lineage_root_id": package.lineage_root_id or package.id,
+        "supersedes_id": package.supersedes_id,
+        "is_current": package.is_current,
+        "lifecycle_status": package.lifecycle_status,
         "standard": package.standard,
         "entrypoint": package.entrypoint,
         "sha256": package.sha256,
