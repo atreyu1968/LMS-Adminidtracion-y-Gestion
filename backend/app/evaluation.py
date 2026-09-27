@@ -1226,6 +1226,7 @@ def evaluation_structure(
     user_id = int(session["sub"])
     course_module, membership = _course_module_access(db, course_module_id, user_id)
     config = _effective_config(db, course_module)
+    is_student = membership.role == "student"
     lrs = list(
         db.scalars(
             select(LearningResult)
@@ -1238,6 +1239,13 @@ def evaluation_structure(
     )
     data = []
     for lr in lrs:
+        lr_access = (
+            access_decision(
+                db, course_module_id, user_id, "learning_result", lr.id
+            )
+            if is_student
+            else {"available": True, "reason": None}
+        )
         criteria = list(
             db.scalars(
                 select(AssessmentCriterion)
@@ -1250,6 +1258,12 @@ def evaluation_structure(
         )
         ce_rows = []
         for criterion in criteria:
+            criterion_exempt = bool(
+                is_student
+                and is_exempt(
+                    db, course_module_id, user_id, "criterion", criterion.id
+                )
+            )
             items = list(
                 db.scalars(
                     select(AssessmentItem)
@@ -1261,6 +1275,59 @@ def evaluation_structure(
                     .order_by(AssessmentItem.position, AssessmentItem.id)
                 )
             )
+            item_rows = []
+            for item in items:
+                item_exempt = bool(
+                    is_student
+                    and is_exempt(
+                        db, course_module_id, user_id, "item", item.id
+                    )
+                )
+                item_access = (
+                    access_decision(
+                        db, course_module_id, user_id, "item", item.id
+                    )
+                    if is_student and not criterion_exempt and not item_exempt
+                    else {
+                        "available": not (criterion_exempt or item_exempt),
+                        "reason": "Actividad exenta" if (criterion_exempt or item_exempt) else None,
+                    }
+                )
+                configured_limits = {
+                    "practice": config.get("practice_max_attempts"),
+                    "portfolio": config.get("portfolio_max_attempts"),
+                    "recovery": config.get("recovery_max_attempts"),
+                }
+                configured = configured_limits.get(item.instrument)
+                max_attempts = int(
+                    configured if configured is not None else (item.max_attempts or 1)
+                )
+                if is_student:
+                    exception = get_learner_exception(
+                        db, course_module_id, user_id, "item", item.id
+                    )
+                    if exception:
+                        max_attempts += int(exception.extra_attempts or 0)
+                item_rows.append(
+                    {
+                        "id": item.id,
+                        "key": item.item_key,
+                        "instrument": item.instrument,
+                        "type": item.item_type,
+                        "prompt": item.prompt,
+                        "options": item.options_json or [],
+                        "pairs": (item.metadata_json or {}).get("pairs") or [],
+                        "evaluable": item.evaluable,
+                        "max_attempts": max_attempts,
+                        "available": bool(lr_access.get("available")) and bool(item_access.get("available")),
+                        "access_reason": (
+                            lr_access.get("reason")
+                            if not lr_access.get("available")
+                            else item_access.get("reason")
+                        ),
+                        "exempt": item_exempt or criterion_exempt,
+                    }
+                )
             ce_rows.append(
                 {
                     "id": criterion.id,
@@ -1268,20 +1335,8 @@ def evaluation_structure(
                     "title": criterion.title,
                     "description": criterion.description,
                     "pass_score": criterion.pass_score,
-                    "items": [
-                        {
-                            "id": item.id,
-                            "key": item.item_key,
-                            "instrument": item.instrument,
-                            "type": item.item_type,
-                            "prompt": item.prompt,
-                            "options": item.options_json or [],
-                            "pairs": (item.metadata_json or {}).get("pairs") or [],
-                            "evaluable": item.evaluable,
-                            "max_attempts": item.max_attempts,
-                        }
-                        for item in items
-                    ],
+                    "exempt": criterion_exempt,
+                    "items": item_rows,
                 }
             )
         data.append(
@@ -1291,6 +1346,8 @@ def evaluation_structure(
                 "title": lr.title,
                 "description": lr.description,
                 "position": lr.position,
+                "available": bool(lr_access.get("available")),
+                "access_reason": lr_access.get("reason"),
                 "criteria": ce_rows,
             }
         )
