@@ -372,6 +372,17 @@ def test_teacher_groups_are_isolated_until_owner_adds_coteacher():
 
         activated = client.post(f"/api/groups/{group_id}/activate")
         assert activated.status_code == 200
+        activated_token = activated.cookies.get("lms_session")
+        assert activated_token
+        activated_claims = jwt.decode(
+            activated_token,
+            "test-session-secret",
+            algorithms=["HS256"],
+        )
+        assert activated_claims["course_id"] == group_id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", activated_token)
         me_response = client.get("/api/me")
         assert me_response.status_code == 200
         assert me_response.json()["course"]["id"] == group_id
