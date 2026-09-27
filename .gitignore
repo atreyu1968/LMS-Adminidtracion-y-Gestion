@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment / secrets
+.env
+*.pem
+*.key
+secrets/
+
+# Runtime data
+storage/*
+!storage/.gitkeep
+postgres-data/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
