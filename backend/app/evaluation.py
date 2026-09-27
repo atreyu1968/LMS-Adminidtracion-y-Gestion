@@ -1779,6 +1779,197 @@ def gradebook(
 
 
 
+
+
+@router.get("/course-modules/{course_module_id}/my-overview")
+def my_learning_overview(
+    course_module_id: int,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    course_module, membership = _course_module_access(db, course_module_id, user_id)
+    lrs = list(
+        db.scalars(
+            select(LearningResult)
+            .where(
+                LearningResult.module_id == course_module.module_id,
+                LearningResult.active.is_(True),
+            )
+            .order_by(LearningResult.position, LearningResult.id)
+        )
+    )
+    overview = []
+    timeline = []
+    for lr in lrs:
+        result = recompute_learning_result(db, course_module_id, user_id, lr.id)
+        details = result.get("details") or {}
+        total_items = sum(
+            int(row.get("portfolio_items_total") or 0)
+            + int(row.get("recovery_items_total") or 0)
+            for row in details.values()
+            if isinstance(row, dict)
+        )
+        completed_items = sum(
+            int(row.get("portfolio_items_scored") or 0)
+            + int(row.get("recovery_items_scored") or 0)
+            for row in details.values()
+            if isinstance(row, dict)
+        )
+        pending_reviews = sum(
+            int(row.get("pending_review") or 0)
+            + int(row.get("recovery_pending_review") or 0)
+            for row in details.values()
+            if isinstance(row, dict)
+        )
+        if result.get("passed"):
+            state = "completed"
+        elif completed_items or result.get("exam_score") is not None:
+            state = "in_progress"
+        else:
+            state = "not_started"
+        progress_percent = (
+            round(completed_items / total_items * 100.0, 1)
+            if total_items
+            else (100.0 if state == "completed" else 0.0)
+        )
+
+        next_action = None
+        if pending_reviews:
+            next_action = {
+                "kind": "wait_review",
+                "label": f"Esperar revisión docente ({pending_reviews})",
+            }
+        elif result.get("status") == "recovery-required":
+            next_action = {
+                "kind": "recovery",
+                "label": f"Abrir recuperación de {lr.code}",
+                "learning_result_id": lr.id,
+            }
+        elif result.get("status") == "exam-pending":
+            next_action = {
+                "kind": "exam",
+                "label": f"Realizar examen de {lr.code}",
+                "learning_result_id": lr.id,
+            }
+        elif state != "completed":
+            next_action = {
+                "kind": "portfolio",
+                "label": f"Continuar actividades de {lr.code}",
+                "learning_result_id": lr.id,
+            }
+
+        overview.append({
+            "id": lr.id,
+            "code": lr.code,
+            "title": lr.title,
+            "state": state,
+            "progress_percent": progress_percent,
+            "completed_items": completed_items,
+            "total_items": total_items,
+            "pending_reviews": pending_reviews,
+            "portfolio_score": result.get("portfolio_score"),
+            "exam_score": result.get("exam_score"),
+            "final_score": result.get("final_score"),
+            "criteria_passed": result.get("criteria_passed"),
+            "criteria_total": result.get("criteria_total"),
+            "status": result.get("status"),
+            "criteria": result.get("details") or {},
+            "next_action": next_action,
+        })
+
+    attempts = list(
+        db.scalars(
+            select(AssessmentAttempt)
+            .where(
+                AssessmentAttempt.course_module_id == course_module_id,
+                AssessmentAttempt.user_id == user_id,
+            )
+            .order_by(AssessmentAttempt.submitted_at.desc(), AssessmentAttempt.id.desc())
+        )
+    )
+    for attempt in attempts[:100]:
+        item = db.get(AssessmentItem, attempt.item_id)
+        criterion = db.get(AssessmentCriterion, item.criterion_id) if item else None
+        lr = db.get(LearningResult, criterion.learning_result_id) if criterion else None
+        timeline.append({
+            "at": attempt.submitted_at or attempt.started_at,
+            "kind": "assessment",
+            "title": item.item_key if item else f"Actividad {attempt.item_id}",
+            "detail": attempt.status,
+            "score": attempt.score,
+            "learning_result": lr.code if lr else None,
+            "criterion": criterion.code if criterion else None,
+        })
+
+    exams = list(
+        db.scalars(
+            select(ExamSession)
+            .where(
+                ExamSession.course_module_id == course_module_id,
+                ExamSession.user_id == user_id,
+            )
+            .order_by(ExamSession.started_at.desc(), ExamSession.id.desc())
+        )
+    )
+    for exam in exams[:50]:
+        lr = db.get(LearningResult, exam.learning_result_id)
+        timeline.append({
+            "at": exam.submitted_at or exam.started_at,
+            "kind": "exam",
+            "title": f"Examen {lr.code if lr else ''}".strip(),
+            "detail": exam.status,
+            "score": exam.score,
+            "learning_result": lr.code if lr else None,
+        })
+
+    registrations = list(
+        db.scalars(
+            select(ScormRegistration)
+            .where(
+                ScormRegistration.course_module_id == course_module_id,
+                ScormRegistration.user_id == user_id,
+            )
+            .order_by(ScormRegistration.updated_at.desc(), ScormRegistration.id.desc())
+        )
+    )
+    for registration in registrations[:50]:
+        package = db.get(ScormPackage, registration.package_id)
+        timeline.append({
+            "at": registration.updated_at,
+            "kind": "scorm",
+            "title": package.title if package else f"SCORM {registration.package_id}",
+            "detail": registration.lesson_status,
+            "score": registration.score_raw,
+        })
+
+    timeline = sorted(
+        [row for row in timeline if row.get("at")],
+        key=lambda row: row["at"],
+        reverse=True,
+    )[:120]
+    total_progress = (
+        round(sum(float(row["progress_percent"]) for row in overview) / len(overview), 1)
+        if overview else 0.0
+    )
+    completed_ra = sum(1 for row in overview if row["state"] == "completed")
+    next_action = next(
+        (row["next_action"] for row in overview if row.get("next_action")),
+        None,
+    )
+    db.commit()
+    return {
+        "course_module_id": course_module_id,
+        "role": membership.role,
+        "progress_percent": total_progress,
+        "completed_learning_results": completed_ra,
+        "total_learning_results": len(overview),
+        "learning_results": overview,
+        "next_action": next_action,
+        "timeline": timeline,
+    }
+
+
 @router.get("/course-modules/{course_module_id}/students/{student_id}/detail")
 def student_evaluation_detail(
     course_module_id: int,
