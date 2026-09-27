@@ -102,7 +102,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
           <label>Título<input name="title" required placeholder="Tratamiento de la documentación contable"></label>
           <div class="row">
             <label>Código<input name="code" placeholder="0443"></label>
-            <label>Identificador<input name="slug" required placeholder="tdc-0443"></label>
+            <label>Identificador opcional<input name="slug" placeholder="Se genera automáticamente"></label>
           </div>
           <label>Descripción<textarea name="description"></textarea></label>
           <button class="btn">Crear módulo</button>
@@ -230,7 +230,7 @@ document.querySelector("#assignModuleForm").addEventListener("submit",async e=>{
 });
 document.querySelector("#createModuleForm").addEventListener("submit",async e=>{
   e.preventDefault();const f=new FormData(e.currentTarget);
-  try{await api("/api/modules",json("POST",{title:f.get("title"),slug:f.get("slug"),code:f.get("code")||null,description:f.get("description")||"",module_type:"scorm"}));e.currentTarget.reset();modules=await api("/api/modules/mine");renderModules();refreshModuleSelects();renderLibrary();renderShared();flash("Módulo creado.")}catch(err){flash(err.message,"error")}
+  try{await api("/api/modules",json("POST",{title:f.get("title"),slug:f.get("slug")||null,code:f.get("code")||null,description:f.get("description")||"",module_type:"scorm"}));e.currentTarget.reset();modules=await api("/api/modules/mine");renderModules();refreshModuleSelects();renderLibrary();renderShared();flash("Módulo creado.")}catch(err){flash(err.message,"error")}
 });
 document.querySelector("#uploadScormForm").addEventListener("submit",async e=>{
   e.preventDefault();const fd=new FormData(e.currentTarget);
