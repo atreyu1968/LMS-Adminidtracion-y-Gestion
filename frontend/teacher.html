@@ -19,9 +19,10 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
   <div style="text-align:right"><strong id="teacherName">Cargando…</strong><br><small id="currentContext"></small></div>
 </header>
 
-<main class="wrap">
-  <div id="flash"></div>
-  <nav class="tabs">
+<a href="#mainContent" style="position:absolute;left:-9999px;top:auto" onfocus="this.style.left='12px';this.style.top='12px';this.style.zIndex='1000'" onblur="this.style.left='-9999px'">Saltar al contenido</a>
+<main class="wrap" id="mainContent" tabindex="-1">
+  <div id="flash" aria-live="polite" aria-atomic="true"></div>
+  <nav class="tabs" aria-label="Secciones del panel docente">
     <button class="tab active" data-tab="home">Inicio</button>
     <button class="tab" data-tab="groups">Mis grupos</button>
     <button class="tab" data-tab="modules">Mis módulos</button>
@@ -46,6 +47,32 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
         <h3>Necesita tu atención</h3>
         <div id="dashboardItems" class="list"></div>
       </div>
+    </div>
+    <div class="grid" style="margin-top:16px">
+      <section class="card">
+        <h2>Buscar</h2>
+        <form id="globalSearchForm" role="search">
+          <label for="globalSearchInput">Buscar en mis módulos</label>
+          <div class="actions"><input id="globalSearchInput" name="q" minlength="2" placeholder="RA, CE, actividad, SCORM…" required><button class="btn">Buscar</button></div>
+        </form>
+        <div id="globalSearchResults" class="list" style="margin-top:12px"></div>
+      </section>
+      <section class="card">
+        <h2>Notificaciones</h2>
+        <div id="notificationsList" class="list"></div>
+      </section>
+      <section class="card">
+        <h2>Favoritos</h2>
+        <div id="favoritesList" class="list"></div>
+      </section>
+      <section class="card">
+        <h2>Recientes</h2>
+        <div id="recentList" class="list"></div>
+      </section>
+      <section class="card">
+        <h2>Calendario próximo</h2>
+        <div id="calendarList" class="list"></div>
+      </section>
     </div>
   </section>
 
@@ -256,7 +283,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
 </main>
 
 <script>
-let me=null, groups=[], modules=[], catalogModules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null, dashboard=null;
+let me=null, groups=[], modules=[], catalogModules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null, dashboard=null,favorites={groups:[],modules:[]},recent={items:[]},notifications={items:[]},calendarData={events:[]};
 
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
@@ -285,7 +312,7 @@ async function boot(){
   }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 async function refreshAll(){
-  [dashboard,groups,modules,catalogModules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
+  [dashboard,groups,modules,catalogModules,myLibrary,sharedLibrary,mediaLibrary,aiSettings,favorites,recent,notifications,calendarData]=await Promise.all([
     api("/api/dashboard/teacher"),
     api("/api/groups"),
     api("/api/modules/mine"),
@@ -293,9 +320,13 @@ async function refreshAll(){
     api("/api/scorm-library?scope=mine"),
     api("/api/scorm-library?scope=shared"),
     api("/api/media-library?scope=mine"),
-    api("/api/ai/settings")
+    api("/api/ai/settings"),
+    api("/api/experience/favorites"),
+    api("/api/experience/recent"),
+    api("/api/experience/notifications"),
+    api("/api/experience/calendar")
   ]);
-  renderDashboard();renderGroups();renderModules();renderCatalog();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
+  renderDashboard();renderExperienceHome();renderGroups();renderModules();renderCatalog();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
 }
 function renderDashboard(){
   const summary=dashboard?.summary||{};
@@ -320,20 +351,42 @@ function renderDashboard(){
 async function refreshDashboard(){
   try{dashboard=await api("/api/dashboard/teacher");renderDashboard();flash("Centro de actividad actualizado.")}catch(e){flash(e.message,"error")}
 }
+function isFavorite(kind,id){const key=kind==="group"?"groups":"modules";return (favorites?.[key]||[]).includes(Number(id))}
+function renderExperienceHome(){
+ const fav=[];
+ for(const id of favorites?.groups||[]){const g=groups.find(x=>x.id===id);if(g)fav.push('<div class="item"><strong>'+esc(g.title)+'</strong><div class="tiny muted">Grupo</div><button class="btn secondary" onclick="openGroup('+g.id+')">Abrir</button></div>')}
+ for(const id of favorites?.modules||[]){const m=modules.find(x=>x.id===id);if(m)fav.push('<div class="item"><strong>'+esc(m.title)+'</strong><div class="tiny muted">Módulo</div></div>')}
+ document.querySelector("#favoritesList").innerHTML=fav.join("")||'<div class="muted">No has marcado favoritos.</div>';
+ document.querySelector("#recentList").innerHTML=(recent?.items||[]).map(x=>'<div class="item"><a href="'+esc(x.href)+'" onclick="recordRecent(\''+esc(x.kind)+'\',\''+esc(x.id)+'\',\''+esc(x.title).replace(/'/g,"&#39;")+'\',\''+esc(x.href).replace(/'/g,"&#39;")+'\')"><strong>'+esc(x.title)+'</strong></a><div class="tiny muted">'+esc(x.kind)+' · '+esc(x.at?new Date(x.at).toLocaleString():"")+'</div></div>').join("")||'<div class="muted">Todavía no hay accesos recientes.</div>';
+ document.querySelector("#notificationsList").innerHTML=(notifications?.items||[]).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong>'+(x.at?'<div class="tiny muted">'+esc(new Date(x.at).toLocaleString())+'</div>':'')+'<a class="btn secondary" href="'+esc(x.href)+'">Abrir</a></div>').join("")||'<div class="notice ok">No hay notificaciones pendientes.</div>';
+ const events=(calendarData?.events||[]).slice(0,12);
+ document.querySelector("#calendarList").innerHTML=events.map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(x.group)+' · '+esc(x.module)+'<br>'+esc(new Date(x.at).toLocaleString())+'</div></div>').join("")||'<div class="muted">No hay fechas próximas configuradas.</div>';
+}
+async function toggleFavorite(kind,id){
+ try{const r=await api("/api/experience/favorites/toggle",json("POST",{kind,id:Number(id)}));favorites=r.value;renderExperienceHome();renderGroups();renderModules()}catch(e){flash(e.message,"error")}
+}
+async function recordRecent(kind,id,title,href){
+ try{recent=await api("/api/experience/recent",json("POST",{kind,id:String(id),title,href}));renderExperienceHome()}catch(e){}
+}
+document.querySelector("#globalSearchForm").addEventListener("submit",async e=>{
+ e.preventDefault();const q=e.currentTarget.elements.q.value.trim(),root=document.querySelector("#globalSearchResults");
+ root.innerHTML='<div class="muted">Buscando…</div>';
+ try{const r=await api("/api/experience/search?q="+encodeURIComponent(q));root.innerHTML=(r.results||[]).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(x.kind)+' · '+esc(x.subtitle||"")+'</div><a class="btn secondary" href="'+esc(x.href)+'" onclick="recordRecent(\'page\',\''+esc(x.course_module_id||x.title)+'\',\''+esc(x.title).replace(/'/g,"&#39;")+'\',\''+esc(x.href).replace(/'/g,"&#39;")+'\')">Abrir</a></div>').join("")||'<div class="muted">Sin resultados.</div>'}catch(err){root.innerHTML='<div class="notice error">'+esc(err.message)+'</div>'}
+});
 function renderGroups(){
   const root=document.querySelector("#groupsList");
   root.innerHTML=groups.length?groups.map(g=>`<article class="item">
     <div class="group-title"><div><strong>${esc(g.title)}</strong><span class="badge ${g.source_type==="local"?"local":"lti"}">${g.source_type==="local"?"Local":"CAMPUS"}</span></div><span class="badge">${g.owned?"Propietario":esc(g.role)}</span></div>
     <div class="muted tiny">${esc(g.label||"")} ${g.academic_year?"· "+esc(g.academic_year):""}</div>
     ${g.join_code?'<div class="tiny">Código de grupo: <strong>'+esc(g.join_code)+'</strong></div>':""}
-    <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGroup(${g.id})">Gestionar</button></div>
+    <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGroup(${g.id});recordRecent('group','${g.id}','${esc(g.title).replace(/'/g,"&#39;")}','#panel-groups')">Gestionar</button><button class="btn secondary" aria-label="Marcar grupo como favorito" onclick="toggleFavorite('group',${g.id})">${isFavorite("group",g.id)?"★":"☆"} Favorito</button></div>
   </article>`).join(""):'<div class="empty">Todavía no tienes grupos.</div>';
 }
 function renderModules(){
   const root=document.querySelector("#modulesList");
   root.innerHTML=modules.length?modules.map(m=>{
     const canEdit=["owner","editor"].includes(m.permission);
-    return `<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · ${esc(m.permission)}</div><p>${esc(m.description||"")}</p><div class="actions"><button class="btn secondary" onclick="showModuleScorms(${m.id},'${esc(m.title).replace(/'/g,"&#39;")}')">Ver SCORM</button>${canEdit?'<button class="btn secondary" onclick="toggleModuleEditor('+m.id+')">Editar datos</button>':""}</div>${canEdit?`<div id="module-edit-${m.id}" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><div class="row"><label>Título<input name="title" value="${esc(m.title)}"></label><label>Código<input name="code" value="${esc(m.code||"")}"></label></div><label>Descripción<textarea name="description">${esc(m.description||"")}</textarea></label><button class="btn" style="margin-top:8px" onclick="saveModule(${m.id})">Guardar cambios</button></div>`:""}<div id="module-scorm-${m.id}"></div></article>`;
+    return `<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · ${esc(m.permission)}</div><p>${esc(m.description||"")}</p><div class="actions"><button class="btn secondary" onclick="showModuleScorms(${m.id},'${esc(m.title).replace(/'/g,"&#39;")}');recordRecent('module','${m.id}','${esc(m.title).replace(/'/g,"&#39;")}','#panel-modules')">Ver SCORM</button><button class="btn secondary" aria-label="Marcar módulo como favorito" onclick="toggleFavorite('module',${m.id})">${isFavorite("module",m.id)?"★":"☆"} Favorito</button>${canEdit?'<button class="btn secondary" onclick="toggleModuleEditor('+m.id+')">Editar datos</button>':""}</div>${canEdit?`<div id="module-edit-${m.id}" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><div class="row"><label>Título<input name="title" value="${esc(m.title)}"></label><label>Código<input name="code" value="${esc(m.code||"")}"></label></div><label>Descripción<textarea name="description">${esc(m.description||"")}</textarea></label><button class="btn" style="margin-top:8px" onclick="saveModule(${m.id})">Guardar cambios</button></div>`:""}<div id="module-scorm-${m.id}"></div></article>`;
   }).join(""):'<div class="empty">Aún no has creado módulos.</div>';
 }
 function toggleModuleEditor(mid){
