@@ -307,6 +307,7 @@ function renderCatalog(){
     <div class="tiny muted">Fuente: ${esc(m.metadata?.source_repository||"catálogo local")} ${m.metadata?.source_ref?"· "+esc(String(m.metadata.source_ref).slice(0,12)):""}</div>
     <div class="actions" style="margin-top:10px">
       ${m.installed?'<button class="btn secondary" onclick="removeCatalogModule('+m.id+')">Quitar de mis módulos</button>':'<button class="btn" onclick="installCatalogModule('+m.id+')">Añadir a mis módulos</button>'}
+      <button class="btn secondary" onclick="forkCatalogModule(${m.id})">Crear copia editable</button>
     </div>
   </article>`).join(""):'<div class="empty">El administrador todavía no ha aprovisionado módulos oficiales.</div>';
 }
@@ -315,6 +316,14 @@ async function installCatalogModule(mid){
     await api("/api/catalog/modules/"+mid+"/install",{method:"POST"});
     [modules,catalogModules]=await Promise.all([api("/api/modules/mine"),api("/api/catalog/modules")]);
     renderModules();renderCatalog();refreshModuleSelects();flash("Módulo oficial añadido a tu espacio.");
+  }catch(e){flash(e.message,"error")}
+}
+async function forkCatalogModule(mid){
+  try{
+    const copy=await api("/api/catalog/modules/"+mid+"/fork",{method:"POST"});
+    modules=await api("/api/modules/mine");
+    renderModules();refreshModuleSelects();
+    flash("Copia editable creada: "+copy.title+". Los SCORM aparecen ahora en tu biblioteca personal.");
   }catch(e){flash(e.message,"error")}
 }
 async function removeCatalogModule(mid){
