@@ -1136,3 +1136,137 @@ def test_gth_catalog_imports_four_ra_thirty_three_criteria_and_public_portfolio(
         assert removed.status_code == 200
         uninstalled = client.delete(f"/api/catalog/modules/{module_id}/install")
         assert uninstalled.status_code == 200
+
+
+def test_nominasol_guided_project_provisions_and_tracks_evidence():
+    with TestClient(app) as client:
+        provisioned = client.post(
+            "/api/admin/catalog/nominasol2026/provision",
+            headers={"X-Admin-Token": "test-admin"},
+        )
+        assert provisioned.status_code == 200, provisioned.text
+        module_id = provisioned.json()["module_id"]
+        package_id = provisioned.json()["package_id"]
+
+        with SessionLocal() as db:
+            teacher = User(display_name="Docente NOMINASOL", email="nominasol-teacher@example.test")
+            student = User(display_name="Alumno NOMINASOL", email="nominasol-student@example.test")
+            course = Course(
+                platform_issuer="local://guided-test",
+                context_id="nominasol-guided-course",
+                source_type="local",
+                title="Proyecto NOMINASOL",
+            )
+            db.add_all([teacher, student, course])
+            db.flush()
+            db.add_all(
+                [
+                    Membership(
+                        course_id=course.id,
+                        user_id=teacher.id,
+                        role="teacher",
+                        lti_roles=["Instructor"],
+                    ),
+                    Membership(
+                        course_id=course.id,
+                        user_id=student.id,
+                        role="student",
+                        lti_roles=["Learner"],
+                    ),
+                    ModulePermission(
+                        module_id=module_id,
+                        user_id=teacher.id,
+                        permission="viewer",
+                    ),
+                ]
+            )
+            course_module = CourseModule(
+                course_id=course.id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            db.add(course_module)
+            db.commit()
+            db.refresh(course_module)
+            teacher_id = teacher.id
+            student_id = student.id
+            course_id = course.id
+            course_module_id = course_module.id
+
+        client.cookies.clear()
+        client.cookies.set(
+            "lms_session",
+            session_cookie(student_id, course_id, role="student"),
+        )
+        launch = client.post(
+            f"/api/course-modules/{course_module_id}/scorm/{package_id}/launch"
+        )
+        assert launch.status_code == 200, launch.text
+        query = parse_qs(urlparse(launch.json()["url"]).query)
+        token = query["lms_token"][0]
+        registration_id = int(query["lms_registration"][0])
+        auth = {"Authorization": f"Bearer {token}"}
+
+        project = client.get(
+            f"/runtime-api/guided/registrations/{registration_id}/project",
+            headers=auth,
+        )
+        assert project.status_code == 200, project.text
+        payload = project.json()
+        assert payload["project"]["project_id"] == "nominasol-2026-anual"
+        assert payload["summary"]["total"] >= 17
+        assert payload["summary"]["completed"] == 0
+
+        started = client.post(
+            f"/runtime-api/guided/registrations/{registration_id}/milestones/M00/start",
+            headers=auth,
+        )
+        assert started.status_code == 200
+        assert started.json()["status"] == "in_progress"
+
+        uploaded = client.post(
+            f"/runtime-api/guided/registrations/{registration_id}/milestones/M00/evidence",
+            headers=auth,
+            data={"notes": "Pantalla principal de la versión educativa"},
+            files={"file": ("pantalla.png", b"not-a-real-png-but-storage-test", "image/png")},
+        )
+        assert uploaded.status_code == 200, uploaded.text
+        assert uploaded.json()["ai_used"] is False
+        evidence_id = uploaded.json()["evidence"]["id"]
+
+        blocked = client.post(
+            f"/runtime-api/guided/registrations/{registration_id}/milestones/M01/start",
+            headers=auth,
+        )
+        assert blocked.status_code == 409
+
+        client.cookies.clear()
+        client.cookies.set(
+            "lms_session",
+            session_cookie(teacher_id, course_id, role="teacher"),
+        )
+        reviewed = client.post(
+            f"/api/guided/evidence/{evidence_id}/review",
+            json={"decision": "accept", "comment": "Evidencia correcta."},
+        )
+        assert reviewed.status_code == 200, reviewed.text
+        assert reviewed.json()["progress"]["status"] == "completed"
+
+        progress = client.get(
+            f"/api/guided/course-modules/{course_module_id}/progress"
+        )
+        assert progress.status_code == 200, progress.text
+        assert progress.json()[0]["completed"] == 1
+
+        client.cookies.clear()
+        client.cookies.set(
+            "lms_session",
+            session_cookie(student_id, course_id, role="student"),
+        )
+        next_step = client.post(
+            f"/runtime-api/guided/registrations/{registration_id}/milestones/M01/start",
+            headers=auth,
+        )
+        assert next_step.status_code == 200
+        assert next_step.json()["status"] == "in_progress"
