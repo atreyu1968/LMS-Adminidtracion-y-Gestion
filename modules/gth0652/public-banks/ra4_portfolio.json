@@ -1,0 +1,630 @@
+{
+  "items": [
+    {
+      "id": "4.ap1",
+      "ce": "4.a",
+      "kind": "calculation",
+      "prompt": "Salario fijo mensual 1.450 € y comisión del 2 % sobre 12.000 € de ventas computables. Calcula el bruto formado por esos dos conceptos (€).",
+      "options": []
+    },
+    {
+      "id": "4.ap2",
+      "ce": "4.a",
+      "kind": "tf",
+      "prompt": "Las comisiones e incentivos de una nómina deben quedar vinculados al periodo, a la regla de cálculo y a la fuente de datos que los origina.",
+      "options": []
+    },
+    {
+      "id": "4.ap3",
+      "ce": "4.a",
+      "kind": "multi",
+      "prompt": "Antes de liquidar una retribución fija más variable, selecciona los elementos que RR. HH. debe comprobar.",
+      "options": [
+        "Criterio del incentivo",
+        "Convenio y estructura salarial",
+        "El líquido que se desea obtener",
+        "Periodo de devengo"
+      ]
+    },
+    {
+      "id": "4.ap4",
+      "ce": "4.a",
+      "kind": "order",
+      "prompt": "Ordena la parametrización profesional de una estructura retributiva antes de calcular la nómina.",
+      "options": [
+        "Definir reglas de devengo",
+        "Documentar y parametrizar",
+        "Identificar puesto y convenio",
+        "Clasificar conceptos salariales"
+      ]
+    },
+    {
+      "id": "4.ap5",
+      "ce": "4.a",
+      "kind": "choice",
+      "prompt": "Un complemento se copia de otra categoría sin revisar el convenio. ¿Qué procede?",
+      "options": [
+        "Ocultar la diferencia",
+        "Copiar los datos de otra nómina",
+        "Ignorarlo si el total parece razonable",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad"
+      ]
+    },
+    {
+      "id": "4.ap6",
+      "ce": "4.a",
+      "kind": "choice",
+      "prompt": "¿Qué evidencia demuestra cómo se construyó la retribución?",
+      "options": [
+        "Datos de origen, reglas, operaciones, resultado y justificantes",
+        "Solo una captura",
+        "Solo el líquido final",
+        "Ninguna si el programa no da error"
+      ]
+    },
+    {
+      "id": "4.bp1",
+      "ce": "4.b",
+      "kind": "calculation",
+      "prompt": "En un supuesto didáctico, el SMI utilizado para la comparación es 1.200 € en 14 pagas. Calcula su cuantía anual (€).",
+      "options": []
+    },
+    {
+      "id": "4.bp2",
+      "ce": "4.b",
+      "kind": "tf",
+      "prompt": "SMI, IPREM y otras referencias legales deben identificarse por periodo y fuente antes de utilizarlas en un cálculo.",
+      "options": []
+    },
+    {
+      "id": "4.bp3",
+      "ce": "4.b",
+      "kind": "multi",
+      "prompt": "Vas a comparar una retribución con una referencia legal anual. Selecciona los datos que debes comprobar.",
+      "options": [
+        "Número de pagas",
+        "Una tabla sin fecha",
+        "Año de referencia",
+        "Importe anual comparable"
+      ]
+    },
+    {
+      "id": "4.bp4",
+      "ce": "4.b",
+      "kind": "order",
+      "prompt": "Ordena la comparación profesional con SMI/IPREM desde la identificación de la magnitud hasta la documentación.",
+      "options": [
+        "Consultar fuente oficial vigente",
+        "Identificar magnitud necesaria",
+        "Comparar y documentar",
+        "Homogeneizar unidad anual/mensual"
+      ]
+    },
+    {
+      "id": "4.bp5",
+      "ce": "4.b",
+      "kind": "choice",
+      "prompt": "Se utiliza un SMI de otro año sin advertirlo. ¿Qué debe hacerse?",
+      "options": [
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad",
+        "Ignorarlo si el total parece razonable",
+        "Ocultar la diferencia",
+        "Copiar los datos de otra nómina"
+      ]
+    },
+    {
+      "id": "4.bp6",
+      "ce": "4.b",
+      "kind": "choice",
+      "prompt": "¿Qué datos deben acompañar siempre a un índice legal variable?",
+      "options": [
+        "Solo una captura",
+        "Ninguna si el programa no da error",
+        "Solo el líquido final",
+        "Datos de origen, reglas, operaciones, resultado y justificantes"
+      ]
+    },
+    {
+      "id": "4.cp1",
+      "ce": "4.c",
+      "kind": "calculation",
+      "prompt": "Una comercial percibe una comisión del 2,5 % sobre 20.000 € de ventas computables. Calcula la comisión (€).",
+      "options": []
+    },
+    {
+      "id": "4.cp2",
+      "ce": "4.c",
+      "kind": "tf",
+      "prompt": "Un incentivo debe poder reproducirse indicando objetivo, métrica, periodo y fórmula aplicada.",
+      "options": []
+    },
+    {
+      "id": "4.cp3",
+      "ce": "4.c",
+      "kind": "multi",
+      "prompt": "La empresa implanta un bonus por objetivos. Selecciona los elementos que hacen auditable el incentivo.",
+      "options": [
+        "Periodo",
+        "Fórmula o tramos",
+        "Preferencia del encargado sin registro",
+        "Indicador medible"
+      ]
+    },
+    {
+      "id": "4.cp4",
+      "ce": "4.c",
+      "kind": "order",
+      "prompt": "Ordena el cálculo y validación de un incentivo desde la definición del objetivo hasta su registro.",
+      "options": [
+        "Definir objetivo",
+        "Calcular resultado",
+        "Fijar métrica y periodo",
+        "Validar y registrar incentivo"
+      ]
+    },
+    {
+      "id": "4.cp5",
+      "ce": "4.c",
+      "kind": "choice",
+      "prompt": "Dos personas obtienen distinto incentivo sin poder explicar la métrica. ¿Qué falla?",
+      "options": [
+        "Ignorarlo si el total parece razonable",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad",
+        "Copiar los datos de otra nómina",
+        "Ocultar la diferencia"
+      ]
+    },
+    {
+      "id": "4.cp6",
+      "ce": "4.c",
+      "kind": "choice",
+      "prompt": "¿Qué evidencia hace auditable una retribución variable?",
+      "options": [
+        "Solo una captura",
+        "Ninguna si el programa no da error",
+        "Datos de origen, reglas, operaciones, resultado y justificantes",
+        "Solo el líquido final"
+      ]
+    },
+    {
+      "id": "4.dp1",
+      "ce": "4.d",
+      "kind": "calculation",
+      "prompt": "Salario base 1.450 €, antigüedad 110 €, complemento de puesto 190 € y comisión 250 €. Calcula el total de estos devengos (€).",
+      "options": []
+    },
+    {
+      "id": "4.dp2",
+      "ce": "4.d",
+      "kind": "tf",
+      "prompt": "Para confeccionar una nómina deben quedar identificadas las incidencias del periodo y las fuentes de los datos que modifican los devengos o deducciones.",
+      "options": []
+    },
+    {
+      "id": "4.dp3",
+      "ce": "4.d",
+      "kind": "multi",
+      "prompt": "Antes de abrir el cálculo mensual, selecciona la documentación y los datos que deben revisarse.",
+      "options": [
+        "Contrato y convenio",
+        "Incidencias del periodo",
+        "Datos personales/fiscales necesarios",
+        "Solo la nómina del mes anterior"
+      ]
+    },
+    {
+      "id": "4.dp4",
+      "ce": "4.d",
+      "kind": "order",
+      "prompt": "Ordena la confección de un recibo salarial desde los datos maestros hasta la revisión del cálculo.",
+      "options": [
+        "Validar conceptos y periodo",
+        "Calcular y revisar recibo",
+        "Incorporar incidencias",
+        "Reunir datos maestros"
+      ]
+    },
+    {
+      "id": "4.dp5",
+      "ce": "4.d",
+      "kind": "choice",
+      "prompt": "La nómina se genera sin incorporar una baja comunicada. ¿Qué debe hacerse?",
+      "options": [
+        "Ocultar la diferencia",
+        "Copiar los datos de otra nómina",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad",
+        "Ignorarlo si el total parece razonable"
+      ]
+    },
+    {
+      "id": "4.dp6",
+      "ce": "4.d",
+      "kind": "choice",
+      "prompt": "¿Qué conjunto documental permite reconstruir una nómina?",
+      "options": [
+        "Solo el líquido final",
+        "Datos de origen, reglas, operaciones, resultado y justificantes",
+        "Ninguna si el programa no da error",
+        "Solo una captura"
+      ]
+    },
+    {
+      "id": "4.ep1",
+      "ce": "4.e",
+      "kind": "calculation",
+      "prompt": "Total devengado: 1.950 €. Deducciones: Seguridad Social 125 €, IRPF 195 € y anticipo 100 €. Calcula el líquido a percibir (€).",
+      "options": []
+    },
+    {
+      "id": "4.ep2",
+      "ce": "4.e",
+      "kind": "tf",
+      "prompt": "Una nómina debe conservar la trazabilidad de los datos, reglas y fuentes usados para obtener devengos, bases, deducciones y líquido.",
+      "options": []
+    },
+    {
+      "id": "4.ep3",
+      "ce": "4.e",
+      "kind": "multi",
+      "prompt": "Antes de validar el líquido a percibir, selecciona los bloques que deben comprobarse.",
+      "options": [
+        "El líquido objetivo",
+        "Devengos",
+        "Deducciones aplicables",
+        "Bases correspondientes"
+      ]
+    },
+    {
+      "id": "4.ep4",
+      "ce": "4.e",
+      "kind": "order",
+      "prompt": "Ordena la confección aritmética de una nómina desde los devengos hasta la verificación del líquido.",
+      "options": [
+        "Calcular devengos",
+        "Restar deducciones y verificar líquido",
+        "Calcular cuotas y retención",
+        "Construir bases"
+      ]
+    },
+    {
+      "id": "4.ep5",
+      "ce": "4.e",
+      "kind": "choice",
+      "prompt": "El líquido se obtiene modificando manualmente una deducción para que cuadre. ¿Qué procede?",
+      "options": [
+        "Ignorarlo si el total parece razonable",
+        "Ocultar la diferencia",
+        "Copiar los datos de otra nómina",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad"
+      ]
+    },
+    {
+      "id": "4.ep6",
+      "ce": "4.e",
+      "kind": "choice",
+      "prompt": "¿Qué desglose permite reproducir una nómina completa?",
+      "options": [
+        "Datos de origen, reglas, operaciones, resultado y justificantes",
+        "Solo una captura",
+        "Solo el líquido final",
+        "Ninguna si el programa no da error"
+      ]
+    },
+    {
+      "id": "4.fp1",
+      "ce": "4.f",
+      "kind": "calculation",
+      "prompt": "Base de cotización: 2.000 €. Tipo didáctico de aportación de la persona trabajadora: 4,70 %. Calcula la cuota (€).",
+      "options": []
+    },
+    {
+      "id": "4.fp2",
+      "ce": "4.f",
+      "kind": "tf",
+      "prompt": "Para calcular una aportación a la Seguridad Social deben quedar identificados la base, el tipo aplicable y el periodo al que pertenecen.",
+      "options": []
+    },
+    {
+      "id": "4.fp3",
+      "ce": "4.f",
+      "kind": "multi",
+      "prompt": "Una base ya está calculada. Selecciona qué dato adicional es imprescindible comprobar antes de obtener una cuota de cotización.",
+      "options": [
+        "Tipo aplicable y periodo",
+        "Número de cuenta bancaria",
+        "Líquido de otro trabajador",
+        "Color del recibo"
+      ]
+    },
+    {
+      "id": "4.fp4",
+      "ce": "4.f",
+      "kind": "order",
+      "prompt": "Ordena el cálculo de una cuota de Seguridad Social y su comprobación final.",
+      "options": [
+        "Separar aportación empresarial/trabajador y verificar",
+        "Determinar base correcta",
+        "Identificar tipo vigente",
+        "Multiplicar base por tipo"
+      ]
+    },
+    {
+      "id": "4.fp5",
+      "ce": "4.f",
+      "kind": "choice",
+      "prompt": "Se aplica un tipo empresarial como deducción del trabajador. ¿Qué debe hacerse?",
+      "options": [
+        "Ocultar la diferencia",
+        "Ignorarlo si el total parece razonable",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad",
+        "Copiar los datos de otra nómina"
+      ]
+    },
+    {
+      "id": "4.fp6",
+      "ce": "4.f",
+      "kind": "choice",
+      "prompt": "¿Qué tabla de trabajo permite auditar bases y cuotas?",
+      "options": [
+        "Solo el líquido final",
+        "Solo una captura",
+        "Ninguna si el programa no da error",
+        "Datos de origen, reglas, operaciones, resultado y justificantes"
+      ]
+    },
+    {
+      "id": "4.gp1",
+      "ce": "4.g",
+      "kind": "choice",
+      "prompt": "¿Qué debe identificarse antes de tramitar una declaración-liquidación de cotizaciones o retenciones?",
+      "options": [
+        "Solo el líquido de las nóminas",
+        "El convenio del año anterior",
+        "Modelo o procedimiento aplicable, periodo y plazo vigente",
+        "Únicamente el banco de la empresa"
+      ]
+    },
+    {
+      "id": "4.gp2",
+      "ce": "4.g",
+      "kind": "multi",
+      "prompt": "Selecciona los datos que debe contener un control profesional de obligaciones periódicas.",
+      "options": [
+        "Obligación o trámite",
+        "Fecha límite y fuente oficial",
+        "Responsable/estado",
+        "Periodo"
+      ]
+    },
+    {
+      "id": "4.gp3",
+      "ce": "4.g",
+      "kind": "tf",
+      "prompt": "Una fecha de presentación aprendida de memoria puede aplicarse indefinidamente sin consultar el calendario vigente.",
+      "options": []
+    },
+    {
+      "id": "4.gp4",
+      "ce": "4.g",
+      "kind": "choice",
+      "prompt": "Una obligación vence en una fecha dudosa por coincidir con un día inhábil. ¿Qué haces?",
+      "options": [
+        "Inventar una fecha prudente",
+        "Consultar la regla y calendario oficial del trámite",
+        "Presentar siempre siete días después",
+        "No presentar"
+      ]
+    },
+    {
+      "id": "4.gp5",
+      "ce": "4.g",
+      "kind": "choice",
+      "prompt": "¿Qué relación debe existir entre un formulario/procedimiento y el expediente mensual?",
+      "options": [
+        "Ninguna",
+        "Basta una captura sin fecha",
+        "Debe quedar identificado con su periodo, estado y justificante cuando proceda",
+        "Solo debe guardarse el nombre"
+      ]
+    },
+    {
+      "id": "4.gp6",
+      "ce": "4.g",
+      "kind": "case",
+      "prompt": "Debes preparar una obligación periódica de ingreso de retenciones y existen dudas sobre el plazo aplicable. Explica qué fuente, periodo, formulario/procedimiento y evidencia dejarías documentados antes de tramitarla.",
+      "options": []
+    },
+    {
+      "id": "4.hp1",
+      "ce": "4.h",
+      "kind": "choice",
+      "prompt": "Antes de confirmar una declaración-liquidación de cotizaciones, ¿qué control es imprescindible?",
+      "options": [
+        "Conciliar bases y cuotas con las nóminas del periodo",
+        "Imprimir un borrador",
+        "Cambiar el periodo",
+        "Comprobar solo el nombre de empresa"
+      ]
+    },
+    {
+      "id": "4.hp2",
+      "ce": "4.h",
+      "kind": "choice",
+      "prompt": "La liquidación incluye once personas y el resumen de nóminas diez. ¿Qué procede?",
+      "options": [
+        "Investigar altas, bajas, periodos y posibles errores antes de cerrar",
+        "Modificar el resumen",
+        "Confirmar igualmente",
+        "Eliminar una persona al azar"
+      ]
+    },
+    {
+      "id": "4.hp3",
+      "ce": "4.h",
+      "kind": "multi",
+      "prompt": "¿Qué elementos deben verificarse al confeccionar una declaración-liquidación?",
+      "options": [
+        "Periodo y sujetos incluidos",
+        "Bases/importes de origen",
+        "Parámetros vigentes",
+        "Totales y conciliación"
+      ]
+    },
+    {
+      "id": "4.hp4",
+      "ce": "4.h",
+      "kind": "choice",
+      "prompt": "El total de retenciones del periodo no coincide con la declaración preparada. ¿Qué haces?",
+      "options": [
+        "Localizar la diferencia por perceptores y datos antes de confirmar",
+        "Ignorar importes pequeños",
+        "Cambiar el total de nóminas",
+        "Presentarla y corregir después"
+      ]
+    },
+    {
+      "id": "4.hp5",
+      "ce": "4.h",
+      "kind": "case",
+      "prompt": "Después de confeccionar una declaración-liquidación detectas una diferencia con el resumen de nóminas. Explica cómo corregirías el expediente sin perder trazabilidad ni ocultar la versión anterior.",
+      "options": []
+    },
+    {
+      "id": "4.hp6",
+      "ce": "4.h",
+      "kind": "order",
+      "prompt": "Ordena el cierre profesional de una declaración-liquidación.",
+      "options": [
+        "Reunir datos del periodo",
+        "Conciliar con nóminas/registros",
+        "Revisar y confirmar",
+        "Calcular",
+        "Presentar y conservar justificante"
+      ]
+    },
+    {
+      "id": "4.ip1",
+      "ce": "4.i",
+      "kind": "choice",
+      "prompt": "Una comunicación telemática devuelve un justificante con advertencia. ¿Qué debe hacer RR. HH.?",
+      "options": [
+        "Modificar el resultado final",
+        "Usar un parámetro sin fecha",
+        "Copiar el mes anterior",
+        "Analizar los datos y reglas aplicables antes de confirmar"
+      ]
+    },
+    {
+      "id": "4.ip2",
+      "ce": "4.i",
+      "kind": "tf",
+      "prompt": "Una comunicación telemática de nóminas o cotizaciones no termina con el envío: debe revisarse la respuesta y vincularse al expediente del periodo.",
+      "options": []
+    },
+    {
+      "id": "4.ip3",
+      "ce": "4.i",
+      "kind": "multi",
+      "prompt": "El organismo devuelve una respuesta al envío. Selecciona las actuaciones correctas antes de cerrar el expediente.",
+      "options": [
+        "Relacionarla con el expediente",
+        "Ignorarla porque existe justificante",
+        "Leer y valorar la respuesta",
+        "Corregir si procede"
+      ]
+    },
+    {
+      "id": "4.ip4",
+      "ce": "4.i",
+      "kind": "order",
+      "prompt": "Ordena el ciclo de una comunicación retributiva o de cotización desde la preparación hasta el archivo o la rectificación.",
+      "options": [
+        "Preparar información",
+        "Comprobar respuesta",
+        "Archivar o rectificar con trazabilidad",
+        "Enviar por canal autorizado"
+      ]
+    },
+    {
+      "id": "4.ip5",
+      "ce": "4.i",
+      "kind": "choice",
+      "prompt": "Se guarda solo una captura previa al envío. ¿Qué falta?",
+      "options": [
+        "Ignorarlo si el total parece razonable",
+        "Copiar los datos de otra nómina",
+        "Ocultar la diferencia",
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad"
+      ]
+    },
+    {
+      "id": "4.ip6",
+      "ce": "4.i",
+      "kind": "case",
+      "prompt": "Una comunicación telemática devuelve justificante y una advertencia. Explica qué evidencias permiten demostrar el envío efectivo y qué harías con la advertencia antes de cerrar el expediente.",
+      "options": []
+    },
+    {
+      "id": "4.jp1",
+      "ce": "4.j",
+      "kind": "choice",
+      "prompt": "El software calcula una nómina distinta del cálculo manual razonado. ¿Qué debe revisarse primero?",
+      "options": [
+        "Analizar los datos y reglas aplicables antes de confirmar",
+        "Modificar el resultado final",
+        "Copiar el mes anterior",
+        "Usar un parámetro sin fecha"
+      ]
+    },
+    {
+      "id": "4.jp2",
+      "ce": "4.j",
+      "kind": "tf",
+      "prompt": "Un cálculo generado por software debe poder reproducirse con los datos maestros, incidencias, parámetros y tablas vigentes del periodo.",
+      "options": []
+    },
+    {
+      "id": "4.jp3",
+      "ce": "4.j",
+      "kind": "multi",
+      "prompt": "Antes de ejecutar la nómina en una aplicación, selecciona qué configuración debe comprobar el técnico.",
+      "options": [
+        "Periodo de tablas",
+        "Cambiar el resultado manual para que coincida",
+        "Datos maestros e incidencias",
+        "Parámetros y convenio configurados"
+      ]
+    },
+    {
+      "id": "4.jp4",
+      "ce": "4.j",
+      "kind": "order",
+      "prompt": "El software arroja un resultado distinto del control manual. Ordena el proceso para localizar y corregir la diferencia.",
+      "options": [
+        "Revisar parametrización",
+        "Comparar entradas",
+        "Corregir, recalcular y documentar",
+        "Localizar causa de diferencia"
+      ]
+    },
+    {
+      "id": "4.jp5",
+      "ce": "4.j",
+      "kind": "choice",
+      "prompt": "Un usuario sobrescribe un dato sin registrar el motivo. ¿Qué problema genera?",
+      "options": [
+        "Detener el cierre, comprobar la causa y corregir con trazabilidad",
+        "Ocultar la diferencia",
+        "Ignorarlo si el total parece razonable",
+        "Copiar los datos de otra nómina"
+      ]
+    },
+    {
+      "id": "4.jp6",
+      "ce": "4.j",
+      "kind": "case",
+      "prompt": "El programa de nóminas genera un resultado distinto del control manual. Explica qué datos, parámetros, versiones y evidencias conservarías para localizar la causa y auditar la corrección.",
+      "options": []
+    }
+  ]
+}
