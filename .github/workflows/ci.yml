@@ -23,7 +23,7 @@ jobs:
       - name: Compile
         run: python -m compileall -q app
       - name: Validate deployment scripts
-        working-directory: ..
+        working-directory: ${{ github.workspace }}
         run: |
           bash -n scripts/install-ubuntu.sh
           bash -n scripts/verify-installation.sh
