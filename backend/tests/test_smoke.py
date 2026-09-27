@@ -3242,3 +3242,183 @@ def test_release_dates_audience_and_exam_extra_time():
         started_at = datetime.fromisoformat(payload["started_at"])
         deadline_at = datetime.fromisoformat(payload["deadline_at"])
         assert 24.5 <= (deadline_at - started_at).total_seconds() / 60 <= 25.5
+
+
+def test_blackboard_style_surfaces_are_wired_end_to_end():
+    frontend_root = Path(__file__).resolve().parents[2] / "frontend"
+    teacher_html = (frontend_root / "teacher.html").read_text(encoding="utf-8")
+    eval_teacher_html = (frontend_root / "evaluation-teacher.html").read_text(encoding="utf-8")
+    student_html = (frontend_root / "evaluation-student.html").read_text(encoding="utf-8")
+
+    # Global teacher experience: activity stream, search, alerts and personal shortcuts.
+    for marker in [
+        'id="dashboardItems"',
+        'id="globalSearchForm"',
+        'id="notificationsList"',
+        'id="favoritesList"',
+        'id="recentList"',
+        'id="calendarList"',
+    ]:
+        assert marker in teacher_html
+
+    # Gradebook / progress / adaptive release / observable activity.
+    for marker in [
+        'data-tab="gradebook"',
+        'data-tab="progress"',
+        'data-tab="activity"',
+        'data-tab="availability"',
+        'id="studentDetailDrawer"',
+        'id="sequenceRaBtn"',
+        'id="sequenceActivitiesBtn"',
+        'id="releaseRuleForm"',
+        'id="exceptionForm"',
+        'id="exemptionForm"',
+    ]:
+        assert marker in eval_teacher_html
+
+    # Student experience: next action, progress, TOC, search, alerts and calendar.
+    for marker in [
+        'id="nextAction"',
+        'id="raNav"',
+        'id="moduleSearchForm"',
+        'id="studentNotifications"',
+        'id="studentCalendar"',
+        'id="timeline"',
+        'function goRelative(',
+        'function goRa(',
+        'progress_state',
+        'access_reason',
+    ]:
+        assert marker in student_html
+
+    # Basic accessible navigation is present on both primary work surfaces.
+    assert 'href="#mainContent"' in eval_teacher_html
+    assert 'aria-label="Secciones de evaluación"' in eval_teacher_html
+    assert 'href="#mainContent"' in student_html
+    assert 'aria-label="Índice de resultados de aprendizaje"' in student_html
+
+
+def test_sequential_release_rules_can_enforce_ra_and_activity_order():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("sequence-rules")
+        with SessionLocal() as db:
+            student = User(display_name="Alumno Secuencia", email="sequence@example.test")
+            cm = CourseModule(course_id=course_id, module_id=module_id, settings_json={}, active=True)
+            ra1 = LearningResult(module_id=module_id, code="RA1", title="Primero", position=1, active=True)
+            ra2 = LearningResult(module_id=module_id, code="RA2", title="Segundo", position=2, active=True)
+            db.add_all([student, cm, ra1, ra2])
+            db.flush()
+            ce1 = AssessmentCriterion(
+                learning_result_id=ra1.id, code="1.a", title="CE 1.a",
+                position=1, pass_score=50, active=True,
+            )
+            ce2 = AssessmentCriterion(
+                learning_result_id=ra2.id, code="2.a", title="CE 2.a",
+                position=1, pass_score=50, active=True,
+            )
+            db.add_all([ce1, ce2]); db.flush()
+            item1 = AssessmentItem(
+                criterion_id=ce1.id, instrument="portfolio", item_key="seq-1",
+                item_type="choice", prompt="Primera", options_json=["A", "B"],
+                evaluable=True, max_attempts=1, active=True,
+            )
+            item2 = AssessmentItem(
+                criterion_id=ce2.id, instrument="portfolio", item_key="seq-2",
+                item_type="choice", prompt="Segunda", options_json=["A", "B"],
+                evaluable=True, max_attempts=1, active=True,
+            )
+            db.add_all([item1, item2]); db.flush()
+            db.add_all([
+                AssessmentKey(item_id=item1.id, answer_json={"value": 0}, active=True),
+                AssessmentKey(item_id=item2.id, answer_json={"value": 0}, active=True),
+                Membership(
+                    course_id=course_id, user_id=student.id, role="student",
+                    lti_roles=["Learner"], active=True,
+                ),
+            ])
+            db.commit()
+            cmid, sid, ra1id, ra2id, i1, i2 = cm.id, student.id, ra1.id, ra2.id, item1.id, item2.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        ra_rule = client.put(
+            f"/api/learning/course-modules/{cmid}/rules/learning_result/{ra2id}",
+            json={
+                "requirements": [
+                    {"type": "learning_result", "key": str(ra1id), "completion": True}
+                ],
+                "audience": {},
+            },
+        )
+        assert ra_rule.status_code == 200, ra_rule.text
+        item_rule = client.put(
+            f"/api/learning/course-modules/{cmid}/rules/item/{i2}",
+            json={
+                "requirements": [
+                    {"type": "item", "key": str(i1), "completion": True}
+                ],
+                "audience": {},
+            },
+        )
+        assert item_rule.status_code == 200, item_rule.text
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(sid, course_id, role="student"))
+        ra2_blocked = client.get(
+            f"/api/learning/course-modules/{cmid}/access/learning_result/{ra2id}"
+        )
+        assert ra2_blocked.status_code == 200
+        assert ra2_blocked.json()["available"] is False
+
+        item2_blocked = client.get(
+            f"/api/learning/course-modules/{cmid}/access/item/{i2}"
+        )
+        assert item2_blocked.status_code == 200
+        assert item2_blocked.json()["available"] is False
+
+        first = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i1}/attempts",
+            json={"metadata": {}},
+        )
+        assert first.status_code == 200
+        submitted = client.post(
+            f"/api/evaluation/attempts/{first.json()['attempt_id']}/submit",
+            json={"response": 0, "metadata": {}},
+        )
+        assert submitted.status_code == 200
+
+        item2_available = client.get(
+            f"/api/learning/course-modules/{cmid}/access/item/{i2}"
+        )
+        assert item2_available.status_code == 200
+        assert item2_available.json()["available"] is True
+
+        # RA2 stays locked until RA1 has a definitive RA result, not merely one item.
+        ra2_still_blocked = client.get(
+            f"/api/learning/course-modules/{cmid}/access/learning_result/{ra2id}"
+        )
+        assert ra2_still_blocked.status_code == 200
+        assert ra2_still_blocked.json()["available"] is False
+
+        with SessionLocal() as db:
+            db.add(
+                EvaluationResult(
+                    course_module_id=cmid,
+                    user_id=sid,
+                    learning_result_id=ra1id,
+                    portfolio_score=100,
+                    exam_score=None,
+                    final_score=100,
+                    criteria_passed=1,
+                    criteria_total=1,
+                    passed=True,
+                    details_json={"status": "passed"},
+                )
+            )
+            db.commit()
+
+        ra2_available = client.get(
+            f"/api/learning/course-modules/{cmid}/access/learning_result/{ra2id}"
+        )
+        assert ra2_available.status_code == 200
+        assert ra2_available.json()["available"] is True
