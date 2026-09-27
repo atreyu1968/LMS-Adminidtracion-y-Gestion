@@ -2141,3 +2141,157 @@ def test_recovery_changes_ce_status_without_rewriting_original_40_60_grade():
             assert plan is not None
             assert plan.criteria_json == []
             assert plan.status == "passed"
+
+
+def test_private_bank_bundle_imports_portfolio_exam_recovery_and_keeps_them_secret():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("private-bundle")
+        with SessionLocal() as db:
+            module = db.get(Module, module_id)
+            module.metadata_json = {
+                "evaluation_defaults": {
+                    "exam_questions_per_ce": 1,
+                    "recovery_items_per_ce": 1,
+                    "exam_enabled": True,
+                }
+            }
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA privada",
+                position=1,
+                metadata_json={"legacy_course_id": "LEGACY_RA1"},
+                active=True,
+            )
+            db.add_all([course_module, lr])
+            db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE privado",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce)
+            db.flush()
+            public = AssessmentItem(
+                criterion_id=ce.id,
+                instrument="portfolio",
+                item_key="P1",
+                item_type="choice",
+                prompt="Pregunta pública",
+                options_json=["A", "B"],
+                public_hash="9" * 64,
+                evaluable=True,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            db.add(public)
+            db.commit()
+            db.refresh(course_module)
+            course_module_id = course_module.id
+
+        portfolio = {
+            "course_id": "LEGACY_RA1",
+            "kind": "portfolio",
+            "items": [
+                {
+                    "id": "P1",
+                    "ce": "1.a",
+                    "kind": "choice",
+                    "answer": 1,
+                }
+            ],
+        }
+        exam = {
+            "course_id": "LEGACY_RA1",
+            "kind": "exam",
+            "questions": [
+                {
+                    "id": "E1",
+                    "ce": "1.a",
+                    "q": "Pregunta privada",
+                    "options": ["A", "B"],
+                    "answer": 1,
+                    "type": "choice",
+                }
+            ],
+        }
+        recovery = {
+            "course_id": "LEGACY_RA1",
+            "kind": "recovery",
+            "items": [
+                {
+                    "id": "R1",
+                    "ce": "1.a",
+                    "kind": "choice",
+                    "prompt": "Recuperación privada",
+                    "options": ["A", "B"],
+                    "answer": 1,
+                    "feedback": "Revisar el CE.",
+                }
+            ],
+        }
+        bundle = io.BytesIO()
+        with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                "ra1_portfolio.json",
+                __import__("json").dumps(portfolio, ensure_ascii=False),
+            )
+            archive.writestr(
+                "ra1_exam.json",
+                __import__("json").dumps(exam, ensure_ascii=False),
+            )
+            archive.writestr(
+                "ra1_recovery.json",
+                __import__("json").dumps(recovery, ensure_ascii=False),
+            )
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        uploaded = client.post(
+            f"/api/evaluation/modules/{module_id}/private-bank-bundle",
+            files={"file": ("private-banks.zip", bundle.getvalue(), "application/zip")},
+        )
+        assert uploaded.status_code == 200, uploaded.text
+        imported = uploaded.json()["imported"]
+        assert imported == {"portfolio": 1, "exam": 1, "recovery": 1}
+        coverage = uploaded.json()["coverage"]["RA1"]
+        assert coverage["exam"]["insufficient"] == {}
+        assert coverage["recovery"]["insufficient"] == {}
+
+        readiness = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/readiness"
+        )
+        assert readiness.status_code == 200, readiness.text
+        state = readiness.json()
+        assert state["portfolio_ready"] is True
+        assert state["exam_ready"] is True
+        assert state["recovery_ready"] is True
+        assert state["ready_for_evaluation"] is True
+        assert state["can_manage_private_banks"] is True
+
+        public_structure = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/structure"
+        )
+        assert public_structure.status_code == 200
+        public_items = [
+            item
+            for ra in public_structure.json()["learning_results"]
+            for criterion in ra["criteria"]
+            for item in criterion["items"]
+        ]
+        assert [item["key"] for item in public_items] == ["P1"]
+        serialized = __import__("json").dumps(
+            public_structure.json(), ensure_ascii=False
+        )
+        assert "Pregunta privada" not in serialized
+        assert "Recuperación privada" not in serialized
