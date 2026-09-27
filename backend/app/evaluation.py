@@ -710,6 +710,14 @@ def _load_exam_bank(
                 criterion_id=criterion.id,
                 instrument="exam",
                 item_key=question.id,
+                item_type=question.type,
+                prompt=question.q,
+                options_json=question.options or [],
+                evaluable=True,
+                max_attempts=1,
+                position=position,
+                metadata_json={"source": payload.source},
+                active=True,
             )
             db.add(item)
             db.flush()
