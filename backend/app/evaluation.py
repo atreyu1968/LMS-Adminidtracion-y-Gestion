@@ -123,6 +123,7 @@ def _effective_config(db: Session, course_module: CourseModule) -> dict:
         "require_both_instruments": bool(defaults.get("require_both_instruments", False)),
         "exam_enabled": bool(defaults.get("exam_enabled", False)),
         "exam_questions_per_ce": int(defaults.get("exam_questions_per_ce", 3)),
+        "recovery_items_per_ce": int(defaults.get("recovery_items_per_ce", 2)),
         "exam_minutes": int(defaults.get("exam_minutes", 45)),
         "exam_integrity_enabled": bool(defaults.get("exam_integrity_enabled", True)),
         "exam_fullscreen_required": bool(defaults.get("exam_fullscreen_required", True)),
@@ -1268,8 +1269,24 @@ def evaluation_readiness(
 ) -> dict:
     user_id = int(session["sub"])
     course_module = _teacher_course_module(db, course_module_id, user_id)
-    items = db.execute(
-        select(AssessmentItem, AssessmentKey)
+    config = _effective_config(db, course_module)
+    permission = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == course_module.module_id,
+            ModulePermission.user_id == user_id,
+        )
+    )
+    can_manage_private_banks = bool(
+        permission and permission.permission in {"owner", "editor"}
+    )
+
+    portfolio_rows = db.execute(
+        select(
+            AssessmentItem,
+            AssessmentKey,
+            AssessmentCriterion,
+            LearningResult,
+        )
         .join(
             AssessmentCriterion,
             AssessmentCriterion.id == AssessmentItem.criterion_id,
@@ -1281,25 +1298,138 @@ def evaluation_readiness(
         .outerjoin(AssessmentKey, AssessmentKey.item_id == AssessmentItem.id)
         .where(
             LearningResult.module_id == course_module.module_id,
+            AssessmentItem.instrument == "portfolio",
             AssessmentItem.active.is_(True),
             AssessmentItem.evaluable.is_(True),
         )
     ).all()
-    missing = [item.item_key for item, key in items if not key or not key.active]
-    semantic = [
-        item.item_key for item, _ in items if item.item_type in SEMANTIC_KINDS
+    missing = [
+        item.item_key
+        for item, key, _, _ in portfolio_rows
+        if not key or not key.active
     ]
+    semantic = [
+        item.item_key
+        for item, _, _, _ in portfolio_rows
+        if item.item_type in SEMANTIC_KINDS
+    ]
+
+    lrs = list(
+        db.scalars(
+            select(LearningResult)
+            .where(
+                LearningResult.module_id == course_module.module_id,
+                LearningResult.active.is_(True),
+            )
+            .order_by(LearningResult.position, LearningResult.id)
+        )
+    )
+    coverage = {}
+    exam_min = int(config["exam_questions_per_ce"])
+    recovery_min = int(config["recovery_items_per_ce"])
+    exam_ready = True
+    recovery_ready = True
+
+    for lr in lrs:
+        criteria = list(
+            db.scalars(
+                select(AssessmentCriterion)
+                .where(
+                    AssessmentCriterion.learning_result_id == lr.id,
+                    AssessmentCriterion.active.is_(True),
+                )
+                .order_by(AssessmentCriterion.position, AssessmentCriterion.id)
+            )
+        )
+        ce_data = {}
+        for criterion in criteria:
+            portfolio_count = int(
+                db.scalar(
+                    select(func.count(AssessmentItem.id)).where(
+                        AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument == "portfolio",
+                        AssessmentItem.active.is_(True),
+                    )
+                )
+                or 0
+            )
+            portfolio_keys = int(
+                db.scalar(
+                    select(func.count(AssessmentKey.id))
+                    .join(
+                        AssessmentItem,
+                        AssessmentItem.id == AssessmentKey.item_id,
+                    )
+                    .where(
+                        AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument == "portfolio",
+                        AssessmentItem.active.is_(True),
+                        AssessmentKey.active.is_(True),
+                    )
+                )
+                or 0
+            )
+            exam_count = int(
+                db.scalar(
+                    select(func.count(AssessmentItem.id)).where(
+                        AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument == "exam",
+                        AssessmentItem.active.is_(True),
+                    )
+                )
+                or 0
+            )
+            recovery_count = int(
+                db.scalar(
+                    select(func.count(AssessmentItem.id)).where(
+                        AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument == "recovery",
+                        AssessmentItem.active.is_(True),
+                    )
+                )
+                or 0
+            )
+            ce_exam_ready = exam_count >= exam_min
+            ce_recovery_ready = recovery_count >= recovery_min
+            exam_ready = exam_ready and ce_exam_ready
+            recovery_ready = recovery_ready and ce_recovery_ready
+            ce_data[criterion.code] = {
+                "portfolio_items": portfolio_count,
+                "portfolio_keys": portfolio_keys,
+                "portfolio_ready": (
+                    portfolio_count > 0 and portfolio_keys == portfolio_count
+                ),
+                "exam_questions": exam_count,
+                "exam_required": exam_min,
+                "exam_ready": ce_exam_ready,
+                "recovery_items": recovery_count,
+                "recovery_required": recovery_min,
+                "recovery_ready": ce_recovery_ready,
+            }
+        coverage[lr.code] = ce_data
+
     ai = resolve_ai_for_course_module(db, course_module_id)
+    portfolio_ready = not missing and bool(portfolio_rows)
     return {
         "course_module_id": course_module_id,
-        "items_total": len(items),
-        "keys_loaded": len(items) - len(missing),
+        "module_id": course_module.module_id,
+        "items_total": len(portfolio_rows),
+        "keys_loaded": len(portfolio_rows) - len(missing),
         "missing_keys": missing,
         "semantic_items": len(semantic),
+        "portfolio_ready": portfolio_ready,
+        "exam_ready": exam_ready and bool(lrs),
+        "recovery_ready": recovery_ready and bool(lrs),
+        "ready_for_evaluation": (
+            portfolio_ready
+            and (not config["exam_enabled"] or exam_ready)
+            and recovery_ready
+        ),
         "ai_enabled": bool(ai),
         "ai_teacher_user_id": ai.get("teacher_user_id") if ai else None,
-        "ready_for_objective_grading": not missing,
-        "config": _effective_config(db, course_module),
+        "can_manage_private_banks": can_manage_private_banks,
+        "coverage": coverage,
+        "config": config,
     }
 
 
