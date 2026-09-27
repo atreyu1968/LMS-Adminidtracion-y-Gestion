@@ -1482,7 +1482,8 @@ def test_evaluation_objective_and_teacher_review_flow():
         assert decided.status_code == 200, decided.text
         assert decided.json()["score"] == 80.0
         assert decided.json()["progress"]["portfolio_score"] == 90.0
-        assert decided.json()["progress"]["criteria_passed"] == 1
+        assert decided.json()["progress"]["criteria_passed"] == 0
+        assert decided.json()["progress"]["portfolio_criteria_passed"] == 1
         assert decided.json()["progress"]["status"] == "portfolio-progress"
 
         with SessionLocal() as db:
