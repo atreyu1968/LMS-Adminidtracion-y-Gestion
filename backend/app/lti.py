@@ -270,12 +270,44 @@ def _upsert_identity(db: Session, platform: LTIPlatform, claims: dict) -> User:
             user.email = str(claims["email"])
         return user
 
-    user = User(
-        display_name=claims.get("name") or claims.get("given_name") or subject,
-        email=claims.get("email"),
-    )
-    db.add(user)
-    db.flush()
+    # If a teacher pre-created a roster entry by institutional email, reuse that
+    # provisional user on the first trusted LTI launch instead of duplicating it.
+    email = str(claims.get("email") or "").strip().lower()
+    provisional_user = None
+    if email:
+        candidates = list(
+            db.scalars(
+                select(User).where(
+                    __import__("sqlalchemy").func.lower(User.email) == email,
+                    User.active.is_(True),
+                )
+            )
+        )
+        unbound = []
+        for candidate in candidates:
+            has_identity = db.scalar(
+                select(ExternalIdentity.id).where(
+                    ExternalIdentity.user_id == candidate.id
+                )
+            )
+            if not has_identity:
+                unbound.append(candidate)
+        if len(unbound) == 1:
+            provisional_user = unbound[0]
+
+    if provisional_user:
+        user = provisional_user
+        if claims.get("name"):
+            user.display_name = str(claims["name"])
+        user.email = email
+    else:
+        user = User(
+            display_name=claims.get("name") or claims.get("given_name") or subject,
+            email=email or None,
+        )
+        db.add(user)
+        db.flush()
+
     db.add(
         ExternalIdentity(
             user_id=user.id,
