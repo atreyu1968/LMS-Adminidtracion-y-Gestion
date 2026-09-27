@@ -30,8 +30,11 @@ from app.models import (
     Course,
     CourseModule,
     CourseModuleAIConfig,
+    AssessmentAttempt,
     AssessmentCriterion,
     AssessmentItem,
+    AssessmentKey,
+    AssessmentReview,
     LearningResult,
     LTIDeepLinkRequest,
     LTIPlatform,
@@ -1309,3 +1312,335 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         )
         assert next_step.status_code == 200
         assert next_step.json()["status"] == "in_progress"
+
+
+def test_evaluation_objective_and_teacher_review_flow():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("evaluation-flow")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={
+                    "evaluation": {
+                        "portfolio_weight": 40,
+                        "exam_weight": 60,
+                        "pass_score": 50,
+                        "ce_pass_score": 50,
+                        "ce_pass_percent": 80,
+                        "exam_enabled": False,
+                    }
+                },
+                active=True,
+            )
+            student = User(display_name="Alumno evaluación", email="eval-student@example.test")
+            db.add_all([course_module, student])
+            db.flush()
+            db.add(
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=[],
+                    active=True,
+                )
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA de prueba",
+                position=1,
+                active=True,
+            )
+            db.add(lr)
+            db.flush()
+            criterion = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="Criterio de prueba",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(criterion)
+            db.flush()
+            objective = AssessmentItem(
+                criterion_id=criterion.id,
+                instrument="portfolio",
+                item_key="OBJ-1",
+                item_type="choice",
+                prompt="Selecciona la respuesta correcta",
+                options_json=["A", "B", "C"],
+                public_hash="a" * 64,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            semantic = AssessmentItem(
+                criterion_id=criterion.id,
+                instrument="portfolio",
+                item_key="SEM-1",
+                item_type="case",
+                prompt="Razona el supuesto",
+                options_json=[],
+                public_hash="b" * 64,
+                max_attempts=2,
+                position=2,
+                active=True,
+            )
+            db.add_all([objective, semantic])
+            db.flush()
+            db.add_all([
+                AssessmentKey(
+                    item_id=objective.id,
+                    answer_json={"value": "B"},
+                    public_hash=objective.public_hash,
+                    source="test",
+                    active=True,
+                ),
+                AssessmentKey(
+                    item_id=semantic.id,
+                    answer_json={"value": "Respuesta de referencia razonada"},
+                    public_hash=semantic.public_hash,
+                    source="test",
+                    active=True,
+                ),
+            ])
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(student)
+            db.refresh(objective)
+            db.refresh(semantic)
+            course_module_id = course_module.id
+            student_id = student.id
+            objective_id = objective.id
+            semantic_id = semantic.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_id, course_id, role="student"))
+
+        structure = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/structure"
+        )
+        assert structure.status_code == 200, structure.text
+        assert structure.json()["learning_results"][0]["criteria"][0]["items"][0]["key"] == "OBJ-1"
+
+        start_objective = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/items/{objective_id}/attempts",
+            json={"metadata": {}},
+        )
+        assert start_objective.status_code == 200, start_objective.text
+        submitted_objective = client.post(
+            f"/api/evaluation/attempts/{start_objective.json()['attempt_id']}/submit",
+            json={"response": "B", "metadata": {}},
+        )
+        assert submitted_objective.status_code == 200, submitted_objective.text
+        assert submitted_objective.json()["score"] == 100.0
+        assert submitted_objective.json()["pending_review"] is False
+        assert submitted_objective.json()["grading_method"] == "deterministic"
+
+        start_semantic = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/items/{semantic_id}/attempts",
+            json={"metadata": {}},
+        )
+        assert start_semantic.status_code == 200
+        submitted_semantic = client.post(
+            f"/api/evaluation/attempts/{start_semantic.json()['attempt_id']}/submit",
+            json={"response": "Una respuesta distinta que requiere valoración", "metadata": {}},
+        )
+        assert submitted_semantic.status_code == 200, submitted_semantic.text
+        assert submitted_semantic.json()["score"] is None
+        assert submitted_semantic.json()["pending_review"] is True
+        assert submitted_semantic.json()["grading_method"] == "teacher"
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        queue = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/reviews"
+        )
+        assert queue.status_code == 200, queue.text
+        assert len(queue.json()) == 1
+        review_id = queue.json()[0]["review_id"]
+        assert queue.json()[0]["student"]["id"] == student_id
+        assert queue.json()[0]["item"]["item_key"] == "SEM-1"
+
+        decided = client.put(
+            f"/api/evaluation/reviews/{review_id}",
+            json={
+                "score": 80,
+                "feedback": "Respuesta válida con margen de mejora.",
+                "status": "accepted",
+            },
+        )
+        assert decided.status_code == 200, decided.text
+        assert decided.json()["score"] == 80.0
+        assert decided.json()["progress"]["portfolio_score"] == 90.0
+        assert decided.json()["progress"]["criteria_passed"] == 1
+        assert decided.json()["progress"]["status"] == "portfolio-progress"
+
+        with SessionLocal() as db:
+            semantic_attempt = db.scalar(
+                __import__("sqlalchemy").select(AssessmentAttempt).where(
+                    AssessmentAttempt.user_id == student_id,
+                    AssessmentAttempt.item_id == semantic_id,
+                )
+            )
+            assert semantic_attempt is not None
+            assert semantic_attempt.pending_review is False
+            assert semantic_attempt.score == 80.0
+            review = db.scalar(
+                __import__("sqlalchemy").select(AssessmentReview).where(
+                    AssessmentReview.attempt_id == semantic_attempt.id
+                )
+            )
+            assert review is not None
+            assert review.status == "accepted"
+            assert review.reviewed_by_user_id == teacher_id
+
+
+def test_evaluation_uses_personal_ai_without_sending_student_identity(monkeypatch):
+    import app.evaluation as evaluation_module
+
+    captured = {}
+
+    async def fake_grade(ai_config, *, response_value, reference_answer, context, rubric=""):
+        captured["response_value"] = response_value
+        captured["reference_answer"] = reference_answer
+        captured["context"] = context
+        captured["rubric"] = rubric
+        return {
+            "score": 86.0,
+            "confidence": 0.94,
+            "verdict": "correct",
+            "feedback": "Buena argumentación.",
+            "breakdown": [],
+        }
+
+    monkeypatch.setattr(evaluation_module, "grade_with_ai", fake_grade)
+
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("evaluation-ai")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={"evaluation": {"exam_enabled": False}},
+                active=True,
+            )
+            student = User(
+                display_name="Nombre que no debe salir",
+                email="privacy-student@example.test",
+            )
+            db.add_all([course_module, student])
+            db.flush()
+            db.add(
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=[],
+                    active=True,
+                )
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA IA",
+                position=1,
+                active=True,
+            )
+            db.add(lr)
+            db.flush()
+            criterion = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE IA",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(criterion)
+            db.flush()
+            item = AssessmentItem(
+                criterion_id=criterion.id,
+                instrument="portfolio",
+                item_key="AI-CASE-1",
+                item_type="case",
+                prompt="Explica el procedimiento aplicable.",
+                public_hash="c" * 64,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            db.add(item)
+            db.flush()
+            db.add(
+                AssessmentKey(
+                    item_id=item.id,
+                    answer_json={"value": "Referencia técnica"},
+                    public_hash=item.public_hash,
+                    source="test",
+                    active=True,
+                )
+            )
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(student)
+            db.refresh(item)
+            course_module_id = course_module.id
+            student_id = student.id
+            item_id = item.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        saved = client.put(
+            "/api/ai/settings",
+            json={
+                "enabled": True,
+                "provider": "openai-compatible",
+                "base_url": "https://api.example.test/v1",
+                "model": "modelo-privado",
+                "api_key": "teacher-private-key",
+                "confidence_threshold": 0.8,
+                "auto_kinds": ["case"],
+                "default_rubric": "Valora precisión técnica.",
+            },
+        )
+        assert saved.status_code == 200
+        binding = client.put(
+            f"/api/ai/course-modules/{course_module_id}",
+            json={
+                "enabled": True,
+                "auto_review": True,
+                "allowed_kinds": ["case"],
+            },
+        )
+        assert binding.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_id, course_id, role="student"))
+        started = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/items/{item_id}/attempts",
+            json={"metadata": {}},
+        )
+        assert started.status_code == 200
+        submitted = client.post(
+            f"/api/evaluation/attempts/{started.json()['attempt_id']}/submit",
+            json={"response": "Mi razonamiento técnico", "metadata": {}},
+        )
+        assert submitted.status_code == 200, submitted.text
+        assert submitted.json()["score"] == 86.0
+        assert submitted.json()["pending_review"] is False
+        assert submitted.json()["grading_method"] == "ai-auto"
+
+        assert captured["response_value"] == "Mi razonamiento técnico"
+        assert captured["reference_answer"] == "Referencia técnica"
+        assert captured["context"]["criterion"] == "1.a"
+        serialized = __import__("json").dumps(captured, ensure_ascii=False)
+        assert "Nombre que no debe salir" not in serialized
+        assert "privacy-student@example.test" not in serialized
+        assert str(student_id) not in serialized
