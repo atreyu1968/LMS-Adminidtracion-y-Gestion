@@ -2623,3 +2623,82 @@ def test_teacher_dashboard_aggregates_pending_work_across_course_module():
         assert {"review", "recovery", "campus", "scorm"}.issubset(kinds)
         review = next(item for item in data["items"] if item["kind"] == "review")
         assert "tab=reviews" in review["href"]
+
+
+def test_teacher_student_detail_and_progress_matrix():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("detail-progress")
+        with SessionLocal() as db:
+            student = User(display_name="Alumno Detalle", email="detalle@example.test")
+            cm = CourseModule(course_id=course_id, module_id=module_id, settings_json={}, active=True)
+            lr = LearningResult(module_id=module_id, code="RA1", title="RA detalle", position=1, active=True)
+            db.add_all([student, cm, lr])
+            db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE detalle",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce)
+            db.flush()
+            item = AssessmentItem(
+                criterion_id=ce.id,
+                instrument="portfolio",
+                item_key="detalle-item",
+                item_type="free",
+                prompt="Explica.",
+                evaluable=True,
+                max_attempts=2,
+                active=True,
+            )
+            db.add(item)
+            db.flush()
+            attempt = AssessmentAttempt(
+                course_module_id=cm.id,
+                user_id=student.id,
+                item_id=item.id,
+                attempt_no=1,
+                status="submitted",
+                response_json={"value": "Respuesta del alumno"},
+                score=80,
+                correct=True,
+                pending_review=False,
+                submitted_at=datetime.now(timezone.utc),
+            )
+            db.add(attempt)
+            db.add(
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                )
+            )
+            db.commit()
+            db.refresh(cm)
+            db.refresh(student)
+            cmid = cm.id
+            sid = student.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        detail = client.get(f"/api/evaluation/course-modules/{cmid}/students/{sid}/detail")
+        assert detail.status_code == 200, detail.text
+        payload = detail.json()
+        assert payload["student"]["display_name"] == "Alumno Detalle"
+        assert len(payload["attempts"]) == 1
+        assert payload["attempts"][0]["item"]["key"] == "detalle-item"
+        assert payload["attempts"][0]["response"] == "Respuesta del alumno"
+        assert any(event["kind"] == "assessment" for event in payload["timeline"])
+
+        matrix = client.get(f"/api/evaluation/course-modules/{cmid}/progress-matrix")
+        assert matrix.status_code == 200, matrix.text
+        row = next(x for x in matrix.json()["students"] if x["user_id"] == sid)
+        cell = row["learning_results"][0]
+        assert cell["state"] in {"in_progress", "completed"}
+        assert cell["completed_items"] >= 1
+        assert cell["progress_percent"] > 0
