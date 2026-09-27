@@ -28,6 +28,9 @@ from app.lti import CLAIM_DL_CONTENT_ITEMS, CLAIM_MESSAGE_TYPE, _upsert_identity
 from app.main import app
 from app.models import (
     Course,
+    ContentExemption,
+    LearnerContentException,
+    ContentReleaseRule,
     CourseModule,
     CourseModuleAIConfig,
     AssessmentAttempt,
@@ -2772,3 +2775,140 @@ def test_student_overview_exposes_progress_next_action_and_timeline():
         assert data["learning_results"][0]["state"] in {"in_progress", "completed"}
         assert data["learning_results"][0]["completed_items"] >= 1
         assert any(event["kind"] == "assessment" for event in data["timeline"])
+
+
+def test_adaptive_release_exception_and_exemption_are_effective():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("adaptive-release")
+        with SessionLocal() as db:
+            student = User(display_name="Alumno Adaptativo", email="adaptive@example.test")
+            cm = CourseModule(course_id=course_id, module_id=module_id, settings_json={}, active=True)
+            lr = LearningResult(module_id=module_id, code="RA1", title="RA Adaptativo", position=1, active=True)
+            db.add_all([student, cm, lr])
+            db.flush()
+            ce1 = AssessmentCriterion(
+                learning_result_id=lr.id, code="1.a", title="CE 1.a",
+                position=1, pass_score=50, active=True,
+            )
+            ce2 = AssessmentCriterion(
+                learning_result_id=lr.id, code="1.b", title="CE 1.b",
+                position=2, pass_score=50, active=True,
+            )
+            db.add_all([ce1, ce2])
+            db.flush()
+            item1 = AssessmentItem(
+                criterion_id=ce1.id, instrument="portfolio",
+                item_key="adaptive-1", item_type="choice",
+                prompt="Primera", options_json=["A", "B"],
+                evaluable=True, max_attempts=1, active=True,
+            )
+            item2 = AssessmentItem(
+                criterion_id=ce2.id, instrument="portfolio",
+                item_key="adaptive-2", item_type="choice",
+                prompt="Segunda", options_json=["A", "B"],
+                evaluable=True, max_attempts=1, active=True,
+            )
+            db.add_all([item1, item2])
+            db.flush()
+            db.add_all([
+                AssessmentKey(item_id=item1.id, answer_json={"value": 0}, active=True),
+                AssessmentKey(item_id=item2.id, answer_json={"value": 0}, active=True),
+                Membership(
+                    course_id=course_id, user_id=student.id, role="student",
+                    lti_roles=["Learner"], active=True,
+                ),
+            ])
+            db.commit()
+            db.refresh(cm); db.refresh(student); db.refresh(item1); db.refresh(item2); db.refresh(ce2)
+            cmid, sid, i1, i2, ce2id = cm.id, student.id, item1.id, item2.id, ce2.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        rule = client.put(
+            f"/api/learning/course-modules/{cmid}/rules/item/{i2}",
+            json={
+                "requirements": [
+                    {"type": "item", "key": str(i1), "completion": True, "min_score": 50}
+                ],
+                "audience": {},
+            },
+        )
+        assert rule.status_code == 200, rule.text
+        exception = client.put(
+            f"/api/learning/course-modules/{cmid}/students/{sid}/exceptions/item/{i1}",
+            json={"extra_attempts": 1, "extra_time_minutes": 0, "notes": "Segundo intento"},
+        )
+        assert exception.status_code == 200, exception.text
+        exemption = client.put(
+            f"/api/learning/course-modules/{cmid}/students/{sid}/exemptions/criterion/{ce2id}",
+            json={"reason": "CE exento en esta convocatoria"},
+        )
+        assert exemption.status_code == 200, exemption.text
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(sid, course_id, role="student"))
+        blocked = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i2}/attempts",
+            json={"metadata": {}},
+        )
+        assert blocked.status_code == 409  # CE 1.b is exempt, so it cannot be attempted.
+
+        # Remove the CE exemption temporarily to validate the prerequisite.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        removed = client.delete(
+            f"/api/learning/course-modules/{cmid}/students/{sid}/exemptions/criterion/{ce2id}"
+        )
+        assert removed.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(sid, course_id, role="student"))
+        blocked_by_rule = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i2}/attempts",
+            json={"metadata": {}},
+        )
+        assert blocked_by_rule.status_code == 403
+
+        first = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i1}/attempts",
+            json={"metadata": {}},
+        )
+        assert first.status_code == 200, first.text
+        submitted = client.post(
+            f"/api/evaluation/attempts/{first.json()['attempt_id']}/submit",
+            json={"response": 0, "metadata": {}},
+        )
+        assert submitted.status_code == 200
+        assert submitted.json()["score"] == 100.0
+
+        now_allowed = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i2}/attempts",
+            json={"metadata": {}},
+        )
+        assert now_allowed.status_code == 200, now_allowed.text
+
+        # The personal exception adds a second attempt to item 1.
+        second = client.post(
+            f"/api/evaluation/course-modules/{cmid}/items/{i1}/attempts",
+            json={"metadata": {}},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["attempt_no"] == 2
+        assert second.json()["max_attempts"] == 2
+
+        # Reapply the CE exemption and verify that it is removed from the RA denominator.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        reapplied = client.put(
+            f"/api/learning/course-modules/{cmid}/students/{sid}/exemptions/criterion/{ce2id}",
+            json={"reason": "CE exento"},
+        )
+        assert reapplied.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(sid, course_id, role="student"))
+        results = client.get(f"/api/evaluation/course-modules/{cmid}/my-results")
+        assert results.status_code == 200, results.text
+        ra = results.json()[0]
+        assert ra["criteria_total"] == 1
+        assert ra["criteria"]["1.b"]["exempt"] is True
