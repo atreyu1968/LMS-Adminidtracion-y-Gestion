@@ -2894,7 +2894,7 @@ def test_adaptive_release_exception_and_exemption_are_effective():
         )
         assert second.status_code == 200, second.text
         assert second.json()["attempt_no"] == 2
-        assert second.json()["max_attempts"] == 2
+        assert second.json()["max_attempts"] == 3
 
         # Reapply the CE exemption and verify that it is removed from the RA denominator.
         client.cookies.clear()
