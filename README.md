@@ -37,7 +37,7 @@ CAMPUS / Moodle
 │  ├─ identidad LTI / sesiones              │
 │  ├─ centros, cursos, profesores, alumnos  │
 │  ├─ catálogo de módulos                   │
-│  ├─ motor SCORM 1.2                       │
+│  ├─ motor SCORM 1.2 / 2004                │
 │  ├─ evaluación / evidencias               │
 │  ├─ AGS → calificaciones a CAMPUS         │
 │  └─ NRPS → matrículas y roles             │
@@ -95,7 +95,8 @@ Para aprovisionar el módulo oficial después de desplegar:
 - [x] Grupos locales propios y cursos CAMPUS unificados en el mismo modelo.
 - [x] Importación de alumnado por CSV y profesores colaboradores.
 - [x] Panel docente para grupos, módulos y biblioteca SCORM.
-- [ ] Migración completa de GTH.
+- [x] Migración funcional pública de GTH: 4 RA, 33 CE, 198 actividades, SCORM y motor de evaluación.
+- [ ] Carga operativa de bancos privados reales de GTH y piloto de regresión.
 - [x] Reproductor SCORM 1.2 y SCORM 2004 con subida, registro y persistencia.
 - [x] Editor SCORM versionado: los intentos iniciados quedan fijados a su revisión.
 - [x] Exportación individual, de borradores y de toda la biblioteca SCORM.
@@ -158,3 +159,8 @@ El panel docente se sirve en:
 ## Edición y exportación SCORM
 
 El funcionamiento del editor, el versionado no destructivo, la biblioteca multimedia y la exportación están documentados en `docs/SCORM_EDITOR.md`.
+
+
+## Migración de GTH
+
+El estado, las reglas conservadas, el aprovisionamiento del catálogo y la carga separada de bancos privados se documentan en `docs/GTH_MIGRATION.md`.
