@@ -83,6 +83,10 @@ class GroupCreate(BaseModel):
     settings: dict = {}
 
 
+class JoinGroupIn(BaseModel):
+    code: str = Field(min_length=4, max_length=40)
+
+
 class GroupUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=2, max_length=300)
     label: str | None = Field(default=None, max_length=120)
@@ -124,7 +128,12 @@ def create_group(
         description=payload.description,
         academic_year=payload.academic_year,
         join_code=_unique_join_code(db),
-        settings_json=payload.settings,
+        settings_json={
+            "allow_self_enrol": False,
+            "show_scores": True,
+            "max_attempts_default": 0,
+            **(payload.settings or {}),
+        },
     )
     db.add(group)
     db.flush()
@@ -163,6 +172,76 @@ def my_groups(
         _group_dict(group, membership.role, owned=(group.owner_user_id == user_id))
         for group, membership in rows
     ]
+
+
+
+
+@router.post("/join")
+def join_group(
+    payload: JoinGroupIn,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    code = payload.code.strip().upper()
+    group = db.scalar(
+        select(Course).where(
+            Course.join_code == code,
+            Course.active.is_(True),
+            Course.source_type == "local",
+        )
+    )
+    if not group:
+        raise HTTPException(status_code=404, detail="Group code not found")
+    settings_json = group.settings_json or {}
+    if not settings_json.get("allow_self_enrol", False):
+        raise HTTPException(status_code=403, detail="Self-enrolment is disabled for this group")
+
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.course_id == group.id,
+            Membership.user_id == user_id,
+        )
+    )
+    if membership:
+        membership.active = True
+        if membership.role not in {"teacher", "admin"}:
+            membership.role = "student"
+        membership.updated_at = _now()
+    else:
+        membership = Membership(
+            course_id=group.id,
+            user_id=user_id,
+            role="student",
+            lti_roles=[],
+            active=True,
+        )
+        db.add(membership)
+    db.commit()
+    return {
+        "ok": True,
+        "group_id": group.id,
+        "title": group.title,
+        "role": membership.role,
+    }
+
+
+@router.delete("/{group_id}")
+def close_group(
+    group_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    group = _group_owner(db, group_id, user_id)
+    if group.source_type != "local":
+        raise HTTPException(
+            status_code=409,
+            detail="CAMPUS groups are managed from the LTI platform and cannot be deleted here",
+        )
+    group.active = False
+    db.commit()
+    return {"ok": True, "group_id": group_id}
 
 
 @router.get("/{group_id}")
