@@ -88,9 +88,9 @@ jobs:
       - name: Exercise backup and restore
         run: |
           sudo bash scripts/backup.sh /tmp/lms-ci-backup
-          test -s /tmp/lms-ci-backup/database.sql.gz
-          test -s /tmp/lms-ci-backup/storage.tar.gz
-          test -s /tmp/lms-ci-backup/SHA256SUMS
+          sudo test -s /tmp/lms-ci-backup/database.sql.gz
+          sudo test -s /tmp/lms-ci-backup/storage.tar.gz
+          sudo test -s /tmp/lms-ci-backup/SHA256SUMS
           sudo bash scripts/restore.sh /tmp/lms-ci-backup --yes
           curl -fsS http://127.0.0.1:8080/api/health | grep -q '"ok":true'
       - name: Final diagnostics
