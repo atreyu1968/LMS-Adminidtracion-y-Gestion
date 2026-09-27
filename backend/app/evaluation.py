@@ -183,13 +183,34 @@ def _normalized_text(value: object) -> str:
     return " ".join(str(value or "").strip().casefold().split())
 
 
-def _objective_score(kind: str, given: object, expected: object) -> float | None:
+def _objective_score(
+    kind: str,
+    given: object,
+    expected: object,
+    options: list | None = None,
+) -> float | None:
     if kind == "multi":
         if not isinstance(given, list) or not isinstance(expected, list):
             return 0.0
         return 100.0 if sorted(map(str, given)) == sorted(map(str, expected)) else 0.0
     if kind == "order":
-        return 100.0 if given == expected else 0.0
+        if not isinstance(given, list) or not isinstance(expected, list):
+            return 0.0
+        if given == expected:
+            return 100.0
+        values = list(options or [])
+        try:
+            if values and all(isinstance(v, int) and not isinstance(v, bool) for v in given):
+                given_as_values = [values[int(index)] for index in given]
+                if given_as_values == expected:
+                    return 100.0
+            if values and all(isinstance(v, int) and not isinstance(v, bool) for v in expected):
+                given_as_indices = [values.index(value) for value in given]
+                if given_as_indices == expected:
+                    return 100.0
+        except (IndexError, ValueError, TypeError):
+            pass
+        return 0.0
     if kind == "match":
         if not isinstance(given, list) or not isinstance(expected, list):
             return 0.0
@@ -1388,7 +1409,16 @@ async def submit_attempt(
             detail="La clave privada ya no corresponde al banco público actual",
         )
 
-    local_score = _objective_score(item.item_type, payload.response, expected) if key else None
+    local_score = (
+        _objective_score(
+            item.item_type,
+            payload.response,
+            expected,
+            item.options_json or [],
+        )
+        if key
+        else None
+    )
     if local_score is not None:
         score = float(local_score)
         correct = score >= float(criterion.pass_score)
@@ -2198,7 +2228,6 @@ def recovery_for_student(
             "type": item.item_type,
             "prompt": item.prompt,
             "options": item.options_json or [],
-            "pairs": (item.metadata_json or {}).get("pairs") or [],
             "max_attempts": _effective_config(
                 db, course_module
             ).get("recovery_max_attempts", item.max_attempts),
