@@ -47,8 +47,8 @@ Leyenda:
 | BB-18 | Excepciones | Ampliación de tiempo individual | 🟢 | Tiempo adicional persistente y auditado |
 | BB-19 | Exenciones | Eximir actividad/CE con trazabilidad | 🟢 | La exención no penaliza cálculo y queda registrada |
 | BB-20 | Alumno | Inicio de curso orientado a “qué hago ahora” | 🟢 | Próxima actividad, pendientes, progreso y notas |
-| BB-21 | Alumno | Vista de calificaciones comprensible por RA/CE | 🟢 | Existe resultado por RA; falta interfaz completa de estudiante |
-| BB-22 | Actividad | Registro temporal de acceso/inicio/envío | 🟢 | Intentos y SCORM registran fechas; falta vista consolidada |
+| BB-21 | Alumno | Vista de calificaciones comprensible por RA/CE | 🟢 | La vista del alumno muestra estado, nota RA, desglose CE, recuperación y pendientes |
+| BB-22 | Actividad | Registro temporal de acceso/inicio/envío | 🟢 | Intentos, exámenes y SCORM alimentan una cronología consolidada |
 | BB-23 | Actividad | Informe de actividad del alumno | 🟢 | Cronología por alumno y evaluación |
 | BB-24 | SCORM | Reproducción 1.2/2004, vídeo y audio | 🟢 | CI cubre runtime y HTTP Range |
 | BB-25 | SCORM | Edición versionada sin alterar notas | 🟢 | Alumno iniciado permanece fijado a revisión anterior |
@@ -59,8 +59,8 @@ Leyenda:
 | BB-30 | Catálogo | Módulos oficiales + copia editable | 🟢 | Catálogo + fork personal |
 | BB-31 | UX | Búsqueda de contenido dentro del módulo | 🟢 | Búsqueda por título/RA/CE/SCORM |
 | BB-32 | UX | Favoritos y recientes para profesorado | 🟢 | Grupos/módulos fijables y últimos accesos |
-| BB-33 | UX | Diseño responsive docente y alumno | 🟢 | Pantallas actuales son responsive; falta revisión integral |
-| BB-34 | Accesibilidad | Navegación por teclado, foco y ARIA | 🟢 | Auditoría automatizada y manual |
+| BB-33 | UX | Diseño responsive docente y alumno | 🟢 | Superficies principales usan layouts adaptativos y se validan en CI |
+| BB-34 | Accesibilidad | Navegación por teclado, foco y ARIA | 🟢 | Cobertura base: salto a contenido, foco, landmarks/ARIA y validación estática; no equivale a certificación WCAG |
 | BB-35 | Notificaciones | Avisos de revisión, recuperación y vencimientos | 🟢 | Centro de notificaciones configurable |
 | BB-36 | Calendario | Fechas de actividades integradas en calendario | 🟢 | Vista calendario por grupo |
 | BB-37 | Analítica | Riesgo por baja actividad/progreso | 🟢 | Señales transparentes, no diagnósticas, con datos observables |
@@ -155,7 +155,7 @@ La fase funcional interna queda cerrada con los siguientes bloques operativos y 
 
 ### Evidencia de validación
 
-El run de GitHub Actions asociado al commit `f7bd9fcc79ecdb93ce2915051caee4cc3ee34b68` finalizó correctamente e incluye:
+Las pruebas funcionales de aceptación Blackboard y secuenciación están incluidas en la batería general de CI. El commit `e2212a5b0ceff7b8788162cdeeea51565c833c55` finalizó correctamente e incluye:
 
 - compilación Python;
 - batería `pytest`;
@@ -167,3 +167,17 @@ El run de GitHub Actions asociado al commit `f7bd9fcc79ecdb93ce2915051caee4cc3ee
 
 - **BB-38** permanece ⚪: prueba contra una instancia Moodle/CAMPUS real. El repositorio dispone de pruebas locales LTI 1.3/Deep Linking/NRPS/AGS, pero una validación real necesita una plataforma externa y credenciales.
 - **BB-39** permanece ⚪: alta oficial del LMS como herramienta externa en CAMPUS del Gobierno de Canarias. Depende de la administración de CAMPUS.
+
+
+## Estado operativo y límites de garantía
+
+Las tareas **BB-01 a BB-37** están implementadas en el repositorio y cubiertas por la batería de CI, directamente o mediante pruebas integrales de aceptación.
+
+La accesibilidad marcada en BB-34 significa que las superficies principales disponen de una base técnica verificable —navegación mediante teclado, salto al contenido, foco, landmarks, regiones ARIA y controles asociados—. No se presenta como una certificación externa WCAG 2.2.
+
+Las tareas **BB-38 y BB-39** no pueden pasar a verde desde el repositorio porque requieren infraestructura y autorización ajenas al LMS:
+
+- una instancia Moodle/CAMPUS real con credenciales LTI;
+- el alta institucional de la herramienta por la administración de CAMPUS.
+
+Estas dependencias externas no impiden desplegar ni probar el LMS, pero sí impiden afirmar que la integración institucional con CAMPUS está certificada antes de realizar el piloto real.
