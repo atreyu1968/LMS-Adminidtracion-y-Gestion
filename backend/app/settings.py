@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     lti_private_key_path: str = "./storage/keys/lti-private.pem"
     storage_root: str = "./storage"
     scorm_content_base_url: str = ""
-    max_scorm_upload_mb: int = 256
+    max_scorm_upload_mb: int = 512
+    max_media_upload_mb: int = 2048
     cors_origins: str = "http://localhost:8080"
 
     @property
