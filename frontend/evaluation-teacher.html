@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evaluación · LMS Administración y Gestión</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb;--ink:#10233f;--line:#dfe6ef;--muted:#64748b;--brand:#18508f}
+*{box-sizing:border-box}body{margin:0}.top{background:var(--ink);color:#fff;padding:16px 4vw;display:flex;justify-content:space-between;gap:16px;align-items:center}.top h1{margin:0;font-size:1.35rem}.top a{color:#fff}.wrap{max-width:1500px;margin:22px auto;padding:0 16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 22px rgba(20,40,70,.05)}.card h2,.card h3{margin-top:0}.notice{padding:11px 13px;border-radius:10px;background:#eef6ff;color:#23466f;margin:10px 0}.ok{background:#ecfdf5;color:#166534}.warn{background:#fff7ed;color:#9a3412}.error{background:#fff1f2;color:#9f1239}.muted{color:var(--muted)}.tiny{font-size:.82rem}.badge{display:inline-block;border-radius:999px;background:#edf3fb;color:#23528b;padding:4px 8px;font-size:.75rem;font-weight:700}.btn{border:0;border-radius:9px;background:var(--brand);color:#fff;padding:9px 12px;font-weight:700;cursor:pointer;text-decoration:none}.btn.secondary{background:#e9eef5;color:#203652}.btn.danger{background:#a52b32}.actions{display:flex;gap:8px;flex-wrap:wrap}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.metric{border:1px solid var(--line);border-radius:12px;padding:12px}.metric b{display:block;font-size:1.45rem}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer}.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}.panel{display:none}.panel.active{display:block}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:12px;padding:13px}label{font-size:.86rem;font-weight:700;display:grid;gap:5px}input,textarea,select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:9px;font:inherit;background:#fff}textarea{min-height:75px;resize:vertical}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:780px}th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:.78rem;text-transform:uppercase;color:#64748b}.ra{margin:10px 0}.ra summary{cursor:pointer;font-weight:800}.ce{margin:9px 0 9px 16px;padding:10px;border-left:3px solid #dbe6f5}.review{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.55fr);gap:14px}.response{white-space:pre-wrap;background:#f8fafc;border-radius:9px;padding:10px;max-height:230px;overflow:auto}@media(max-width:800px){.review{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div><h1>Evaluación del módulo</h1><div id="subtitle" class="tiny">Cargando…</div></div><a href="/teacher.html">Volver al panel docente</a></header>
+<main class="wrap">
+<div id="flash"></div>
+<div class="metrics" id="metrics"></div>
+<nav class="tabs">
+  <button class="tab active" data-tab="gradebook">Cuaderno</button>
+  <button class="tab" data-tab="reviews">Revisiones</button>
+  <button class="tab" data-tab="structure">RA y CE</button>
+  <button class="tab" data-tab="config">Configuración</button>
+  <button class="tab" data-tab="readiness">Preparación</button>
+</nav>
+
+<section id="panel-gradebook" class="panel active card">
+  <h2>Cuaderno del grupo</h2>
+  <p class="muted">Las notas mostradas son el estado interno del LMS. La nota final del RA permanecerá pendiente mientras falte el instrumento exigido por la configuración.</p>
+  <div id="gradebook"></div>
+</section>
+
+<section id="panel-reviews" class="panel card">
+  <div class="actions" style="justify-content:space-between"><div><h2>Cola de revisión</h2><p class="muted">Incluye respuestas sin corrección automática y propuestas de IA que requieren validación.</p></div><button class="btn secondary" id="reloadReviews">Actualizar</button></div>
+  <div id="reviews" class="list"></div>
+</section>
+
+<section id="panel-structure" class="panel card">
+  <h2>Estructura RA / CE</h2>
+  <div id="structure"></div>
+</section>
+
+<section id="panel-config" class="panel card">
+  <h2>Configuración de evaluación</h2>
+  <form id="configForm">
+    <div class="form-grid">
+      <label>Intentos Portafolio<input name="portfolio_max_attempts" type="number" min="1" max="20"></label>
+      <label>Intentos examen<input name="exam_max_attempts" type="number" min="1" max="10"></label>
+      <label>Intentos recuperación<input name="recovery_max_attempts" type="number" min="1" max="10"></label>
+      <label>Peso Portafolio (%)<input name="portfolio_weight" type="number" min="0" max="100" step="0.1"></label>
+      <label>Peso examen (%)<input name="exam_weight" type="number" min="0" max="100" step="0.1"></label>
+      <label>Umbral RA (0–100)<input name="pass_score" type="number" min="0" max="100" step="0.1"></label>
+      <label>Umbral CE (0–100)<input name="ce_pass_score" type="number" min="0" max="100" step="0.1"></label>
+      <label>CE mínimos superados (%)<input name="ce_pass_percent" type="number" min="0" max="100"></label>
+      <label>Preguntas examen por CE<input name="exam_questions_per_ce" type="number" min="1" max="20"></label>
+      <label>Duración examen (min)<input name="exam_minutes" type="number" min="1" max="300"></label>
+      <label>Incidentes permitidos<input name="exam_incident_limit" type="number" min="0" max="20"></label>
+      <label>Política de incidentes<select name="exam_incident_policy"><option value="submit">Entregar al alcanzar el límite</option><option value="warn">Avisar</option><option value="log">Solo registrar</option></select></label>
+    </div>
+    <div style="margin:12px 0;display:grid;gap:8px">
+      <label><span><input style="width:auto" name="exam_enabled" type="checkbox"> Examen habilitado</span></label>
+      <label><span><input style="width:auto" name="require_both_instruments" type="checkbox"> Exigir aprobar ambos instrumentos</span></label>
+      <label><span><input style="width:auto" name="exam_integrity_enabled" type="checkbox"> Registrar integridad del examen</span></label>
+      <label><span><input style="width:auto" name="exam_fullscreen_required" type="checkbox"> Exigir pantalla completa</span></label>
+    </div>
+    <div class="actions"><button class="btn">Guardar nueva versión</button><span id="configVersion" class="muted"></span></div>
+  </form>
+</section>
+
+<section id="panel-readiness" class="panel card">
+  <h2>Semáforo de preparación</h2>
+  <div id="readiness"></div>
+</section>
+</main>
+
+<script>
+const cmid=Number(new URLSearchParams(location.search).get("course_module"));
+let structure=null,readiness=null,gradebook=null,configData=null,reviews=[];
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
+async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
+function json(method,body){return{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelector("#panel-"+b.dataset.tab).classList.add("active")}));
+
+async function load(){
+ if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo del grupo.</div>';return}
+ try{
+  [structure,readiness,gradebook,configData,reviews]=await Promise.all([
+   api("/api/evaluation/course-modules/"+cmid+"/structure"),
+   api("/api/evaluation/course-modules/"+cmid+"/readiness"),
+   api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
+   api("/api/evaluation/course-modules/"+cmid+"/config"),
+   api("/api/evaluation/course-modules/"+cmid+"/reviews")
+  ]);
+  const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
+  document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
+  renderAll();
+ }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+function renderAll(){renderMetrics();renderGradebook();renderReviews();renderStructure();renderConfig();renderReadiness()}
+function renderMetrics(){
+ const pending=reviews.length,students=gradebook.students.length,total=readiness.items_total,keys=readiness.keys_loaded;
+ document.querySelector("#metrics").innerHTML=[
+  ["Alumnado",students],["Revisiones pendientes",pending],["Actividades evaluables",total],["Claves cargadas",keys+"/"+total]
+ ].map(x=>'<div class="metric"><span class="muted tiny">'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
+}
+function renderGradebook(){
+ const lrs=structure.learning_results||[];
+ let head='<tr><th>Alumno/a</th><th>Revisiones</th>'+lrs.map(r=>'<th>'+esc(r.code)+'</th>').join("")+'</tr>';
+ let body=(gradebook.students||[]).map(s=>'<tr><td><strong>'+esc(s.display_name)+'</strong><div class="tiny muted">'+esc(s.email||"")+'</div></td><td>'+esc(s.pending_reviews)+'</td>'+s.learning_results.map(r=>'<td><strong>'+esc(r.portfolio_score.toFixed(2))+'</strong><div class="tiny muted">Portafolio · '+esc(r.criteria_passed)+'/'+esc(r.criteria_total)+' CE</div><span class="badge">'+esc(r.status)+'</span></td>').join("")+'</tr>').join("");
+ document.querySelector("#gradebook").innerHTML='<div class="table-wrap"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+function renderReviews(){
+ const root=document.querySelector("#reviews");
+ root.innerHTML=reviews.length?reviews.map(r=>'<article class="item review"><div><div class="actions"><span class="badge">'+esc(r.learning_result.code)+'</span><span class="badge">'+esc(r.criterion.code)+'</span><span class="badge">'+esc(r.source)+'</span></div><h3>'+esc(r.student.display_name)+'</h3><p><strong>'+esc(r.item.item_key)+' · '+esc(r.item.prompt)+'</strong></p><div class="response">'+esc(typeof r.response==="object"?JSON.stringify(r.response,null,2):r.response)+'</div>'+(r.proposed_score!==null&&r.proposed_score!==undefined?'<div class="notice"><strong>Propuesta IA: '+esc(r.proposed_score)+'/100</strong> · confianza '+esc(Math.round((r.confidence||0)*100))+'%<br>'+esc(r.feedback||"")+'</div>':'<div class="notice warn">'+esc(r.feedback||"Pendiente de valoración docente.")+'</div>')+'</div><div><label>Puntuación<input id="score-'+r.review_id+'" type="number" min="0" max="100" step="0.1" value="'+esc(r.proposed_score??"")+'"></label><label style="margin-top:8px">Comentario<textarea id="feedback-'+r.review_id+'">'+esc(r.feedback||"")+'</textarea></label><div class="actions" style="margin-top:9px"><button class="btn" onclick="decide('+r.review_id+',\'accepted\')">Aceptar puntuación</button><button class="btn danger" onclick="decide('+r.review_id+',\'rejected\')">Rechazar</button></div></div></article>').join(""):'<div class="notice ok">No hay respuestas pendientes de revisión.</div>';
+}
+async function decide(id,status){
+ const score=Number(document.querySelector("#score-"+id).value||0),feedback=document.querySelector("#feedback-"+id).value;
+ try{await api("/api/evaluation/reviews/"+id,json("PUT",{score,feedback,status}));flash("Revisión registrada.");await reloadDynamic()}catch(e){flash(e.message,"error")}
+}
+async function reloadDynamic(){
+ [reviews,gradebook,readiness]=await Promise.all([
+  api("/api/evaluation/course-modules/"+cmid+"/reviews"),
+  api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
+  api("/api/evaluation/course-modules/"+cmid+"/readiness")
+ ]);renderMetrics();renderGradebook();renderReviews();renderReadiness();
+}
+document.querySelector("#reloadReviews").addEventListener("click",reloadDynamic);
+function renderStructure(){
+ document.querySelector("#structure").innerHTML=(structure.learning_results||[]).map(ra=>'<details class="ra" open><summary>'+esc(ra.code)+' · '+esc(ra.title)+'</summary>'+ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+'</strong><div class="tiny muted">Umbral: '+esc(ce.pass_score)+'/100 · '+esc(ce.items.length)+' actividades</div><div class="list" style="margin-top:8px">'+ce.items.map(it=>'<div class="item"><strong>'+esc(it.key)+'</strong><div>'+esc(it.prompt)+'</div><div class="tiny muted">'+esc(it.type)+' · '+esc(it.instrument)+' · '+esc(it.max_attempts)+' intentos</div></div>').join("")+'</div></div>').join("")+'</details>').join("");
+}
+function renderConfig(){
+ const f=document.querySelector("#configForm"),c=configData.config||{};
+ ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","exam_minutes","exam_incident_limit","exam_incident_policy"].forEach(k=>{if(f.elements[k])f.elements[k].value=c[k]??""});
+ ["exam_enabled","require_both_instruments","exam_integrity_enabled","exam_fullscreen_required"].forEach(k=>{f.elements[k].checked=!!c[k]});
+ document.querySelector("#configVersion").textContent="Versión "+configData.version;
+}
+document.querySelector("#configForm").addEventListener("submit",async e=>{
+ e.preventDefault();const f=e.currentTarget;
+ const payload={};
+ ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","exam_minutes","exam_incident_limit"].forEach(k=>payload[k]=Number(f.elements[k].value));
+ payload.exam_incident_policy=f.elements.exam_incident_policy.value;
+ ["exam_enabled","require_both_instruments","exam_integrity_enabled","exam_fullscreen_required"].forEach(k=>payload[k]=f.elements[k].checked);
+ try{configData=await api("/api/evaluation/course-modules/"+cmid+"/config",json("PUT",payload));renderConfig();structure=await api("/api/evaluation/course-modules/"+cmid+"/structure");readiness=await api("/api/evaluation/course-modules/"+cmid+"/readiness");renderReadiness();flash("Nueva versión de configuración guardada.")}catch(e2){flash(e2.message,"error")}
+});
+function renderReadiness(){
+ const missing=readiness.missing_keys||[];
+ const ready=!missing.length;
+ document.querySelector("#readiness").innerHTML='<div class="notice '+(ready?"ok":"warn")+'"><strong>'+(ready?"Banco privado completo":"Faltan claves privadas")+'</strong><br>'+esc(readiness.keys_loaded)+' de '+esc(readiness.items_total)+' actividades con clave.</div><div class="notice '+(readiness.ai_enabled?"ok":"")+'"><strong>IA:</strong> '+(readiness.ai_enabled?"activa para este grupo-módulo":"desactivada")+'. Actividades semánticas: '+esc(readiness.semantic_items)+'</div>'+(missing.length?'<details><summary>Ver claves faltantes ('+missing.length+')</summary><div class="response">'+esc(missing.join("\n"))+'</div></details>':'');
+}
+load();
+</script>
+</body>
+</html>
