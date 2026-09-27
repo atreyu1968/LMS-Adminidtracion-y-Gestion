@@ -1803,7 +1803,7 @@ def my_learning_overview(
     timeline = []
     for lr in lrs:
         result = recompute_learning_result(db, course_module_id, user_id, lr.id)
-        details = result.get("details") or {}
+        details = result.get("criteria") or {}
         total_items = sum(
             int(row.get("portfolio_items_total") or 0)
             + int(row.get("recovery_items_total") or 0)
@@ -1874,7 +1874,7 @@ def my_learning_overview(
             "criteria_passed": result.get("criteria_passed"),
             "criteria_total": result.get("criteria_total"),
             "status": result.get("status"),
-            "criteria": result.get("details") or {},
+            "criteria": result.get("criteria") or {},
             "next_action": next_action,
         })
 
@@ -2269,7 +2269,7 @@ def progress_matrix(
             result = recompute_learning_result(
                 db, course_module_id, user.id, lr.id
             )
-            details = result.get("details") or {}
+            details = result.get("criteria") or {}
             total_items = sum(
                 int(value.get("portfolio_items_total") or 0)
                 + int(value.get("recovery_items_total") or 0)
