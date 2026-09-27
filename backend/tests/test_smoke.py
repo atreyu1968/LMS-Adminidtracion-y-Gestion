@@ -14,6 +14,7 @@ shutil.rmtree(STORAGE, ignore_errors=True)
 
 os.environ["LMS_DATABASE_URL"] = f"sqlite:///{DB_PATH}"
 os.environ["LMS_SESSION_SECRET"] = "test-session-secret"
+os.environ["LMS_AI_ENCRYPTION_SECRET"] = "test-ai-encryption-secret"
 os.environ["LMS_ADMIN_TOKEN"] = "test-admin"
 os.environ["LMS_LTI_PRIVATE_KEY_PATH"] = "/tmp/lms-test-lti-private.pem"
 os.environ["LMS_PUBLIC_BASE_URL"] = "https://lms.example.test"
@@ -28,11 +29,13 @@ from app.main import app
 from app.models import (
     Course,
     CourseModule,
+    CourseModuleAIConfig,
     LTIDeepLinkRequest,
     LTIPlatform,
     Membership,
     Module,
     ModulePermission,
+    TeacherAISettings,
     User,
 )
 from app.security import create_session_token
@@ -861,3 +864,171 @@ def test_export_all_contains_independent_scorm_archives_and_catalog():
 
             with zipfile.ZipFile(io.BytesIO(outer.read(inner_names[0]))) as inner:
                 assert "imsmanifest.xml" in inner.namelist()
+
+
+def test_teacher_ai_settings_are_private_encrypted_and_not_shared():
+    with TestClient(app) as client:
+        teacher_a, course_a, module_a = teacher_fixture("ai-private-a")
+        teacher_b, course_b, _ = teacher_fixture("ai-private-b")
+
+        with SessionLocal() as db:
+            course = db.get(Course, course_a)
+            course.owner_user_id = teacher_a
+            db.add(
+                Membership(
+                    course_id=course_a,
+                    user_id=teacher_b,
+                    role="teacher",
+                    lti_roles=["Instructor"],
+                    active=True,
+                )
+            )
+            course_module = CourseModule(
+                course_id=course_a,
+                module_id=module_a,
+                settings_json={},
+                active=True,
+            )
+            db.add(course_module)
+            db.commit()
+            db.refresh(course_module)
+            course_module_id = course_module.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        saved_a = client.put(
+            "/api/ai/settings",
+            json={
+                "enabled": True,
+                "provider": "openai-compatible",
+                "base_url": "https://api-a.example.test/v1",
+                "model": "modelo-a",
+                "api_key": "secret-key-teacher-a",
+                "confidence_threshold": 0.8,
+                "auto_kinds": ["free", "case"],
+                "default_rubric": "Rúbrica del profesor A",
+            },
+        )
+        assert saved_a.status_code == 200, saved_a.text
+        assert saved_a.json()["api_key_configured"] is True
+        assert "secret-key-teacher-a" not in saved_a.text
+
+        bound_a = client.put(
+            f"/api/ai/course-modules/{course_module_id}",
+            json={
+                "enabled": True,
+                "auto_review": True,
+                "allowed_kinds": ["free", "case"],
+            },
+        )
+        assert bound_a.status_code == 200, bound_a.text
+        assert bound_a.json()["teacher_user_id"] == teacher_a
+        assert bound_a.json()["is_mine"] is True
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_a))
+        settings_b_before = client.get("/api/ai/settings")
+        assert settings_b_before.status_code == 200
+        assert settings_b_before.json()["api_key_configured"] is False
+        assert settings_b_before.json()["model"] == ""
+
+        saved_b = client.put(
+            "/api/ai/settings",
+            json={
+                "enabled": True,
+                "provider": "openai-compatible",
+                "base_url": "https://api-b.example.test/v1",
+                "model": "modelo-b",
+                "api_key": "secret-key-teacher-b",
+                "confidence_threshold": 0.7,
+                "auto_kinds": ["text"],
+                "default_rubric": "Rúbrica del profesor B",
+            },
+        )
+        assert saved_b.status_code == 200, saved_b.text
+        assert "secret-key-teacher-b" not in saved_b.text
+
+        binding_seen_by_b = client.get(f"/api/ai/course-modules/{course_module_id}")
+        assert binding_seen_by_b.status_code == 200
+        assert binding_seen_by_b.json()["enabled"] is True
+        assert binding_seen_by_b.json()["is_mine"] is False
+
+        cannot_replace_owner_binding = client.put(
+            f"/api/ai/course-modules/{course_module_id}",
+            json={
+                "enabled": True,
+                "auto_review": True,
+                "allowed_kinds": ["text"],
+            },
+        )
+        assert cannot_replace_owner_binding.status_code == 409
+
+        with SessionLocal() as db:
+            row_a = db.scalar(
+                __import__("sqlalchemy").select(TeacherAISettings).where(
+                    TeacherAISettings.user_id == teacher_a
+                )
+            )
+            row_b = db.scalar(
+                __import__("sqlalchemy").select(TeacherAISettings).where(
+                    TeacherAISettings.user_id == teacher_b
+                )
+            )
+            assert row_a is not None and row_b is not None
+            assert row_a.encrypted_api_key != "secret-key-teacher-a"
+            assert row_b.encrypted_api_key != "secret-key-teacher-b"
+            assert row_a.encrypted_api_key != row_b.encrypted_api_key
+
+            binding = db.scalar(
+                __import__("sqlalchemy").select(CourseModuleAIConfig).where(
+                    CourseModuleAIConfig.course_module_id == course_module_id
+                )
+            )
+            assert binding is not None
+            assert binding.teacher_user_id == teacher_a
+
+
+def test_deleting_personal_ai_settings_disables_only_that_teachers_bindings():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("ai-delete")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            db.add(course_module)
+            db.commit()
+            db.refresh(course_module)
+            course_module_id = course_module.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        saved = client.put(
+            "/api/ai/settings",
+            json={
+                "enabled": True,
+                "provider": "openai-compatible",
+                "base_url": "https://api.example.test/v1",
+                "model": "modelo",
+                "api_key": "teacher-secret",
+                "auto_kinds": ["free"],
+            },
+        )
+        assert saved.status_code == 200
+        binding = client.put(
+            f"/api/ai/course-modules/{course_module_id}",
+            json={"enabled": True, "auto_review": True, "allowed_kinds": ["free"]},
+        )
+        assert binding.status_code == 200
+
+        deleted = client.delete("/api/ai/settings")
+        assert deleted.status_code == 200
+        assert deleted.json()["disabled_bindings"] == 1
+
+        after = client.get(f"/api/ai/course-modules/{course_module_id}")
+        assert after.status_code == 200
+        assert after.json()["enabled"] is False
