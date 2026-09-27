@@ -757,9 +757,9 @@ def test_media_library_is_private_and_supports_range_playback():
             f"/api/media-library/{asset['id']}/content",
             headers={"Range": "bytes=2-5"},
         )
-        assert ranged.status_code in {200, 206}
-        if ranged.status_code == 206:
-            assert ranged.content == b"2345"
+        assert ranged.status_code == 206
+        assert ranged.content == b"2345"
+        assert ranged.headers.get("content-range", "").startswith("bytes 2-5/")
 
         client.cookies.clear()
         client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
