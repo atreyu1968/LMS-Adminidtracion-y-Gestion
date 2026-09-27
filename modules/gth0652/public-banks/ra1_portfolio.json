@@ -1,0 +1,607 @@
+{
+  "items": [
+    {
+      "id": "1a-v1-01",
+      "ce": "1.a",
+      "kind": "choice",
+      "prompt": "Una empresa va a redactar una cláusula sobre jornada. ¿Qué comprobación debe realizar antes de incorporarla al contrato?",
+      "options": [
+        "Usar la cláusula de una empresa distinta",
+        "Revisar la norma vigente y el convenio aplicable para comprobar los límites mínimos",
+        "Esperar a que la persona trabajadora detecte posibles errores",
+        "Elegir la redacción más breve aunque reduzca derechos"
+      ]
+    },
+    {
+      "id": "1a-v1-02",
+      "ce": "1.a",
+      "kind": "multi",
+      "prompt": "Selecciona las fuentes que pueden condicionar las condiciones de un contrato de trabajo.",
+      "options": [
+        "Pactos individuales válidos dentro de los límites legales",
+        "Catálogo comercial del proveedor de oficina",
+        "Normativa laboral vigente",
+        "Convenio colectivo aplicable"
+      ]
+    },
+    {
+      "id": "1a-v1-03",
+      "ce": "1.a",
+      "kind": "tf",
+      "prompt": "Un acuerdo individual puede empeorar un mínimo de derecho necesario fijado por una norma superior si existe consentimiento escrito.",
+      "options": []
+    },
+    {
+      "id": "1a-v1-04",
+      "ce": "1.a",
+      "kind": "order",
+      "prompt": "Ordena el análisis que debería seguir RR. HH. antes de decidir qué condición contractual aplicar.",
+      "options": [
+        "Identificar el hecho y la condición que debe regularse",
+        "Comprobar el convenio colectivo aplicable",
+        "Consultar la norma laboral vigente",
+        "Redactar la cláusula respetando los límites anteriores"
+      ]
+    },
+    {
+      "id": "1a-v1-05",
+      "ce": "1.a",
+      "kind": "choice",
+      "prompt": "Una guía interna contradice una disposición legal vigente. ¿Qué criterio debe seguir el técnico?",
+      "options": [
+        "Mantener la guía porque ya la usa toda la empresa",
+        "Aplicar la fuente normativa superior y actualizar la guía interna",
+        "Elegir la opción económicamente más barata",
+        "Aplicar indistintamente cualquiera de las dos"
+      ]
+    },
+    {
+      "id": "1a-v1-06",
+      "ce": "1.a",
+      "kind": "choice",
+      "prompt": "¿Qué dato resulta imprescindible al consultar una norma o convenio para un expediente real?",
+      "options": [
+        "El formato de descarga",
+        "La antigüedad del archivo guardado en el ordenador",
+        "Su vigencia en la fecha del supuesto",
+        "El número de páginas del documento"
+      ]
+    },
+    {
+      "id": "1b-v1-01",
+      "ce": "1.b",
+      "kind": "choice",
+      "prompt": "La empresa ha decidido incorporar a una persona. ¿Qué actuación debe preceder a la cumplimentación del contrato?",
+      "options": [
+        "Analizar la necesidad, el puesto y la modalidad contractual adecuada",
+        "Emitir la primera nómina",
+        "Archivar el expediente vacío",
+        "Comunicar el contrato antes de redactarlo"
+      ]
+    },
+    {
+      "id": "1b-v1-02",
+      "ce": "1.b",
+      "kind": "multi",
+      "prompt": "Antes de cerrar una incorporación, ¿qué evidencias deben quedar controladas?",
+      "options": [
+        "Trámites de alta o comunicaciones que procedan",
+        "Contrato y anexos correctamente formalizados",
+        "Contraseñas personales utilizadas para firmar",
+        "Justificantes y documentos del expediente"
+      ]
+    },
+    {
+      "id": "1b-v1-03",
+      "ce": "1.b",
+      "kind": "tf",
+      "prompt": "La firma del contrato, por sí sola, permite considerar terminado todo el procedimiento administrativo de incorporación.",
+      "options": []
+    },
+    {
+      "id": "1b-v1-04",
+      "ce": "1.b",
+      "kind": "order",
+      "prompt": "Ordena las fases de una incorporación laboral completa.",
+      "options": [
+        "Seleccionar la modalidad y preparar la documentación",
+        "Formalizar contrato y trámites asociados",
+        "Comprobar comunicaciones y archivar justificantes",
+        "Definir la necesidad y recopilar datos"
+      ]
+    },
+    {
+      "id": "1b-v1-05",
+      "ce": "1.b",
+      "kind": "choice",
+      "prompt": "Se ha firmado el contrato, pero el alta obligatoria todavía no consta tramitada. ¿Cómo debe calificarse el expediente?",
+      "options": [
+        "Incompleto hasta realizar y verificar el trámite pendiente",
+        "Correcto si se archiva una copia del contrato",
+        "Anulado automáticamente",
+        "Cerrado porque existe firma"
+      ]
+    },
+    {
+      "id": "1b-v1-06",
+      "ce": "1.b",
+      "kind": "choice",
+      "prompt": "¿Qué actuación mejora la trazabilidad del proceso de contratación?",
+      "options": [
+        "Conservar solo el documento final",
+        "Registrar fechas, responsables, documentos enviados y justificantes recibidos",
+        "Usar siempre expedientes anteriores sin comprobarlos",
+        "Eliminar versiones y justificantes intermedios"
+      ]
+    },
+    {
+      "id": "1c-v1-01",
+      "ce": "1.c",
+      "kind": "choice",
+      "prompt": "Una empresa debe tramitar el alta de una persona trabajadora por cuenta ajena. ¿Qué organismo gestiona ordinariamente esa actuación?",
+      "options": [
+        "Servicio Público de Empleo Estatal",
+        "Agencia Tributaria",
+        "Registro Mercantil",
+        "Tesorería General de la Seguridad Social"
+      ]
+    },
+    {
+      "id": "1c-v1-02",
+      "ce": "1.c",
+      "kind": "multi",
+      "prompt": "Selecciona asociaciones correctas entre organismo y actuación.",
+      "options": [
+        "TGSS — afiliación, altas y bajas",
+        "INSS — gestión de numerosas prestaciones económicas",
+        "SEPE — comunicación de contratos",
+        "Registro Mercantil — asignación del número de afiliación"
+      ]
+    },
+    {
+      "id": "1c-v1-03",
+      "ce": "1.c",
+      "kind": "tf",
+      "prompt": "El Servicio Canario de Empleo puede intervenir en programas y políticas activas de empleo desarrolladas en Canarias.",
+      "options": []
+    },
+    {
+      "id": "1c-v1-04",
+      "ce": "1.c",
+      "kind": "order",
+      "prompt": "Ordena la actuación cuando RR. HH. duda sobre el organismo competente para un trámite.",
+      "options": [
+        "Identificar exactamente el trámite que debe realizarse",
+        "Conservar la respuesta o justificante",
+        "Acceder al canal del organismo competente",
+        "Consultar la competencia en una fuente oficial"
+      ]
+    },
+    {
+      "id": "1c-v1-05",
+      "ce": "1.c",
+      "kind": "choice",
+      "prompt": "La empresa necesita comunicar el contenido de un contrato y, además, tramitar el alta. ¿Qué combinación de organismos es la habitual?",
+      "options": [
+        "INSS para ambos trámites",
+        "AEAT para el contrato y SEPE para el alta",
+        "Registro Mercantil para el contrato y TGSS para el alta",
+        "SEPE para el contrato y TGSS para el alta"
+      ]
+    },
+    {
+      "id": "1c-v1-06",
+      "ce": "1.c",
+      "kind": "choice",
+      "prompt": "¿Qué debe hacer el técnico si una plataforma oficial rechaza un trámite por organismo o procedimiento incorrecto?",
+      "options": [
+        "Revisar la competencia, corregir el trámite y conservar la evidencia válida",
+        "Enviar la misma información a todos los organismos",
+        "Dar por presentado el trámite",
+        "Eliminar cualquier justificante del error"
+      ]
+    },
+    {
+      "id": "1d-v1-01",
+      "ce": "1.d",
+      "kind": "choice",
+      "prompt": "Una necesidad empresarial es estructural y no tiene fecha prevista de finalización. ¿Qué modalidad constituye la referencia general?",
+      "options": [
+        "Contratación indefinida",
+        "Contrato temporal sin causa",
+        "Contrato de sustitución sin persona sustituida",
+        "Relación mercantil por defecto"
+      ]
+    },
+    {
+      "id": "1d-v1-02",
+      "ce": "1.d",
+      "kind": "multi",
+      "prompt": "Selecciona modalidades o categorías contractuales que deben distinguirse al analizar una contratación laboral actual.",
+      "options": [
+        "Formativa",
+        "Obra y servicio como modalidad ordinaria vigente",
+        "Temporal causal",
+        "Indefinida"
+      ]
+    },
+    {
+      "id": "1d-v1-03",
+      "ce": "1.d",
+      "kind": "tf",
+      "prompt": "La relación fijo-discontinua tiene naturaleza indefinida aunque existan periodos de inactividad.",
+      "options": []
+    },
+    {
+      "id": "1d-v1-04",
+      "ce": "1.d",
+      "kind": "order",
+      "prompt": "Ordena el análisis para escoger una modalidad contractual.",
+      "options": [
+        "Comprobar la causa y requisitos legales",
+        "Documentar la modalidad elegida y su justificación",
+        "Identificar si la necesidad es estructural, temporal, sustitutiva o formativa",
+        "Contrastar jornada, duración y convenio"
+      ]
+    },
+    {
+      "id": "1d-v1-05",
+      "ce": "1.d",
+      "kind": "choice",
+      "prompt": "Una actividad se repite cada temporada de forma previsible, alternando periodos de actividad e inactividad. ¿Qué figura debe analizarse especialmente?",
+      "options": [
+        "Contrato fijo-discontinuo",
+        "Temporal sin causa por repetirse cada año",
+        "Contrato de sustitución",
+        "Contrato mercantil"
+      ]
+    },
+    {
+      "id": "1d-v1-06",
+      "ce": "1.d",
+      "kind": "choice",
+      "prompt": "¿Qué caracteriza al trabajo a tiempo parcial?",
+      "options": [
+        "Que solo pueda prestarse en verano",
+        "Que no pueda coexistir con contratación indefinida",
+        "Que sea siempre temporal",
+        "Una jornada inferior a la de una persona comparable a tiempo completo"
+      ]
+    },
+    {
+      "id": "1e-v1-01",
+      "ce": "1.e",
+      "kind": "choice",
+      "prompt": "Una administrativa cubrirá de forma permanente tareas ordinarias de la empresa. ¿Qué propuesta es inicialmente la más coherente?",
+      "options": [
+        "Formativo sin finalidad formativa",
+        "Contrato indefinido, salvo particularidad legal del caso",
+        "Temporal para probar a la persona",
+        "Sustitución aunque no exista ausencia"
+      ]
+    },
+    {
+      "id": "1e-v1-02",
+      "ce": "1.e",
+      "kind": "multi",
+      "prompt": "Para justificar correctamente la modalidad elegida, selecciona la información que debe analizar RR. HH.",
+      "options": [
+        "Naturaleza y duración de la necesidad",
+        "Preferencia personal del responsable sin relación con la causa",
+        "Requisitos legales de la modalidad",
+        "Situación de la persona que se incorpora o sustituye"
+      ]
+    },
+    {
+      "id": "1e-v1-03",
+      "ce": "1.e",
+      "kind": "tf",
+      "prompt": "La existencia de una causa temporal debe poder explicarse y conectarse con la duración prevista del contrato.",
+      "options": []
+    },
+    {
+      "id": "1e-v1-04",
+      "ce": "1.e",
+      "kind": "order",
+      "prompt": "Ordena el razonamiento ante una necesidad de contratación.",
+      "options": [
+        "Comprobar requisitos de la modalidad posible",
+        "Clasificarla según su naturaleza",
+        "Describir la necesidad real",
+        "Documentar la causa y cumplimentar el contrato"
+      ]
+    },
+    {
+      "id": "1e-v1-05",
+      "ce": "1.e",
+      "kind": "choice",
+      "prompt": "Una trabajadora tiene derecho a reserva del puesto durante su ausencia y la empresa necesita cubrir sus funciones. ¿Qué modalidad debe valorarse?",
+      "options": [
+        "Formación en alternancia",
+        "Contrato de sustitución",
+        "Fijo-discontinuo por definición",
+        "Temporal sin identificar persona sustituida"
+      ]
+    },
+    {
+      "id": "1e-v1-06",
+      "ce": "1.e",
+      "kind": "choice",
+      "prompt": "La empresa quiere combinar trabajo retribuido con formación oficial coordinada de la persona contratada. ¿Qué modalidad debe analizar?",
+      "options": [
+        "Contrato de formación en alternancia",
+        "Temporal sin causa",
+        "Indefinido fijo-discontinuo por ese solo motivo",
+        "Contrato de sustitución"
+      ]
+    },
+    {
+      "id": "1f-v1-01",
+      "ce": "1.f",
+      "kind": "choice",
+      "prompt": "Antes de aplicar un convenio a una empresa, ¿qué comprobación es esencial?",
+      "options": [
+        "Verificar sus ámbitos funcional, territorial, personal y temporal",
+        "Elegir el convenio usado por una empresa vecina",
+        "Aplicar el que tenga menor coste",
+        "Comprobar únicamente el salario base"
+      ]
+    },
+    {
+      "id": "1f-v1-02",
+      "ce": "1.f",
+      "kind": "multi",
+      "prompt": "Selecciona materias que un convenio colectivo puede concretar y que pueden afectar a la contratación.",
+      "options": [
+        "Contraseñas de acceso de cada trabajador",
+        "Clasificación profesional",
+        "Jornada y descansos",
+        "Tablas salariales y complementos"
+      ]
+    },
+    {
+      "id": "1f-v1-03",
+      "ce": "1.f",
+      "kind": "tf",
+      "prompt": "La vigencia temporal del convenio debe comprobarse en la fecha concreta del expediente.",
+      "options": []
+    },
+    {
+      "id": "1f-v1-04",
+      "ce": "1.f",
+      "kind": "order",
+      "prompt": "Ordena la comprobación de un convenio antes de utilizarlo en un contrato.",
+      "options": [
+        "Localizar convenios potencialmente aplicables",
+        "Extraer las condiciones relevantes y documentar la fuente",
+        "Comprobar ámbitos y vigencia",
+        "Identificar la actividad y centro de trabajo"
+      ]
+    },
+    {
+      "id": "1f-v1-05",
+      "ce": "1.f",
+      "kind": "choice",
+      "prompt": "Las funciones reales encajan en un grupo profesional distinto del usado habitualmente por la empresa. ¿Qué debe hacer RR. HH.?",
+      "options": [
+        "Revisar clasificación y convenio antes de formalizar",
+        "Omitir el grupo profesional en el expediente",
+        "Aplicar el grupo con salario más bajo",
+        "Mantener el grupo habitual por comodidad"
+      ]
+    },
+    {
+      "id": "1f-v1-06",
+      "ce": "1.f",
+      "kind": "choice",
+      "prompt": "El salario pactado queda por debajo del mínimo de convenio aplicable al grupo correcto. ¿Qué procede?",
+      "options": [
+        "Ocultar la diferencia en un anexo",
+        "Corregir la retribución para respetar el mínimo aplicable",
+        "Mantenerla si existe firma",
+        "Compensarla con un acuerdo verbal"
+      ]
+    },
+    {
+      "id": "1g-v1-01",
+      "ce": "1.g",
+      "kind": "choice",
+      "prompt": "Antes de firmar un contrato, ¿qué control documental es prioritario?",
+      "options": [
+        "Comprobar que el documento ocupe una sola página",
+        "Usar siempre la plantilla del año anterior",
+        "Eliminar cualquier anexo",
+        "Comprobar coherencia entre identidad, puesto, modalidad, jornada, fechas, convenio y retribución"
+      ]
+    },
+    {
+      "id": "1g-v1-02",
+      "ce": "1.g",
+      "kind": "multi",
+      "prompt": "Selecciona evidencias que deben poder localizarse en un expediente de contratación bien organizado.",
+      "options": [
+        "Justificantes de trámites realizados",
+        "Anexos o comunicaciones aplicables",
+        "Contrato firmado",
+        "Clave privada del certificado digital del empleado"
+      ]
+    },
+    {
+      "id": "1g-v1-03",
+      "ce": "1.g",
+      "kind": "tf",
+      "prompt": "Guardar el justificante de una comunicación telemática mejora la capacidad de acreditar qué se hizo y cuándo.",
+      "options": []
+    },
+    {
+      "id": "1g-v1-04",
+      "ce": "1.g",
+      "kind": "order",
+      "prompt": "Ordena un control documental previo y posterior a la firma.",
+      "options": [
+        "Recopilar y verificar datos",
+        "Formalizar, comunicar y archivar justificantes",
+        "Revisar coherencia y corregir errores",
+        "Cumplimentar la documentación"
+      ]
+    },
+    {
+      "id": "1g-v1-05",
+      "ce": "1.g",
+      "kind": "choice",
+      "prompt": "El puesto descrito y el grupo profesional consignado no son coherentes. ¿Qué actuación es correcta?",
+      "options": [
+        "Firmar y esperar una reclamación",
+        "Eliminar la descripción del puesto",
+        "Cambiar otros datos para que el documento parezca coherente",
+        "Detener la firma y revisar clasificación, funciones y convenio"
+      ]
+    },
+    {
+      "id": "1g-v1-06",
+      "ce": "1.g",
+      "kind": "choice",
+      "prompt": "¿Qué criterio debe seguirse al conservar documentación laboral?",
+      "options": [
+        "Compartirla en carpetas públicas",
+        "Guardar todo sin estructura",
+        "Mantenerla organizada, íntegra, accesible para quien corresponda y protegida frente a accesos indebidos",
+        "Eliminar justificantes una vez enviado el trámite"
+      ]
+    },
+    {
+      "id": "1h-v1-01",
+      "ce": "1.h",
+      "kind": "choice",
+      "prompt": "¿Qué sistema se asocia habitualmente a la comunicación telemática de afiliación, altas y bajas con la TGSS?",
+      "options": [
+        "Sistema RED o el canal oficial habilitado por la TGSS",
+        "Registro Mercantil",
+        "Contrat@",
+        "Sede del Catastro"
+      ]
+    },
+    {
+      "id": "1h-v1-02",
+      "ce": "1.h",
+      "kind": "multi",
+      "prompt": "Selecciona buenas prácticas antes y después de una comunicación laboral telemática.",
+      "options": [
+        "Respetar el plazo aplicable",
+        "Guardar acuse, justificante o respuesta",
+        "Compartir credenciales para agilizar el envío",
+        "Verificar datos y destinatario"
+      ]
+    },
+    {
+      "id": "1h-v1-03",
+      "ce": "1.h",
+      "kind": "tf",
+      "prompt": "Una comunicación exigida oficialmente puede darse por realizada solo porque se preparó el documento, aunque no exista constancia de envío.",
+      "options": []
+    },
+    {
+      "id": "1h-v1-04",
+      "ce": "1.h",
+      "kind": "order",
+      "prompt": "Ordena el ciclo de una comunicación telemática laboral.",
+      "options": [
+        "Enviar por el canal oficial",
+        "Preparar y revisar la información",
+        "Corregir si procede y archivar el justificante válido",
+        "Comprobar la respuesta del sistema"
+      ]
+    },
+    {
+      "id": "1h-v1-05",
+      "ce": "1.h",
+      "kind": "choice",
+      "prompt": "El sistema devuelve un error de validación al comunicar un contrato. ¿Qué debe hacer el técnico?",
+      "options": [
+        "Interpretar el error, corregir los datos y repetir el envío hasta obtener constancia válida",
+        "Enviar el documento a un organismo diferente al azar",
+        "Considerar el contrato comunicado",
+        "Borrar todo el expediente"
+      ]
+    },
+    {
+      "id": "1h-v1-06",
+      "ce": "1.h",
+      "kind": "choice",
+      "prompt": "¿Qué dato permite demostrar que una comunicación se realizó dentro de plazo?",
+      "options": [
+        "La fecha de creación del archivo local",
+        "Una nota manuscrita sin registro",
+        "El nombre de la carpeta donde se guardó",
+        "Un justificante o registro con fecha y hora del envío válido"
+      ]
+    },
+    {
+      "id": "1i-v1-01",
+      "ce": "1.i",
+      "kind": "choice",
+      "prompt": "¿Qué función debe cumplir una aplicación de gestión laboral en el proceso de contratación?",
+      "options": [
+        "Decidir por sí sola la modalidad jurídica correcta",
+        "Compartir automáticamente credenciales entre usuarios",
+        "Facilitar registro, cumplimentación y trazabilidad sin sustituir la revisión profesional",
+        "Eliminar la necesidad de comprobar datos"
+      ]
+    },
+    {
+      "id": "1i-v1-02",
+      "ce": "1.i",
+      "kind": "multi",
+      "prompt": "Selecciona controles adecuados al trabajar con una aplicación laboral.",
+      "options": [
+        "Permisos según perfil",
+        "Actualización de parámetros y modelos",
+        "Uso de una única cuenta compartida por toda la organización",
+        "Copias de seguridad y trazabilidad"
+      ]
+    },
+    {
+      "id": "1i-v1-03",
+      "ce": "1.i",
+      "kind": "tf",
+      "prompt": "Que un programa acepte un dato no garantiza que ese dato sea jurídicamente correcto ni esté actualizado.",
+      "options": []
+    },
+    {
+      "id": "1i-v1-04",
+      "ce": "1.i",
+      "kind": "order",
+      "prompt": "Ordena una gestión segura de datos en la aplicación laboral.",
+      "options": [
+        "Revisar datos de entrada y permisos",
+        "Registrar o importar la información",
+        "Validar el resultado y las alertas",
+        "Guardar cambios, justificantes y copia de seguridad cuando proceda"
+      ]
+    },
+    {
+      "id": "1i-v1-05",
+      "ce": "1.i",
+      "kind": "choice",
+      "prompt": "Dos usuarios modifican el mismo expediente y no queda registro de quién cambió un dato. ¿Qué control falta principalmente?",
+      "options": [
+        "Un color distinto en la interfaz",
+        "Una contraseña compartida",
+        "Trazabilidad o registro de auditoría",
+        "Más copias impresas"
+      ]
+    },
+    {
+      "id": "1i-v1-06",
+      "ce": "1.i",
+      "kind": "choice",
+      "prompt": "¿Qué práctica protege mejor la confidencialidad de la información laboral?",
+      "options": [
+        "Accesos individuales, mínimos privilegios y bloqueo de credenciales compartidas",
+        "Mantener sesiones abiertas en equipos comunes",
+        "Guardar copias sin protección en dispositivos personales",
+        "Enviar contraseñas por correo al grupo"
+      ]
+    }
+  ]
+}
