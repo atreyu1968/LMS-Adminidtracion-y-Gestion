@@ -1796,6 +1796,19 @@ def test_exam_combines_40_60_and_creates_recovery_without_exposing_answers():
         assert bank.status_code == 200, bank.text
         assert bank.json()["questions"] == 1
 
+        public_structure = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/structure"
+        )
+        assert public_structure.status_code == 200
+        public_items = [
+            item
+            for ra in public_structure.json()["learning_results"]
+            for ce in ra["criteria"]
+            for item in ce["items"]
+        ]
+        assert all(item["instrument"] != "exam" for item in public_items)
+        assert all(item["key"] != "EX-1" for item in public_items)
+
         client.cookies.clear()
         client.cookies.set("lms_session", session_cookie(student_id, course_id, role="student"))
         pstart = client.post(
