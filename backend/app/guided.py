@@ -94,6 +94,18 @@ def _load_scenario(package: ScormPackage) -> dict:
         raise HTTPException(status_code=500, detail="scenario.json no es JSON válido") from exc
 
 
+def _load_teacher_guide(package: ScormPackage) -> dict:
+    folder = _project_folder(package)
+    root = Path(settings.modules_root).resolve()
+    path = (root / folder / "teacher-guide.json").resolve()
+    if root not in path.parents or not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="teacher-guide.json no es JSON válido") from exc
+
+
 def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
     if not variants:
         return None
@@ -563,6 +575,50 @@ def _teacher_registration(
     if not membership:
         raise HTTPException(status_code=403, detail="No eres profesor de este grupo")
     return course_module
+
+
+
+@router.get("/api/guided/course-modules/{course_module_id}/guide")
+def teacher_guide(
+    course_module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    teacher_id = int(session["sub"])
+    cm = db.get(CourseModule, course_module_id)
+    if not cm:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.course_id == cm.course_id,
+            Membership.user_id == teacher_id,
+            Membership.active.is_(True),
+            Membership.role.in_(["teacher", "admin"]),
+        )
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="No eres profesor de este grupo")
+    package = db.scalar(
+        select(ScormPackage)
+        .join(ScormRegistration, ScormRegistration.package_id == ScormPackage.id, isouter=True)
+        .where(
+            ScormPackage.module_id == cm.module_id,
+            ScormPackage.active.is_(True),
+        )
+        .order_by(ScormPackage.id.desc())
+    )
+    if not package:
+        package = db.scalar(
+            select(ScormPackage)
+            .where(
+                ScormPackage.module_id == cm.module_id,
+                ScormPackage.active.is_(True),
+            )
+            .order_by(ScormPackage.id.desc())
+        )
+    if not package or not (package.manifest_json or {}).get("guided_project_folder"):
+        raise HTTPException(status_code=404, detail="Este módulo no tiene una guía docente asociada")
+    return _load_teacher_guide(package)
 
 
 @router.get("/api/guided/course-modules/{course_module_id}/progress")
