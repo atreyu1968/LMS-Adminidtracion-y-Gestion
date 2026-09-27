@@ -130,3 +130,16 @@ El ZIP SCORM incorpora únicamente un marcador `guided-version.json` con la vers
 Las revisiones sucesivas quedan enlazadas mediante `lineage_root_id`, `supersedes_id` y `revision_number`. La asociación del módulo apunta solo a la revisión actual para nuevos alumnos, mientras que un alumno con un registro previo continúa fijado a su revisión anterior y conserva también la configuración guiada de aquella revisión.
 
 Las reglas de auditoría permanecen en almacenamiento privado; el marcador público contiene únicamente hashes, nunca el solucionario.
+
+
+## Precisión visual de las pantallas
+
+La versión 2026.7 sustituye varias capturas genéricas por pantallas oficiales específicas de la operación que el alumno está realizando.
+
+Se han incorporado, entre otras, capturas reales de la pantalla de acceso de NOMINASOL 2026, Situación del trabajador, Conceptos retributivos, Retribuciones especiales, Kilometraje, Categorías de convenio, Regularización de IRPF, Retribución en especie, Vacaciones y Descanso por nacimiento/cuidado del menor.
+
+Noviembre dispone además de imagen dinámica por variante: el alumno con anticipo visualiza la ficha de anticipo, quien recibe bonus ve la configuración de bonus y quien trabaja el embargo simulado ve la pantalla de Embargos.
+
+La fuente concreta del artículo oficial de TeamSystem se muestra debajo de cada captura cuando está disponible. Esto facilita mantener el material si TeamSystem modifica la interfaz o publica documentación más reciente.
+
+También se ha ajustado el procedimiento de nacimiento y cuidado del menor a la operativa documentada por TeamSystem en 2026: dentro de NOMINASOL se registra mediante un parte de incapacidad temporal con la contingencia de descanso por maternidad/paternidad, sin confundirlo con una extinción de la relación laboral.

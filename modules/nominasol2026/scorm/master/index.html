@@ -176,11 +176,14 @@ function renderSidebar(){
     btn.addEventListener("click",function(){openMilestone(btn.getAttribute("data-key"));});
   });
 }
-function screenshotBlock(step){
-  if(!step.screenshot) return "";
-  var src=/^https?:\/\//i.test(step.screenshot)?step.screenshot:("assets/screenshots/"+encodeURIComponent(step.screenshot));
+function screenshotBlock(step,milestone){
+  var variantKey=milestone&&milestone.variant&&milestone.variant.key;
+  var selected=(variantKey&&step.screenshot_by_variant&&step.screenshot_by_variant[variantKey])||step.screenshot;
+  if(!selected) return "";
+  var sourcePage=(variantKey&&step.screenshot_source_page_by_variant&&step.screenshot_source_page_by_variant[variantKey])||step.screenshot_source_page||"Centro de ayuda oficial";
+  var src=/^https?:\/\//i.test(selected)?selected:("assets/screenshots/"+encodeURIComponent(selected));
   return '<div class="shot"><img data-real-shot="1" src="'+src+'" alt="Captura real de NOMINASOL: '+esc(step.title)+'">'
-   +'<div class="shot-source small" style="padding:8px 12px;border-top:1px solid #e2e8f0">Captura real de NOMINASOL · fuente oficial TeamSystem</div>'
+   +'<div class="shot-source small" style="padding:8px 12px;border-top:1px solid #e2e8f0">Captura real de NOMINASOL · TeamSystem · '+esc(sourcePage)+'</div>'
    +'<div class="missing" style="display:none"><strong>Captura real todavía no incorporada</strong>'
    +'No la sustituimos por una imagen inventada. Sigue la ruta de menú y la explicación de la izquierda; '
    +'esta pantalla se completará únicamente con una captura real de NOMINASOL 2026.</div></div>';
@@ -347,7 +350,7 @@ function openMilestone(key){
       +(s.route?'<div class="route">'+esc(s.route)+'</div>':"")
       +(s.look_for?'<div class="look"><strong>Qué debes comprobar</strong><br>'+esc(s.look_for)+'</div>':"")
       +(s.common_mistake?'<div class="mistake"><strong>Error habitual</strong><br>'+esc(s.common_mistake)+'</div>':"")
-      +'</div>'+screenshotBlock(s)+'</div></section>';
+      +'</div>'+screenshotBlock(s,m)+'</div></section>';
   }).join("");
   var checks=(m.checklist||[]).map(function(c,i){
     return '<label><input type="checkbox" class="selfcheck" data-i="'+i+'"><span>'+esc(c)+'</span></label>';
