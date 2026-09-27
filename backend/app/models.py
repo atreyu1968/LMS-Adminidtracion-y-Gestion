@@ -195,6 +195,11 @@ class ScormPackage(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
     version: Mapped[str] = mapped_column(String(80), default="1")
+    lineage_root_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    supersedes_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    revision_number: Mapped[int] = mapped_column(Integer, default=1)
+    is_current: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    lifecycle_status: Mapped[str] = mapped_column(String(30), default="published", index=True)
     standard: Mapped[str] = mapped_column(String(40), default="SCORM_1.2")
     entrypoint: Mapped[str] = mapped_column(String(1000))
     storage_path: Mapped[str] = mapped_column(String(1000))
@@ -203,6 +208,20 @@ class ScormPackage(Base):
     visibility: Mapped[str] = mapped_column(String(30), default="private", index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ScormDraft(Base):
+    __tablename__ = "scorm_drafts"
+
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    base_package_id: Mapped[int] = mapped_column(ForeignKey("scorm_packages.id", ondelete="CASCADE"), index=True)
+    owner_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    working_path: Mapped[str] = mapped_column(String(1000))
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="")
+    visibility: Mapped[str] = mapped_column(String(30), default="private")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class ModuleScormPackage(Base):
