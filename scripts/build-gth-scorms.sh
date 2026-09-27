@@ -91,6 +91,15 @@ for unit, zip_name in names.items():
     if shared_secure_exam.is_file():
         (root / "assets").mkdir(parents=True, exist_ok=True)
         shutil.copy2(shared_secure_exam, root / "assets" / "secure-exam.js")
+        secure_path = root / "assets" / "secure-exam.js"
+        secure_text = secure_path.read_text(encoding="utf-8")
+        secure_text = secure_text.replace(
+            "}\\n  async function syncStatus()",
+            "}\n  async function syncStatus()",
+        )
+        if "\\n" in secure_text:
+            errors.append(f"{unit}: quedan secuencias \\n literales sospechosas en secure-exam.js")
+        secure_path.write_text(secure_text, encoding="utf-8")
 
     # The source tree can reach the shared exam runtime through ../../assets,
     # but a standalone SCORM ZIP cannot. Make every package self-contained.
