@@ -9,7 +9,7 @@
     *{box-sizing:border-box}body{margin:0}.top{background:#10233f;color:white;padding:22px 7vw}.top h1{margin:0;font-size:clamp(1.3rem,3vw,2rem)}
     .top p{margin:.4rem 0 0;color:#cbd6e5}.wrap{max-width:1180px;margin:32px auto;padding:0 20px}.card{background:white;border:1px solid #dfe6ef;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(34,55,85,.07)}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}.badge{display:inline-block;border-radius:999px;background:#e8f0ff;color:#214a8b;padding:6px 10px;font-size:.82rem;font-weight:700}
-    h2{margin-top:10px}.muted{color:#64748b}.module{padding:18px;border:1px solid #e3e8f0;border-radius:14px}.error{background:#fff3f3;border-color:#ffd0d0;color:#8c2424}
+    h2{margin-top:10px}.muted{color:#64748b}.module{padding:18px;border:1px solid #e3e8f0;border-radius:14px}.error{background:#fff3f3;border-color:#ffd0d0;color:#8c2424}.btn{display:inline-block;margin-top:12px;border-radius:10px;background:#18508f;color:#fff;padding:10px 14px;text-decoration:none;font-weight:700}
   </style>
 </head>
 <body>
@@ -38,7 +38,7 @@
     const me=await fetch("/api/me",{credentials:"include"});
     if(!me.ok) throw new Error("Sin sesión LTI");
     const d=await me.json();
-    who.innerHTML="<strong>"+escapeHtml(d.user.display_name)+"</strong><br><span class='muted'>"+escapeHtml(d.role||"")+" · "+escapeHtml(d.course?.title||"Sin curso")+"</span>";
+    who.innerHTML="<strong>"+escapeHtml(d.user.display_name)+"</strong><br><span class='muted'>"+escapeHtml(d.role||"")+" · "+escapeHtml(d.course?.title||"Sin curso")+"</span>"+((d.role==="teacher"||d.role==="admin")?"<br><a class='btn' href='/teacher.html'>Abrir panel docente</a>":"");
     const m=await fetch("/api/modules",{credentials:"include"}).then(r=>r.json());
     modules.innerHTML=m.length?m.map(x=>"<article class='module'><strong>"+escapeHtml(x.title)+"</strong><div class='muted'>"+escapeHtml(x.code||"")+" · "+escapeHtml(x.version)+"</div><p>"+escapeHtml(x.description||"")+"</p></article>").join(""):"<p class='muted'>Aún no hay módulos publicados.</p>";
   }catch(e){
