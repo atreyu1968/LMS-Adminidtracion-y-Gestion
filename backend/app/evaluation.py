@@ -316,6 +316,7 @@ def recompute_learning_result(
     lr = db.get(LearningResult, learning_result_id)
     if not course_module or not lr or lr.module_id != course_module.module_id:
         raise HTTPException(status_code=404, detail="Resultado de aprendizaje no válido")
+
     config = _effective_config(db, course_module)
     criteria = list(
         db.scalars(
@@ -338,15 +339,30 @@ def recompute_learning_result(
         )
         .order_by(ExamSession.attempt_no.desc(), ExamSession.id.desc())
     )
-    exam_by_ce = {}
+    exam_by_ce: dict[str, dict] = {}
     if latest_exam:
-        exam_by_ce = dict((latest_exam.response_json or {}).get("by_ce") or {})
+        exam_payload = dict(latest_exam.response_json or {})
+        exam_by_ce = dict(exam_payload.get("by_ce") or {})
+        snapshot = exam_payload.get("config")
+        if isinstance(snapshot, dict):
+            # La configuración usada al empezar el examen manda para ese intento:
+            # cambios docentes posteriores no reescriben resultados históricos.
+            config = {**config, **snapshot}
+
+    existing_plan = db.scalar(
+        select(RecoveryPlan).where(
+            RecoveryPlan.course_module_id == course_module_id,
+            RecoveryPlan.user_id == user_id,
+            RecoveryPlan.learning_result_id == learning_result_id,
+        )
+    )
 
     details: dict[str, dict] = {}
     portfolio_values: list[float] = []
     exam_values: list[float] = []
     final_values: list[float] = []
-    passed_count = 0
+    original_passed_count = 0
+    effective_passed_count = 0
     portfolio_passed_count = 0
     all_portfolio_complete = True
     all_exam_complete = bool(latest_exam)
@@ -355,7 +371,7 @@ def recompute_learning_result(
     ew = float(config["exam_weight"]) / 100.0
 
     for criterion in criteria:
-        items = list(
+        portfolio_items = list(
             db.scalars(
                 select(AssessmentItem)
                 .where(
@@ -367,25 +383,35 @@ def recompute_learning_result(
                 .order_by(AssessmentItem.position, AssessmentItem.id)
             )
         )
-        attempts = _latest_attempts_for_items(
+        portfolio_attempts = _latest_attempts_for_items(
             db,
             course_module_id,
             user_id,
-            [item.id for item in items],
+            [item.id for item in portfolio_items],
         )
-        scored = [
-            float(attempts[item.id].score)
-            for item in items
-            if item.id in attempts and attempts[item.id].score is not None
+        portfolio_scored = [
+            float(portfolio_attempts[item.id].score)
+            for item in portfolio_items
+            if item.id in portfolio_attempts
+            and portfolio_attempts[item.id].score is not None
         ]
-        pending = sum(
+        portfolio_pending = sum(
             1
-            for item in items
-            if item.id in attempts and attempts[item.id].pending_review
+            for item in portfolio_items
+            if item.id in portfolio_attempts
+            and portfolio_attempts[item.id].pending_review
         )
-        portfolio_complete = bool(items) and len(scored) == len(items) and pending == 0
+        portfolio_complete = (
+            bool(portfolio_items)
+            and len(portfolio_scored) == len(portfolio_items)
+            and portfolio_pending == 0
+        )
         all_portfolio_complete = all_portfolio_complete and portfolio_complete
-        portfolio_ce = round(sum(scored) / len(scored), 2) if scored else 0.0
+        portfolio_ce = (
+            round(sum(portfolio_scored) / len(portfolio_scored), 2)
+            if portfolio_scored
+            else 0.0
+        )
         portfolio_values.append(portfolio_ce)
         portfolio_passed = (
             portfolio_complete
@@ -405,31 +431,82 @@ def recompute_learning_result(
             exam_values.append(exam_ce)
 
         final_ce = None
-        criterion_passed = False
+        original_passed = False
         if config["exam_enabled"] and portfolio_complete and exam_complete:
             final_ce = round(portfolio_ce * pw + float(exam_ce) * ew, 2)
-            criterion_passed = final_ce >= float(config["ce_pass_score"])
+            original_passed = final_ce >= float(config["ce_pass_score"])
             final_values.append(final_ce)
-        elif not config["exam_enabled"]:
-            # Mientras el examen esté desactivado, el Portafolio es progreso,
-            # no una calificación final oficial del RA.
-            final_ce = None
+        if original_passed:
+            original_passed_count += 1
 
-        if criterion_passed:
-            passed_count += 1
+        recovery_items = list(
+            db.scalars(
+                select(AssessmentItem)
+                .where(
+                    AssessmentItem.criterion_id == criterion.id,
+                    AssessmentItem.instrument == "recovery",
+                    AssessmentItem.active.is_(True),
+                    AssessmentItem.evaluable.is_(True),
+                )
+                .order_by(AssessmentItem.position, AssessmentItem.id)
+            )
+        )
+        recovery_attempts = _latest_attempts_for_items(
+            db,
+            course_module_id,
+            user_id,
+            [item.id for item in recovery_items],
+        )
+        recovery_scored = [
+            float(recovery_attempts[item.id].score)
+            for item in recovery_items
+            if item.id in recovery_attempts
+            and recovery_attempts[item.id].score is not None
+        ]
+        recovery_pending = sum(
+            1
+            for item in recovery_items
+            if item.id in recovery_attempts
+            and recovery_attempts[item.id].pending_review
+        )
+        recovery_complete = (
+            bool(recovery_items)
+            and len(recovery_scored) == len(recovery_items)
+            and recovery_pending == 0
+        )
+        recovery_score = (
+            round(sum(recovery_scored) / len(recovery_scored), 2)
+            if recovery_scored
+            else None
+        )
+        recovered = (
+            not original_passed
+            and recovery_complete
+            and float(recovery_score or 0) >= float(config["ce_pass_score"])
+        )
+        effective_passed = original_passed or recovered
+        if effective_passed:
+            effective_passed_count += 1
 
         details[criterion.code] = {
             "criterion_id": criterion.id,
             "portfolio": portfolio_ce,
-            "portfolio_items_total": len(items),
-            "portfolio_items_scored": len(scored),
-            "pending_review": pending,
+            "portfolio_items_total": len(portfolio_items),
+            "portfolio_items_scored": len(portfolio_scored),
+            "pending_review": portfolio_pending,
             "portfolio_complete": portfolio_complete,
             "portfolio_passed": portfolio_passed,
             "exam": exam_ce,
             "exam_questions": exam_n,
             "final": final_ce,
-            "passed": criterion_passed,
+            "passed_original": original_passed,
+            "recovery": recovery_score,
+            "recovery_items_total": len(recovery_items),
+            "recovery_items_scored": len(recovery_scored),
+            "recovery_pending_review": recovery_pending,
+            "recovery_complete": recovery_complete,
+            "recovered": recovered,
+            "passed": effective_passed,
         }
 
     portfolio_score = (
@@ -443,10 +520,16 @@ def recompute_learning_result(
         else None
     )
     criteria_total = len(criteria)
-    needed = math.ceil(criteria_total * config["ce_pass_percent"] / 100) if criteria_total else 0
+    needed = (
+        math.ceil(criteria_total * int(config["ce_pass_percent"]) / 100)
+        if criteria_total
+        else 0
+    )
 
     final_score = None
     ra_passed = False
+    remaining_recovery: list[str] = []
+
     if not config["exam_enabled"]:
         final_state = "portfolio-progress"
     elif not latest_exam:
@@ -467,40 +550,41 @@ def recompute_learning_result(
                 and float(exam_score or 0) >= float(config["pass_score"])
             )
         )
+        remaining_recovery = [
+            code for code, data in details.items() if not data.get("passed")
+        ]
         ra_passed = (
             final_score >= float(config["pass_score"])
-            and passed_count >= needed
+            and effective_passed_count >= needed
             and both_ok
         )
-        final_state = "passed" if ra_passed else "recovery-required"
+        if ra_passed:
+            final_state = "passed"
+        elif remaining_recovery:
+            final_state = "recovery-required"
+        else:
+            # Todos los CE están superados/recuperados pero la nota numérica global
+            # o el requisito de ambos instrumentos impide superar el RA.
+            final_state = "not-passed"
 
-    failed_criteria = [
-        code
-        for code, data in details.items()
-        if config["exam_enabled"] and data.get("final") is not None and not data.get("passed")
-    ]
-    recovery = db.scalar(
-        select(RecoveryPlan).where(
-            RecoveryPlan.course_module_id == course_module_id,
-            RecoveryPlan.user_id == user_id,
-            RecoveryPlan.learning_result_id == learning_result_id,
-        )
-    )
-    if final_state == "recovery-required":
-        if not recovery:
-            recovery = RecoveryPlan(
+    recovery_plan = existing_plan
+    if final_score is not None and not ra_passed:
+        if not recovery_plan:
+            recovery_plan = RecoveryPlan(
                 course_module_id=course_module_id,
                 user_id=user_id,
                 learning_result_id=learning_result_id,
             )
-            db.add(recovery)
-        recovery.criteria_json = failed_criteria
-        recovery.status = "pending"
-        recovery.updated_at = _now()
-    elif recovery and ra_passed:
-        recovery.criteria_json = []
-        recovery.status = "passed"
-        recovery.updated_at = _now()
+            db.add(recovery_plan)
+        recovery_plan.criteria_json = remaining_recovery
+        recovery_plan.status = (
+            "pending" if remaining_recovery else "completed-no-pass"
+        )
+        recovery_plan.updated_at = _now()
+    elif recovery_plan and ra_passed:
+        recovery_plan.criteria_json = []
+        recovery_plan.status = "passed"
+        recovery_plan.updated_at = _now()
 
     result = db.scalar(
         select(EvaluationResult).where(
@@ -519,15 +603,16 @@ def recompute_learning_result(
     result.portfolio_score = portfolio_score
     result.exam_score = exam_score
     result.final_score = final_score
-    result.criteria_passed = passed_count
+    result.criteria_passed = effective_passed_count
     result.criteria_total = criteria_total
     result.passed = ra_passed
     result.details_json = {
         "status": final_state,
         "criteria_needed": needed,
+        "criteria_passed_original": original_passed_count,
         "portfolio_criteria_passed": portfolio_passed_count,
         "criteria": details,
-        "recovery": failed_criteria,
+        "recovery": remaining_recovery,
         "exam_attempt": latest_exam.attempt_no if latest_exam else None,
         "config": {
             "portfolio_weight": config["portfolio_weight"],
@@ -547,13 +632,14 @@ def recompute_learning_result(
         "portfolio_score": portfolio_score,
         "exam_score": exam_score,
         "final_score": final_score,
-        "criteria_passed": passed_count,
+        "criteria_passed": effective_passed_count,
+        "criteria_passed_original": original_passed_count,
         "criteria_total": criteria_total,
         "criteria_needed": needed,
         "portfolio_criteria_passed": portfolio_passed_count,
         "passed": ra_passed,
         "status": final_state,
-        "recovery": failed_criteria,
+        "recovery": remaining_recovery,
         "criteria": details,
     }
 
