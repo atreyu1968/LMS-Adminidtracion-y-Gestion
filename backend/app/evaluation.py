@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from .ai import grade_with_ai, resolve_ai_for_course_module
 from .db import get_db
+from .learning import access_decision, get_learner_exception, is_exempt
 from .models import (
     AssessmentAttempt,
     AssessmentCriterion,
@@ -355,6 +356,13 @@ def recompute_learning_result(
             .order_by(AssessmentCriterion.position, AssessmentCriterion.id)
         )
     )
+    exempt_criteria = {
+        criterion.id
+        for criterion in criteria
+        if is_exempt(
+            db, course_module_id, user_id, "criterion", criterion.id
+        )
+    }
 
     latest_exam = db.scalar(
         select(ExamSession)
@@ -398,6 +406,29 @@ def recompute_learning_result(
     ew = float(config["exam_weight"]) / 100.0
 
     for criterion in criteria:
+        if criterion.id in exempt_criteria:
+            details[criterion.code] = {
+                "criterion_id": criterion.id,
+                "exempt": True,
+                "portfolio": None,
+                "portfolio_items_total": 0,
+                "portfolio_items_scored": 0,
+                "pending_review": 0,
+                "portfolio_complete": True,
+                "portfolio_passed": True,
+                "exam": None,
+                "exam_questions": 0,
+                "final": None,
+                "passed_original": True,
+                "recovery": None,
+                "recovery_items_total": 0,
+                "recovery_items_scored": 0,
+                "recovery_pending_review": 0,
+                "recovery_complete": True,
+                "recovered": False,
+                "passed": True,
+            }
+            continue
         portfolio_items = list(
             db.scalars(
                 select(AssessmentItem)
@@ -410,6 +441,10 @@ def recompute_learning_result(
                 .order_by(AssessmentItem.position, AssessmentItem.id)
             )
         )
+        portfolio_items = [
+            item for item in portfolio_items
+            if not is_exempt(db, course_module_id, user_id, "item", item.id)
+        ]
         portfolio_attempts = _latest_attempts_for_items(
             db,
             course_module_id,
@@ -478,6 +513,10 @@ def recompute_learning_result(
                 .order_by(AssessmentItem.position, AssessmentItem.id)
             )
         )
+        recovery_items = [
+            item for item in recovery_items
+            if not is_exempt(db, course_module_id, user_id, "item", item.id)
+        ]
         recovery_attempts = _latest_attempts_for_items(
             db,
             course_module_id,
@@ -546,7 +585,7 @@ def recompute_learning_result(
         if exam_values
         else None
     )
-    criteria_total = len(criteria)
+    criteria_total = len(criteria) - len(exempt_criteria)
     needed = (
         math.ceil(criteria_total * int(config["ce_pass_percent"]) / 100)
         if criteria_total
@@ -1449,6 +1488,20 @@ def start_attempt(
     item, criterion, lr = _item_belongs_to_module(
         db, item_id, course_module.module_id
     )
+    if is_exempt(db, course_module_id, user_id, "criterion", criterion.id) or is_exempt(
+        db, course_module_id, user_id, "item", item.id
+    ):
+        raise HTTPException(status_code=409, detail="Esta actividad está exenta para el alumno")
+    ra_access = access_decision(
+        db, course_module_id, user_id, "learning_result", lr.id
+    )
+    if not ra_access["available"]:
+        raise HTTPException(status_code=403, detail=ra_access)
+    item_access = access_decision(
+        db, course_module_id, user_id, "item", item.id
+    )
+    if not item_access["available"]:
+        raise HTTPException(status_code=403, detail=item_access)
     active = db.scalar(
         select(AssessmentAttempt)
         .where(
@@ -1484,6 +1537,11 @@ def start_attempt(
     }
     configured = configured_limits.get(item.instrument)
     limit = int(configured if configured is not None else (item.max_attempts or 1))
+    item_exception = get_learner_exception(
+        db, course_module_id, user_id, "item", item.id
+    )
+    if item_exception:
+        limit += int(item_exception.extra_attempts or 0)
     if used >= limit:
         raise HTTPException(status_code=409, detail="No quedan intentos disponibles")
 
@@ -2813,6 +2871,15 @@ def start_exam(
         raise HTTPException(status_code=404, detail="RA no encontrado")
 
     config = _effective_config(db, course_module)
+    ra_access = access_decision(
+        db, course_module_id, user_id, "learning_result", learning_result_id
+    )
+    if not ra_access["available"]:
+        raise HTTPException(status_code=403, detail=ra_access)
+    if is_exempt(
+        db, course_module_id, user_id, "learning_result", learning_result_id
+    ):
+        raise HTTPException(status_code=409, detail="Este RA está exento para el alumno")
     if not config["exam_enabled"]:
         raise HTTPException(status_code=403, detail="El examen no está habilitado")
 
@@ -2836,7 +2903,13 @@ def start_exam(
             ExamSession.learning_result_id == learning_result_id,
         )
     ) or 0
-    if used >= int(config["exam_max_attempts"]):
+    exam_limit = int(config["exam_max_attempts"])
+    lr_exception = get_learner_exception(
+        db, course_module_id, user_id, "learning_result", learning_result_id
+    )
+    if lr_exception:
+        exam_limit += int(lr_exception.extra_attempts or 0)
+    if used >= exam_limit:
         raise HTTPException(status_code=409, detail="No quedan intentos de examen")
 
     bank = _exam_items_for_lr(db, learning_result_id)
@@ -2901,7 +2974,10 @@ def start_exam(
             )
     rnd.shuffle(chosen)
     started = _now()
-    deadline = started + timedelta(minutes=int(config["exam_minutes"]))
+    extra_minutes = int(lr_exception.extra_time_minutes or 0) if lr_exception else 0
+    deadline = started + timedelta(
+        minutes=int(config["exam_minutes"]) + extra_minutes
+    )
     exam = ExamSession(
         course_module_id=course_module_id,
         user_id=user_id,
