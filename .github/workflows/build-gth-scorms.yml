@@ -41,6 +41,18 @@ jobs:
           unzip -t downloads/gth0652/GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip
           unzip -t downloads/gth0652/GTH_SCORM_4_UNIDADES_COMPLETO.zip
 
+      - name: Validate JavaScript syntax
+        run: |
+          rm -rf /tmp/gth-js && mkdir -p /tmp/gth-js
+          n=0
+          for z in downloads/gth0652/GTH_RA*_SCORM_1.2.zip; do
+            n=$((n+1))
+            unzip -p "$z" assets/scorm.js > "/tmp/gth-js/scorm-$n.js"
+            unzip -p "$z" assets/secure-exam.js > "/tmp/gth-js/secure-exam-$n.js"
+            node --check "/tmp/gth-js/scorm-$n.js"
+            node --check "/tmp/gth-js/secure-exam-$n.js"
+          done
+
       - name: Browser smoke test for study mode
         run: python3 scripts/test-gth-study-mode-browser.py downloads/gth0652
 
