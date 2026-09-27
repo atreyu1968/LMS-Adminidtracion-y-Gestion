@@ -289,7 +289,24 @@ function renderGroups(){
 }
 function renderModules(){
   const root=document.querySelector("#modulesList");
-  root.innerHTML=modules.length?modules.map(m=>`<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · ${esc(m.permission)}</div><p>${esc(m.description||"")}</p><div class="actions"><button class="btn secondary" onclick="showModuleScorms(${m.id},'${esc(m.title).replace(/'/g,"&#39;")}')">Ver SCORM</button></div><div id="module-scorm-${m.id}"></div></article>`).join(""):'<div class="empty">Aún no has creado módulos.</div>';
+  root.innerHTML=modules.length?modules.map(m=>{
+    const canEdit=["owner","editor"].includes(m.permission);
+    return `<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.code||"")} · ${esc(m.permission)}</div><p>${esc(m.description||"")}</p><div class="actions"><button class="btn secondary" onclick="showModuleScorms(${m.id},'${esc(m.title).replace(/'/g,"&#39;")}')">Ver SCORM</button>${canEdit?'<button class="btn secondary" onclick="toggleModuleEditor('+m.id+')">Editar datos</button>':""}</div>${canEdit?`<div id="module-edit-${m.id}" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><div class="row"><label>Título<input name="title" value="${esc(m.title)}"></label><label>Código<input name="code" value="${esc(m.code||"")}"></label></div><label>Descripción<textarea name="description">${esc(m.description||"")}</textarea></label><button class="btn" style="margin-top:8px" onclick="saveModule(${m.id})">Guardar cambios</button></div>`:""}<div id="module-scorm-${m.id}"></div></article>`;
+  }).join(""):'<div class="empty">Aún no has creado módulos.</div>';
+}
+function toggleModuleEditor(mid){
+  const box=document.querySelector("#module-edit-"+mid);
+  if(box)box.classList.toggle("hidden");
+}
+async function saveModule(mid){
+  const box=document.querySelector("#module-edit-"+mid);if(!box)return;
+  const title=box.querySelector('[name="title"]').value.trim();
+  const code=box.querySelector('[name="code"]').value.trim();
+  const description=box.querySelector('[name="description"]').value;
+  try{
+    await api("/api/modules/"+mid,json("PATCH",{title,code:code||null,description}));
+    modules=await api("/api/modules/mine");renderModules();refreshModuleSelects();flash("Datos del módulo actualizados.");
+  }catch(e){flash(e.message,"error")}
 }
 function packageCard(p,shared=false){
   const moduleOptions=modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
