@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOMINASOL 2026 · Proyecto anual guiado</title>
+<style>
+:root{
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#172033;background:#eef3f8;line-height:1.55;
+  --nav:#10233f;--blue:#205d9c;--blue2:#eaf3ff;--green:#1d7a57;
+  --amber:#9b6500;--red:#a63b3b;--line:#dbe4ee;--muted:#607086;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#eef3f8}
+header{background:linear-gradient(120deg,#10233f,#1f4d7c);color:white;padding:22px 28px}
+header h1{margin:0;font-size:clamp(1.25rem,2.4vw,2rem)}
+header p{margin:.35rem 0 0;color:#d9e6f4}
+.app{display:grid;grid-template-columns:310px minmax(0,1fr);min-height:calc(100vh - 96px)}
+aside{background:#fff;border-right:1px solid var(--line);padding:20px;overflow:auto}
+main{padding:28px;overflow:auto}
+.progress{height:12px;background:#e7edf4;border-radius:999px;overflow:hidden;margin:10px 0}
+.progress>div{height:100%;background:#2a75b9;width:0;transition:.25s}
+.summary{font-size:.92rem;color:var(--muted);margin-bottom:16px}
+.milestone{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 10px;border-radius:10px;cursor:pointer;color:#243247}
+.milestone:hover{background:#f3f6fa}
+.milestone.active{background:#eaf3ff;color:#174d82;font-weight:700}
+.dot{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;margin-right:8px;background:#e6ebf1;font-size:.78rem}
+.dot.completed{background:#dff4e9;color:#176445}
+.dot.needs_revision{background:#fff0e2;color:#8c5200}
+.dot.teacher_review,.dot.evidence_submitted{background:#fff7d9;color:#765500}
+.dot.in_progress{background:#e8f2ff;color:#1d5f9d}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 12px 34px rgba(34,55,85,.07);margin-bottom:18px}
+.eyebrow{font-size:.8rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#4e6c8f}
+h2{margin:.25rem 0 .5rem;font-size:clamp(1.45rem,3vw,2.15rem);line-height:1.2}
+h3{margin:0 0 .5rem}
+.story{font-size:1.07rem;color:#2f3b4c}
+.callout{border-left:5px solid #4d83b6;background:#f4f8fd;padding:14px 16px;border-radius:10px;margin:16px 0}
+.route{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f2f5f8;border:1px solid #dbe3ec;padding:8px 10px;border-radius:8px;display:inline-block;margin:.35rem 0}
+.step{padding:20px 0;border-top:1px solid #edf1f5}
+.step:first-child{border-top:0}
+.step-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:20px;align-items:start}
+.shot{border:1px solid #dce5ee;border-radius:14px;background:#f7f9fb;overflow:hidden;min-height:210px}
+.shot img{display:block;width:100%;height:auto}
+.missing{padding:28px;text-align:center;color:#5f6f82}
+.missing strong{display:block;color:#2b3b50;margin-bottom:8px}
+.look{background:#eef8f3;border-radius:10px;padding:12px 14px;margin-top:12px}
+.mistake{background:#fff4f0;border-radius:10px;padding:12px 14px;margin-top:10px}
+.checks label{display:flex;gap:10px;padding:8px 0}
+.checks input{margin-top:5px}
+.btn{border:0;border-radius:10px;background:#1d5f9d;color:white;padding:11px 15px;font-weight:750;cursor:pointer}
+.btn.secondary{background:#e9f1f9;color:#174c7d}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.evidence{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label span{display:block;font-weight:700;margin-bottom:6px}
+input[type=file],textarea{width:100%;border:1px solid #ccd8e4;border-radius:10px;padding:10px;background:white}
+textarea{min-height:92px;resize:vertical}
+.feedback{margin-top:15px;border-radius:12px;padding:14px 16px}
+.feedback.pass{background:#e5f6ed;color:#145d41}
+.feedback.retry{background:#fff0e8;color:#82421e}
+.feedback.review{background:#fff7d9;color:#6b5300}
+.statusline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf2f7;font-size:.8rem;font-weight:700}
+.hidden{display:none!important}
+.small{font-size:.9rem;color:var(--muted)}
+@media(max-width:900px){
+ .app{grid-template-columns:1fr}
+ aside{border-right:0;border-bottom:1px solid var(--line);max-height:300px}
+ main{padding:18px}
+ .step-grid,.evidence{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>NOMINASOL 2026 · Un año en Recursos Humanos</h1>
+  <p>ATLÁNTICO GESTIÓN INTEGRAL, S.L. · Aprende haciendo, comprobando y corrigiendo hasta conseguir cada hito.</p>
+</header>
+<div class="app">
+  <aside>
+    <strong>Tu recorrido</strong>
+    <div class="progress"><div id="bar"></div></div>
+    <div id="summary" class="summary">Cargando progreso…</div>
+    <div id="milestones"></div>
+  </aside>
+  <main>
+    <div id="loading" class="card"><h2>Preparando tu proyecto…</h2><p class="story">Estamos recuperando tu punto exacto de trabajo para que puedas continuar donde lo dejaste.</p></div>
+    <div id="content" class="hidden"></div>
+    <div id="fatal" class="card hidden"></div>
+  </main>
+</div>
+<script>
+(function(){
+"use strict";
+var runtime=null,data=null,currentKey=null,api12=null;
+
+function esc(v){
+  return String(v==null?"":v).replace(/[&<>'"]/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c];
+  });
+}
+function findRuntime(){
+  try{
+    if(window.parent && window.parent.LMSGuided) return window.parent.LMSGuided;
+  }catch(e){}
+  return null;
+}
+function findScorm(){
+  try{
+    if(window.parent && window.parent.API) return window.parent.API;
+  }catch(e){}
+  return null;
+}
+function scormSet(key,value){
+  if(!api12) return;
+  try{api12.LMSSetValue(key,String(value));api12.LMSCommit("");}catch(e){}
+}
+function statusLabel(status){
+  var map={
+    not_started:"No iniciado",in_progress:"En proceso",
+    evidence_submitted:"Evidencia enviada",teacher_review:"Revisión",
+    needs_revision:"Necesita corrección",completed:"Superado"
+  };
+  return map[status]||status||"No iniciado";
+}
+function stateFor(key){
+  return (data && data.progress && data.progress[key]) || {status:"not_started",attempts:0,ai:{}};
+}
+function updateScormProgress(){
+  if(!data) return;
+  var s=data.summary||{};
+  scormSet("cmi.core.score.raw",Math.round(Number(s.percentage||0)));
+  scormSet("cmi.core.score.min","0");
+  scormSet("cmi.core.score.max","100");
+  scormSet("cmi.core.lesson_status",Number(s.percentage||0)>=100?"completed":"incomplete");
+}
+function renderSidebar(){
+  var p=data.project, list=document.getElementById("milestones");
+  document.getElementById("bar").style.width=String(data.summary.percentage||0)+"%";
+  document.getElementById("summary").textContent=
+    data.summary.completed+" de "+data.summary.total+" hitos superados · "+data.summary.percentage+" %";
+  var html="";
+  (p.milestones||[]).forEach(function(m){
+    var st=stateFor(m.key).status;
+    var mark=st==="completed"?"✓":(st==="needs_revision"?"!":(st==="teacher_review"?"?":""));
+    html+='<button class="milestone '+(m.key===currentKey?"active":"")+'" data-key="'+esc(m.key)+'">'
+      +'<span class="dot '+esc(st)+'">'+esc(mark||"•")+'</span>'
+      +'<span>'+esc(m.period)+' · '+esc(m.title)+'</span></button>';
+  });
+  list.innerHTML=html;
+  Array.prototype.forEach.call(list.querySelectorAll(".milestone"),function(btn){
+    btn.addEventListener("click",function(){openMilestone(btn.getAttribute("data-key"));});
+  });
+}
+function screenshotBlock(step){
+  if(!step.screenshot) return "";
+  var src="assets/screenshots/"+encodeURIComponent(step.screenshot);
+  return '<div class="shot"><img src="'+src+'" alt="Captura real de NOMINASOL: '+esc(step.title)+'" '
+   +'onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'block\\';">'
+   +'<div class="missing" style="display:none"><strong>Captura real todavía no incorporada</strong>'
+   +'No la sustituimos por una imagen inventada. Sigue la ruta de menú y la explicación de la izquierda; '
+   +'esta pantalla se completará únicamente con una captura real de NOMINASOL 2026.</div></div>';
+}
+function renderFeedback(st){
+  var ai=st.ai||{};
+  var html="";
+  if(ai.summary){
+    var klass=ai.verdict==="pass"?"pass":(ai.verdict==="retry"?"retry":"review");
+    html+='<div class="feedback '+klass+'"><strong>Comprobación de la evidencia</strong><p>'+esc(ai.summary)+'</p>';
+    if(ai.next_hint) html+='<p><strong>Siguiente paso:</strong> '+esc(ai.next_hint)+'</p>';
+    if(Array.isArray(ai.checks)&&ai.checks.length){
+      html+='<ul>'+ai.checks.map(function(c){return '<li><strong>'+esc(c.label)+':</strong> '+esc(c.detail||c.status)+'</li>';}).join("")+'</ul>';
+    }
+    html+='</div>';
+  }
+  if(st.teacher_comment){
+    html+='<div class="feedback review"><strong>Comentario del profesor</strong><p>'+esc(st.teacher_comment)+'</p></div>';
+  }
+  return html;
+}
+function openMilestone(key){
+  var p=data.project, m=(p.milestones||[]).filter(function(x){return x.key===key;})[0];
+  if(!m) return;
+  currentKey=key;
+  scormSet("cmi.core.lesson_location",key);
+  renderSidebar();
+  var st=stateFor(key);
+  var priorOk=!m.requires || stateFor(m.requires).status==="completed";
+  var steps=(m.steps||[]).map(function(s,i){
+    return '<section class="step"><div class="step-grid"><div>'
+      +'<div class="eyebrow">Paso '+(i+1)+'</div><h3>'+esc(s.title)+'</h3>'
+      +'<p>'+esc(s.body)+'</p>'
+      +(s.route?'<div class="route">'+esc(s.route)+'</div>':"")
+      +(s.look_for?'<div class="look"><strong>Qué debes comprobar</strong><br>'+esc(s.look_for)+'</div>':"")
+      +(s.common_mistake?'<div class="mistake"><strong>Error habitual</strong><br>'+esc(s.common_mistake)+'</div>':"")
+      +'</div>'+screenshotBlock(s)+'</div></section>';
+  }).join("");
+  var checks=(m.checklist||[]).map(function(c,i){
+    return '<label><input type="checkbox" class="selfcheck" data-i="'+i+'"><span>'+esc(c)+'</span></label>';
+  }).join("");
+  var ev=(data.evidence&&data.evidence[key])||[];
+  var evHistory=ev.length?'<p class="small">Evidencias enviadas: '+ev.length+'. Último estado: '+esc(ev[0].status)+'.</p>':"";
+  var locked=!priorOk;
+  var html='<section class="card"><div class="eyebrow">'+esc(m.period)+'</div><h2>'+esc(m.title)+'</h2>'
+    +'<p class="story">'+esc(m.story)+'</p>'
+    +'<div class="callout"><strong>Qué vas a conseguir</strong><br>'+esc(m.objective)+'</div>'
+    +'<p>'+esc(m.guide_intro||"")+'</p>'
+    +'<div class="statusline"><span class="pill">Estado: '+esc(statusLabel(st.status))+'</span>'
+    +'<span class="pill">Intentos de evidencia: '+Number(st.attempts||0)+'</span></div>'
+    +(locked?'<div class="feedback review"><strong>Aún no abras esta fase.</strong><p>Primero debes dejar correctamente terminado el hito anterior. Así evitamos que un error de base se arrastre durante meses.</p></div>':"")
+    +'</section>'
+    +'<section class="card"><h3>Trabaja conmigo paso a paso</h3>'+steps+'</section>'
+    +'<section class="card"><h3>Antes de entregar, comprueba tu trabajo</h3><div class="checks">'+checks+'</div></section>'
+    +'<section class="card"><h3>Demuestra el hito</h3><p>'+esc(m.evidence_prompt||"")+'</p>'
+    +'<p class="small">'+esc(m.evidence_help||"")+'</p>'+evHistory
+    +'<div class="evidence"><label><span>Archivo de evidencia</span><input id="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,application/zip,text/plain"></label>'
+    +'<label><span>Observaciones para la comprobación</span><textarea id="evidenceNotes" placeholder="Explica brevemente qué demuestra tu captura o documento."></textarea></label></div>'
+    +'<p><button id="startBtn" class="btn secondary" '+(locked?"disabled":"")+'>Estoy trabajando en este hito</button> '
+    +'<button id="submitBtn" class="btn" '+(locked?"disabled":"")+'>Subir evidencia y comprobar</button></p>'
+    +'<div id="sendStatus"></div>'+renderFeedback(st)+'</section>';
+  var root=document.getElementById("content");
+  root.innerHTML=html;
+  root.classList.remove("hidden");
+  document.getElementById("loading").classList.add("hidden");
+  document.getElementById("startBtn").addEventListener("click",async function(){
+    try{
+      await runtime.start(key);
+      await reload(key);
+    }catch(e){showInline(e.message,"review");}
+  });
+  document.getElementById("submitBtn").addEventListener("click",async function(){
+    var file=document.getElementById("evidenceFile").files[0];
+    if(!file){showInline("Selecciona primero la captura, PDF o archivo que demuestra tu trabajo.","retry");return;}
+    var btn=this;btn.disabled=true;btn.textContent="Comprobando…";
+    try{
+      var result=await runtime.submitEvidence(key,file,document.getElementById("evidenceNotes").value||"");
+      if(result.ai_used){
+        var v=result.evidence.ai&&result.evidence.ai.verdict;
+        showInline(v==="pass"?"La IA considera alcanzado el hito. Estamos actualizando tu progreso.":(v==="retry"?"La evidencia muestra algo que debes corregir. Lee la pista y vuelve a intentarlo.":"La evidencia queda guardada para revisión del profesor."),v||"review");
+      }else{
+        showInline("La evidencia ha quedado guardada. Si la IA del profesor no está activa o el archivo requiere revisión humana, el profesor la validará.","review");
+      }
+      await reload(key);
+    }catch(e){
+      showInline(e.message,"retry");
+      btn.disabled=false;btn.textContent="Subir evidencia y comprobar";
+    }
+  });
+}
+function showInline(message,kind){
+  var box=document.getElementById("sendStatus");
+  if(box) box.innerHTML='<div class="feedback '+esc(kind||"review")+'">'+esc(message)+'</div>';
+}
+async function reload(preferred){
+  data=await runtime.project();
+  updateScormProgress();
+  var location="";
+  try{location=api12?api12.LMSGetValue("cmi.core.lesson_location"):"";}catch(e){}
+  currentKey=preferred || currentKey || location || (data.project.milestones[0]&&data.project.milestones[0].key);
+  renderSidebar();
+  openMilestone(currentKey);
+}
+async function boot(){
+  runtime=findRuntime();
+  api12=findScorm();
+  if(api12){try{api12.LMSInitialize("");}catch(e){}}
+  if(!runtime){
+    document.getElementById("loading").classList.add("hidden");
+    var fatal=document.getElementById("fatal");
+    fatal.classList.remove("hidden");
+    fatal.innerHTML="<h2>Este proyecto necesita el LMS de Administración y Gestión</h2><p class='story'>El paquete puede abrirse como SCORM estándar, pero la subida de evidencias, la revisión con IA y el desbloqueo de hitos necesitan ejecutarse desde el LMS del centro.</p>";
+    return;
+  }
+  try{await reload(null);}
+  catch(e){
+    document.getElementById("loading").classList.add("hidden");
+    var fatal=document.getElementById("fatal");
+    fatal.classList.remove("hidden");
+    fatal.innerHTML="<h2>No hemos podido recuperar tu proyecto</h2><p>"+esc(e.message)+"</p>";
+  }
+}
+window.addEventListener("beforeunload",function(){
+  if(api12){try{api12.LMSCommit("");api12.LMSFinish("");}catch(e){}}
+});
+boot();
+})();
+</script>
+</body>
+</html>
