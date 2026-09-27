@@ -20,6 +20,7 @@
   <button class="tab" data-tab="progress">Progreso</button>
   <button class="tab" data-tab="structure">RA y CE</button>
   <button class="tab" data-tab="config">Configuración</button>
+  <button class="tab" data-tab="availability">Disponibilidad</button>
   <button class="tab" data-tab="readiness">Preparación</button>
 </nav>
 
@@ -78,6 +79,46 @@
   </form>
 </section>
 
+<section id="panel-availability" class="panel card">
+  <div class="actions" style="justify-content:space-between;align-items:flex-start">
+    <div><h2>Disponibilidad y excepciones</h2><p class="muted">Controla fechas, prerrequisitos, secuencia y ajustes individuales sin modificar la configuración general.</p></div>
+    <button class="btn secondary" id="sequenceRaBtn">Aplicar secuencia RA</button>
+  </div>
+  <div class="grid">
+    <div>
+      <h3>Regla de disponibilidad</h3>
+      <form id="releaseRuleForm">
+        <label>Contenido<select name="target" required></select></label>
+        <div class="form-grid"><label>Disponible desde<input name="open_at" type="datetime-local"></label><label>Disponible hasta<input name="close_at" type="datetime-local"></label></div>
+        <label>Prerrequisito<select name="requirement"><option value="">Sin prerrequisito</option></select></label>
+        <label>Puntuación mínima del prerrequisito<input name="min_score" type="number" min="0" max="100" step="0.1" placeholder="Opcional"></label>
+        <label>Audiencia<select name="audience_user"><option value="">Todo el grupo</option></select></label>
+        <button class="btn">Guardar regla</button>
+      </form>
+      <div id="releaseRulesList" class="list" style="margin-top:14px"></div>
+    </div>
+    <div>
+      <h3>Excepción individual</h3>
+      <form id="exceptionForm">
+        <label>Alumno/a<select name="student_id" required></select></label>
+        <label>Contenido<select name="target" required></select></label>
+        <div class="form-grid"><label>Intentos extra<input name="extra_attempts" type="number" min="0" max="100" value="0"></label><label>Tiempo extra (min)<input name="extra_time_minutes" type="number" min="0" max="1440" value="0"></label></div>
+        <div class="form-grid"><label>Abrir excepcionalmente<input name="open_at_override" type="datetime-local"></label><label>Cerrar excepcionalmente<input name="close_at_override" type="datetime-local"></label></div>
+        <label>Observaciones<textarea name="notes"></textarea></label>
+        <button class="btn">Guardar excepción</button>
+      </form>
+      <h3 style="margin-top:18px">Exención</h3>
+      <form id="exemptionForm">
+        <label>Alumno/a<select name="student_id" required></select></label>
+        <label>Contenido<select name="target" required></select></label>
+        <label>Motivo<textarea name="reason"></textarea></label>
+        <button class="btn secondary">Eximir sin penalización</button>
+      </form>
+      <div id="exceptionsList" class="list" style="margin-top:14px"></div>
+    </div>
+  </div>
+</section>
+
 <section id="panel-readiness" class="panel card">
   <h2>Semáforo de preparación</h2>
   <div id="readiness"></div>
@@ -101,7 +142,7 @@
 const pageParams=new URLSearchParams(location.search);
 const cmid=Number(pageParams.get("course_module"));
 const requestedTab=pageParams.get("tab");
-let structure=null,readiness=null,gradebook=null,configData=null,reviews=[],progressMatrix=null;
+let structure=null,readiness=null,gradebook=null,configData=null,reviews=[],progressMatrix=null,adaptive={rules:[],exceptions:[],exemptions:[]};
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
@@ -116,21 +157,24 @@ function activateTab(name){
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo del grupo.</div>';return}
  try{
-  [structure,readiness,gradebook,configData,reviews,progressMatrix]=await Promise.all([
+  [structure,readiness,gradebook,configData,reviews,progressMatrix,adaptive.rules,adaptive]=await Promise.all([
    api("/api/evaluation/course-modules/"+cmid+"/structure"),
    api("/api/evaluation/course-modules/"+cmid+"/readiness"),
    api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
    api("/api/evaluation/course-modules/"+cmid+"/config"),
    api("/api/evaluation/course-modules/"+cmid+"/reviews"),
-   api("/api/evaluation/course-modules/"+cmid+"/progress-matrix")
+   api("/api/evaluation/course-modules/"+cmid+"/progress-matrix"),
+   api("/api/learning/course-modules/"+cmid+"/rules"),
+   api("/api/learning/course-modules/"+cmid+"/exceptions")
   ]);
+  adaptive.rules=adaptive.rules||[];
   const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
   document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
   renderAll();
   if(requestedTab)activateTab(requestedTab);
  }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
-function renderAll(){renderMetrics();renderGradebook();renderProgress();renderReviews();renderStructure();renderConfig();renderReadiness()}
+function renderAll(){renderMetrics();renderGradebook();renderProgress();renderReviews();renderStructure();renderConfig();renderAvailability();renderReadiness()}
 function renderMetrics(){
  const pending=reviews.length,students=gradebook.students.length,total=readiness.items_total,keys=readiness.keys_loaded;
  document.querySelector("#metrics").innerHTML=[
@@ -217,6 +261,63 @@ document.querySelector("#configForm").addEventListener("submit",async e=>{
  payload.exam_incident_policy=f.elements.exam_incident_policy.value;
  ["exam_enabled","require_both_instruments","exam_integrity_enabled","exam_fullscreen_required"].forEach(k=>payload[k]=f.elements[k].checked);
  try{configData=await api("/api/evaluation/course-modules/"+cmid+"/config",json("PUT",payload));renderConfig();structure=await api("/api/evaluation/course-modules/"+cmid+"/structure");readiness=await api("/api/evaluation/course-modules/"+cmid+"/readiness");renderReadiness();flash("Nueva versión de configuración guardada.")}catch(e2){flash(e2.message,"error")}
+});
+function adaptiveTargets(){
+ const out=[];
+ for(const ra of structure.learning_results||[]){
+   out.push({type:"learning_result",key:String(ra.id),label:ra.code+" · "+ra.title});
+   for(const ce of ra.criteria||[]){
+     out.push({type:"criterion",key:String(ce.id),label:ra.code+" / "+ce.code+" · "+ce.title});
+     for(const item of ce.items||[])out.push({type:"item",key:String(item.id),label:ra.code+" / "+ce.code+" / "+item.key});
+   }
+ }
+ return out;
+}
+function targetValue(t){return t.type+":"+t.key}
+function parseTarget(value){const i=value.indexOf(":");return{type:value.slice(0,i),key:value.slice(i+1)}}
+function localToIso(value){return value?new Date(value).toISOString():null}
+function renderAvailability(){
+ const targets=adaptiveTargets(),options=targets.map(t=>'<option value="'+esc(targetValue(t))+'">'+esc(t.label)+'</option>').join("");
+ const prereq='<option value="">Sin prerrequisito</option>'+options;
+ document.querySelectorAll('#releaseRuleForm select[name="target"],#exceptionForm select[name="target"],#exemptionForm select[name="target"]').forEach(x=>x.innerHTML=options);
+ document.querySelector('#releaseRuleForm select[name="requirement"]').innerHTML=prereq;
+ const students=(gradebook.students||[]).map(x=>'<option value="'+x.user_id+'">'+esc(x.display_name)+'</option>').join("");
+ document.querySelectorAll('#exceptionForm select[name="student_id"],#exemptionForm select[name="student_id"]').forEach(x=>x.innerHTML=students);
+ document.querySelector('#releaseRuleForm select[name="audience_user"]').innerHTML='<option value="">Todo el grupo</option>'+students;
+ document.querySelector("#releaseRulesList").innerHTML=(adaptive.rules||[]).length?(adaptive.rules||[]).map(r=>{
+   const t=targets.find(x=>x.type===r.content_type&&x.key===String(r.content_key));
+   return '<div class="item"><strong>'+esc(t?.label||r.content_type+":"+r.content_key)+'</strong><div class="tiny muted">'+(r.open_at?'Desde '+esc(new Date(r.open_at).toLocaleString())+' ':'')+(r.close_at?'Hasta '+esc(new Date(r.close_at).toLocaleString()):'')+'</div><div class="tiny muted">Prerrequisitos: '+esc((r.requirements||[]).length)+'</div><button class="btn danger" onclick="deleteRule(\''+esc(r.content_type)+'\',\''+esc(r.content_key)+'\')">Eliminar</button></div>';
+ }).join(""):'<div class="muted">No hay reglas especiales.</div>';
+ const exceptions=adaptive.exceptions||[],exemptions=adaptive.exemptions||[];
+ document.querySelector("#exceptionsList").innerHTML=[...exceptions.map(x=>'<div class="item"><strong>Excepción · alumno '+esc(x.user_id)+'</strong><div class="tiny muted">'+esc(x.content_type)+':'+esc(x.content_key)+' · +'+esc(x.extra_attempts)+' intentos · +'+esc(x.extra_time_minutes)+' min</div></div>'),...exemptions.map(x=>'<div class="item"><strong>Exención · alumno '+esc(x.user_id)+'</strong><div class="tiny muted">'+esc(x.content_type)+':'+esc(x.content_key)+' · '+esc(x.reason||"")+'</div></div>')].join("")||'<div class="muted">No hay excepciones ni exenciones.</div>';
+}
+async function reloadAdaptive(){
+ const [rules,ex]=await Promise.all([api("/api/learning/course-modules/"+cmid+"/rules"),api("/api/learning/course-modules/"+cmid+"/exceptions")]);
+ adaptive={rules,...ex};renderAvailability();
+}
+document.querySelector("#releaseRuleForm").addEventListener("submit",async e=>{
+ e.preventDefault();const f=e.currentTarget,target=parseTarget(f.elements.target.value),req=f.elements.requirement.value?parseTarget(f.elements.requirement.value):null;
+ const requirements=req?[{type:req.type,key:req.key,completion:true,...(f.elements.min_score.value?{min_score:Number(f.elements.min_score.value)}:{})}]:[];
+ const audience=f.elements.audience_user.value?{user_ids:[Number(f.elements.audience_user.value)]}:{};
+ try{await api("/api/learning/course-modules/"+cmid+"/rules/"+target.type+"/"+target.key,json("PUT",{open_at:localToIso(f.elements.open_at.value),close_at:localToIso(f.elements.close_at.value),requirements,audience}));await reloadAdaptive();flash("Regla de disponibilidad guardada.")}catch(err){flash(err.message,"error")}
+});
+async function deleteRule(type,key){
+ try{await api("/api/learning/course-modules/"+cmid+"/rules/"+type+"/"+key,{method:"DELETE"});await reloadAdaptive();flash("Regla eliminada.")}catch(e){flash(e.message,"error")}
+}
+document.querySelector("#exceptionForm").addEventListener("submit",async e=>{
+ e.preventDefault();const f=e.currentTarget,target=parseTarget(f.elements.target.value),student=Number(f.elements.student_id.value);
+ try{await api("/api/learning/course-modules/"+cmid+"/students/"+student+"/exceptions/"+target.type+"/"+target.key,json("PUT",{extra_attempts:Number(f.elements.extra_attempts.value||0),extra_time_minutes:Number(f.elements.extra_time_minutes.value||0),open_at_override:localToIso(f.elements.open_at_override.value),close_at_override:localToIso(f.elements.close_at_override.value),notes:f.elements.notes.value||""}));await reloadAdaptive();flash("Excepción individual guardada.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#exemptionForm").addEventListener("submit",async e=>{
+ e.preventDefault();const f=e.currentTarget,target=parseTarget(f.elements.target.value),student=Number(f.elements.student_id.value);
+ try{await api("/api/learning/course-modules/"+cmid+"/students/"+student+"/exemptions/"+target.type+"/"+target.key,json("PUT",{reason:f.elements.reason.value||""}));await reloadAdaptive();await reloadDynamic();flash("Exención registrada sin penalización.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#sequenceRaBtn").addEventListener("click",async()=>{
+ const ras=structure.learning_results||[];if(ras.length<2)return;
+ try{
+   for(let i=1;i<ras.length;i++)await api("/api/learning/course-modules/"+cmid+"/rules/learning_result/"+ras[i].id,json("PUT",{requirements:[{type:"learning_result",key:String(ras[i-1].id),completion:true}],audience:{}}));
+   await reloadAdaptive();flash("Secuencia RA aplicada: cada RA requiere completar el anterior.");
+ }catch(e){flash(e.message,"error")}
 });
 function renderReadiness(){
  const missing=readiness.missing_keys||[];
