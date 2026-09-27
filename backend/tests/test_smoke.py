@@ -2702,3 +2702,73 @@ def test_teacher_student_detail_and_progress_matrix():
         assert cell["state"] in {"in_progress", "completed"}
         assert cell["completed_items"] >= 1
         assert cell["progress_percent"] > 0
+
+
+def test_student_overview_exposes_progress_next_action_and_timeline():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("student-overview")
+        with SessionLocal() as db:
+            student = User(display_name="Alumno Overview", email="overview@example.test")
+            cm = CourseModule(course_id=course_id, module_id=module_id, settings_json={}, active=True)
+            lr = LearningResult(module_id=module_id, code="RA1", title="RA Overview", position=1, active=True)
+            db.add_all([student, cm, lr])
+            db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE Overview",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce)
+            db.flush()
+            item = AssessmentItem(
+                criterion_id=ce.id,
+                instrument="portfolio",
+                item_key="overview-item",
+                item_type="choice",
+                prompt="Selecciona",
+                options_json=["A", "B"],
+                evaluable=True,
+                max_attempts=2,
+                active=True,
+            )
+            db.add(item)
+            db.flush()
+            db.add_all([
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                ),
+                AssessmentAttempt(
+                    course_module_id=cm.id,
+                    user_id=student.id,
+                    item_id=item.id,
+                    attempt_no=1,
+                    status="submitted",
+                    response_json={"value": 0},
+                    score=100,
+                    correct=True,
+                    pending_review=False,
+                    submitted_at=datetime.now(timezone.utc),
+                ),
+            ])
+            db.commit()
+            db.refresh(cm)
+            db.refresh(student)
+            cmid, sid = cm.id, student.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(sid, course_id, role="student"))
+        response = client.get(f"/api/evaluation/course-modules/{cmid}/my-overview")
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["total_learning_results"] == 1
+        assert data["progress_percent"] > 0
+        assert data["learning_results"][0]["state"] in {"in_progress", "completed"}
+        assert data["learning_results"][0]["completed_items"] >= 1
+        assert any(event["kind"] == "assessment" for event in data["timeline"])
