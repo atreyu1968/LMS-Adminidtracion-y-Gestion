@@ -29,7 +29,8 @@ for (const rel of files) {
     failed = true;
   }
 
-  const ids = [...html.matchAll(/\sid=["']([^"']+)["']/g)].map(m => m[1]);
+  const htmlMarkup = html.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi, "");
+  const ids = [...htmlMarkup.matchAll(/\sid=["']([^"']+)["']/g)].map(m => m[1]);
   const seen = new Set();
   for (const id of ids) {
     if (seen.has(id)) {
