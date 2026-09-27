@@ -608,3 +608,94 @@ class GuidedEvidence(Base):
     teacher_comment: Mapped[str] = mapped_column(Text, default="")
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ContentReleaseRule(Base):
+    __tablename__ = "content_release_rules"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "content_type", "content_key",
+            name="uq_release_rule_target",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    content_type: Mapped[str] = mapped_column(String(40), index=True)
+    content_key: Mapped[str] = mapped_column(String(160), index=True)
+    open_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    close_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    requirements_json: Mapped[list] = mapped_column(JSON, default=list)
+    audience_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LearnerContentException(Base):
+    __tablename__ = "learner_content_exceptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "content_type", "content_key",
+            name="uq_learner_content_exception",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    content_type: Mapped[str] = mapped_column(String(40), index=True)
+    content_key: Mapped[str] = mapped_column(String(160), index=True)
+    extra_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    extra_time_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    open_at_override: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    close_at_override: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    updated_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ContentExemption(Base):
+    __tablename__ = "content_exemptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "content_type", "content_key",
+            name="uq_content_exemption",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    content_type: Mapped[str] = mapped_column(String(40), index=True)
+    content_key: Mapped[str] = mapped_column(String(160), index=True)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", "pref_key", name="uq_user_preference"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    pref_key: Mapped[str] = mapped_column(String(160), index=True)
+    value_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
