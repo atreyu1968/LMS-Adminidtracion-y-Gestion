@@ -1313,7 +1313,14 @@ def start_attempt(
             AssessmentAttempt.item_id == item_id,
         )
     ) or 0
-    limit = int(item.max_attempts or 1)
+    config = _effective_config(db, course_module)
+    configured_limits = {
+        "practice": config.get("practice_max_attempts"),
+        "portfolio": config.get("portfolio_max_attempts"),
+        "recovery": config.get("recovery_max_attempts"),
+    }
+    configured = configured_limits.get(item.instrument)
+    limit = int(configured if configured is not None else (item.max_attempts or 1))
     if used >= limit:
         raise HTTPException(status_code=409, detail="No quedan intentos disponibles")
 
@@ -2095,5 +2102,114 @@ def submit_exam(
         "answered": len(answers),
         "total": question_count,
         "by_ce": by_ce,
+        "progress": progress,
+    }
+
+
+
+@router.put("/modules/{module_id}/learning-results/{learning_result_id}/recovery-bank")
+def teacher_recovery_bank(
+    module_id: int,
+    learning_result_id: int,
+    payload: RecoveryBankIn,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    _module_editor(db, module_id, int(session["sub"]))
+    return _load_recovery_bank(db, module_id, learning_result_id, payload)
+
+
+@router.put(
+    "/admin/modules/{module_id}/learning-results/{learning_result_id}/recovery-bank",
+    dependencies=[Depends(require_admin)],
+)
+def admin_recovery_bank(
+    module_id: int,
+    learning_result_id: int,
+    payload: RecoveryBankIn,
+    db: Session = Depends(get_db),
+) -> dict:
+    return _load_recovery_bank(db, module_id, learning_result_id, payload)
+
+
+@router.get(
+    "/course-modules/{course_module_id}/learning-results/{learning_result_id}/recovery"
+)
+def recovery_for_student(
+    course_module_id: int,
+    learning_result_id: int,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    course_module, _ = _course_module_access(db, course_module_id, user_id)
+    lr = db.get(LearningResult, learning_result_id)
+    if not lr or lr.module_id != course_module.module_id or not lr.active:
+        raise HTTPException(status_code=404, detail="RA no encontrado")
+
+    # Recalcular primero garantiza que el plan refleja el estado actual.
+    progress = recompute_learning_result(
+        db, course_module_id, user_id, learning_result_id
+    )
+    plan = db.scalar(
+        select(RecoveryPlan).where(
+            RecoveryPlan.course_module_id == course_module_id,
+            RecoveryPlan.user_id == user_id,
+            RecoveryPlan.learning_result_id == learning_result_id,
+        )
+    )
+    criteria_codes = list(plan.criteria_json or []) if plan else []
+    if not plan or not criteria_codes:
+        db.commit()
+        return {
+            "learning_result_id": learning_result_id,
+            "code": lr.code,
+            "status": plan.status if plan else "not-required",
+            "criteria": [],
+            "items": [],
+            "progress": progress,
+        }
+
+    rows = db.execute(
+        select(AssessmentItem, AssessmentCriterion)
+        .join(
+            AssessmentCriterion,
+            AssessmentCriterion.id == AssessmentItem.criterion_id,
+        )
+        .where(
+            AssessmentCriterion.learning_result_id == learning_result_id,
+            AssessmentCriterion.code.in_(criteria_codes),
+            AssessmentItem.instrument == "recovery",
+            AssessmentItem.active.is_(True),
+            AssessmentItem.evaluable.is_(True),
+        )
+        .order_by(
+            AssessmentCriterion.position,
+            AssessmentItem.position,
+            AssessmentItem.id,
+        )
+    ).all()
+    items = [
+        {
+            "id": item.id,
+            "key": item.item_key,
+            "ce": criterion.code,
+            "type": item.item_type,
+            "prompt": item.prompt,
+            "options": item.options_json or [],
+            "pairs": (item.metadata_json or {}).get("pairs") or [],
+            "max_attempts": _effective_config(
+                db, course_module
+            ).get("recovery_max_attempts", item.max_attempts),
+        }
+        for item, criterion in rows
+    ]
+    db.commit()
+    return {
+        "learning_result_id": learning_result_id,
+        "code": lr.code,
+        "status": plan.status,
+        "criteria": criteria_codes,
+        "items": items,
         "progress": progress,
     }
