@@ -59,7 +59,7 @@ CAMPUS / Moodle
 
 ## Proyecto guiado NOMINASOL 2026
 
-Se ha incorporado un proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**. La versión 2026.7 mantiene el versionado inmutable y mejora la precisión visual con capturas oficiales específicas de cada operación, incluyendo pantallas diferentes según la variante individual del alumno. No se plantea como un manual esquemático: el alumno recibe contexto empresarial, explicación del porqué de cada operación, recorrido visual con capturas reales de la aplicación, comprobaciones antes de entregar y evidencias de progreso.
+Se ha incorporado un proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**. La versión 2026.8 añade un expediente documental operativo: cada comunicación puede imprimirse o guardarse, el alumnado puede conservar su dossier anual y el profesorado puede descargar un ZIP personalizado por alumno sin exponer el solucionario técnico. No se plantea como un manual esquemático: el alumno recibe contexto empresarial, explicación del porqué de cada operación, recorrido visual con capturas reales de la aplicación, comprobaciones antes de entregar y evidencias de progreso.
 
 El flujo es:
 

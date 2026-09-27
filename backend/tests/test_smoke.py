@@ -1235,7 +1235,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.7"
+        assert payload["project"]["version"] == "2026.8"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1276,7 +1276,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
                 headers=auth,
             )
             assert pinned.status_code == 200
-            assert pinned.json()["project"]["version"] == "2026.7"
+            assert pinned.json()["project"]["version"] == "2026.8"
         finally:
             snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
@@ -1340,6 +1340,29 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
             for check in guide_by_key["M02"]["audit"]["checks"]
         )
         assert "F02-B" in guide_by_key["M05"]["audit"]["variant_checks"]
+
+        dossier = client.get(
+            f"/api/guided/registrations/{registration_id}/dossier.zip"
+        )
+        assert dossier.status_code == 200, dossier.text
+        assert dossier.headers["content-type"].startswith("application/zip")
+        with zipfile.ZipFile(io.BytesIO(dossier.content)) as archive:
+            names = set(archive.namelist())
+            assert "00_INDICE.html" in names
+            assert "00_DATOS_EMPRESA.json" in names
+            assert "00_VARIANTES.json" in names
+            assert "LEEME.txt" in names
+            assert any(name.startswith("M05/") for name in names)
+            index_html = archive.read("00_INDICE.html").decode("utf-8")
+            assert "Alumno NOMINASOL" in index_html
+            variant_key = progress.json()[0]["variants"]["M05"]
+            assert variant_key in index_html
+            variants = __import__("json").loads(
+                archive.read("00_VARIANTES.json").decode("utf-8")
+            )
+            assert variants["M05"]["key"] == variant_key
+            assert "audit-rules" not in "\n".join(names).lower()
+            assert "hidden_audit" not in index_html
 
         client.cookies.clear()
         client.cookies.set(

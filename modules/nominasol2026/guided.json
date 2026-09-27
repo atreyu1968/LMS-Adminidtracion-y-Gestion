@@ -2,7 +2,7 @@
   "project_id": "nominasol-2026-anual",
   "title": "Un año en Recursos Humanos con NOMINASOL 2026",
   "subtitle": "Proyecto profesional guiado · ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
-  "version": "2026.7",
+  "version": "2026.8",
   "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
   "approach": "Aprender haciendo y corrigiendo hasta conseguir el resultado",
   "introduction": "Este curso no presupone que conozcas NOMINASOL. Tampoco espera que memorices botones. Durante todo el año el SCORM permanecerá a tu lado como un tutor de trabajo: primero te contará qué ocurre en la empresa, después te enseñará dónde actuar en la aplicación, te ayudará a comprobar el resultado y finalmente te pedirá una evidencia. Si te equivocas, el objetivo no es penalizar el error, sino localizarlo, corregirlo y continuar con una empresa coherente.",
@@ -903,5 +903,6 @@
   "didactic_support": "contextual-2026.4",
   "learning_portfolio": "evidence-history-2026.5",
   "revision_snapshot": "private-config-2026.6",
-  "visual_guide": "official-specific-screens-2026.7"
+  "visual_guide": "official-specific-screens-2026.7",
+  "operational_dossier": "printable-personalized-2026.8"
 }
