@@ -182,7 +182,7 @@ def _manifest_info(data: bytes) -> tuple[str, str, str, dict]:
 async def _store_scorm(
     *,
     file: UploadFile,
-    owner_user_id: int,
+    owner_user_id: int | None,
     db: Session,
     title_override: str | None = None,
     description: str = "",
@@ -251,7 +251,8 @@ async def _store_scorm(
             if entry_path not in names:
                 raise HTTPException(status_code=400, detail="SCORM entrypoint does not exist in the package")
 
-            relative_dir = Path(f"user-{owner_user_id}") / sha
+            owner_segment = f"user-{owner_user_id}" if owner_user_id is not None else "catalog"
+            relative_dir = Path(owner_segment) / sha
             final_dir = Path(settings.storage_root) / "scorm" / relative_dir
             if not final_dir.exists():
                 final_dir.mkdir(parents=True, exist_ok=True)
