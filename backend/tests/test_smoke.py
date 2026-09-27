@@ -765,3 +765,99 @@ def test_media_library_is_private_and_supports_range_playback():
         client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
         forbidden = client.get(f"/api/media-library/{asset['id']}/content")
         assert forbidden.status_code == 403
+
+
+def test_shared_scorm_revision_does_not_silently_update_other_teacher_module():
+    with TestClient(app) as client:
+        teacher_a, course_a, module_a = teacher_fixture("shared-owner-revision")
+        teacher_b, course_b, module_b = teacher_fixture("shared-consumer-revision")
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        upload = client.post(
+            f"/api/modules/{module_a}/scorm-packages",
+            data={"visibility": "shared", "title": "SCORM compartido versionado"},
+            files={"file": ("shared-versioned.zip", minimal_scorm_zip(), "application/zip")},
+        )
+        assert upload.status_code == 200, upload.text
+        revision_1 = upload.json()
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        attached_b = client.post(
+            f"/api/modules/{module_b}/scorm-packages/{revision_1['id']}",
+            json={"position": 0, "required": True, "weight": 1, "settings": {}},
+        )
+        assert attached_b.status_code == 200, attached_b.text
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        draft = client.post(f"/api/scorm-library/{revision_1['id']}/draft")
+        assert draft.status_code == 200
+        draft_id = draft.json()["draft_id"]
+        changed = client.put(
+            f"/api/scorm-editor/{draft_id}/file",
+            json={
+                "path": "index.html",
+                "content": "<!doctype html><html><body>Revisión nueva</body></html>",
+            },
+        )
+        assert changed.status_code == 200
+        published = client.post(f"/api/scorm-editor/{draft_id}/publish")
+        assert published.status_code == 200, published.text
+        revision_2 = published.json()["package"]
+        assert published.json()["preserved_external_modules"] >= 1
+
+        modules_a = client.get(f"/api/modules/{module_a}/scorm-packages")
+        assert modules_a.status_code == 200
+        assert [row["id"] for row in modules_a.json()] == [revision_2["id"]]
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        modules_b = client.get(f"/api/modules/{module_b}/scorm-packages")
+        assert modules_b.status_code == 200
+        assert [row["id"] for row in modules_b.json()] == [revision_1["id"]]
+
+        shared_updates = client.get("/api/scorm-library?scope=shared")
+        assert shared_updates.status_code == 200
+        assert any(row["id"] == revision_2["id"] for row in shared_updates.json())
+
+        fork = client.post(f"/api/scorm-library/{revision_2['id']}/fork")
+        assert fork.status_code == 200
+        assert fork.json()["owner_user_id"] == teacher_b
+        assert fork.json()["visibility"] == "private"
+        assert fork.json()["revision_number"] == 1
+
+
+def test_export_all_contains_independent_scorm_archives_and_catalog():
+    with TestClient(app) as client:
+        teacher_id, course_id, _ = teacher_fixture("batch-export")
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+
+        one = client.post(
+            "/api/scorm-library",
+            data={"title": "Paquete uno"},
+            files={"file": ("one.zip", minimal_scorm_zip(), "application/zip")},
+        )
+        assert one.status_code == 200
+        two = client.post(
+            "/api/scorm-library",
+            data={"title": "Paquete dos"},
+            files={"file": ("two-2004.zip", minimal_scorm_2004_zip(), "application/zip")},
+        )
+        assert two.status_code == 200
+
+        exported = client.get("/api/scorm-library/export/all")
+        assert exported.status_code == 200, exported.text
+        with zipfile.ZipFile(io.BytesIO(exported.content)) as outer:
+            names = outer.namelist()
+            assert "catalogo.json" in names
+            inner_names = [name for name in names if name.startswith("scorm/") and name.endswith(".zip")]
+            assert len(inner_names) >= 2
+            catalog = __import__("json").loads(outer.read("catalogo.json"))
+            assert any(item["title"] == "Paquete uno" for item in catalog)
+            assert any(item["standard"] == "SCORM_2004" for item in catalog)
+
+            with zipfile.ZipFile(io.BytesIO(outer.read(inner_names[0]))) as inner:
+                assert "imsmanifest.xml" in inner.namelist()
