@@ -60,6 +60,8 @@ function render(){
      +(rr?'<div class="notice"><strong>Portafolio:</strong> '+esc(rr.portfolio_score)+'/100'+(rr.exam_score!==null?' · <strong>Examen:</strong> '+esc(rr.exam_score)+'/100':'')+(rr.final_score!==null?' · <strong>Final:</strong> '+esc(rr.final_score)+'/100':'')+'</div>':'')
      +ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+'</strong><div class="items">'+ce.items.filter(i=>i.instrument==="portfolio").map(item=>renderItem(item,ce,ra)).join("")+'</div></div>').join("")
      +(structure.config.exam_enabled?'<div class="notice"><strong>Examen de '+esc(ra.code)+'</strong><br><span class="muted">Duración: '+esc(structure.config.exam_minutes)+' min · '+esc(structure.config.exam_questions_per_ce)+' preguntas por CE.</span><br><button class="btn" style="margin-top:8px" onclick="startExam('+ra.id+',\''+esc(ra.code)+'\')">Iniciar o reanudar examen</button></div>':'<div class="notice warn">El examen todavía no está habilitado por el profesor.</div>')
+     +(rr&&rr.status==="recovery-required"?'<div class="notice warn"><strong>Recuperación necesaria.</strong> CE pendientes: '+esc((rr.recovery||[]).join(", "))+'<br><button class="btn secondary" style="margin-top:8px" onclick="loadRecovery('+ra.id+')">Abrir recuperación</button><div id="recovery-'+ra.id+'"></div></div>':'')
+     +(rr&&rr.status==="not-passed"?'<div class="notice error"><strong>RA no superado.</strong> Los CE están recuperados, pero la calificación global o los requisitos de los instrumentos no alcanzan el mínimo.</div>':'')
      +'</details></section>';
  }).join("");
 }
@@ -100,6 +102,20 @@ async function submitItem(itemId,type){
    const submitted=await api("/api/evaluation/attempts/"+started.attempt_id+"/submit",json("POST",{response:value,metadata:{surface:"student-ui"}}));
    root.innerHTML='<div class="notice '+(submitted.pending_review?"warn":"ok")+'">'+(submitted.pending_review?"Respuesta guardada. Pendiente de revisión docente.":"Puntuación: "+esc(submitted.score)+"/100")+(submitted.feedback?"<br>"+esc(submitted.feedback):"")+'</div>';
    results=await api("/api/evaluation/course-modules/"+cmid+"/my-results");render();
+ }catch(e){root.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+
+async function loadRecovery(lrId){
+ const root=document.querySelector("#recovery-"+lrId);if(!root)return;
+ root.innerHTML='<div class="tiny muted">Cargando recuperación…</div>';
+ try{
+   const r=await api("/api/evaluation/course-modules/"+cmid+"/learning-results/"+lrId+"/recovery");
+   if(!r.items.length){
+     root.innerHTML='<div class="notice">No hay actividades de recuperación publicadas para los CE pendientes. Consulta con tu profesor.</div>';return;
+   }
+   const groups={};
+   for(const item of r.items){(groups[item.ce]??=[]).push(item)}
+   root.innerHTML=Object.entries(groups).map(([ce,items])=>'<div class="ce"><strong>'+esc(ce)+'</strong><div class="items">'+items.map(item=>renderItem(item,{code:ce},{id:lrId})).join("")+'</div></div>').join("");
  }catch(e){root.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 
