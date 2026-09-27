@@ -109,6 +109,240 @@ Para aprovisionar el módulo oficial después de desplegar:
 - [x] Instalador Ubuntu + Docker Compose + Cloudflare Tunnel opcional + autodiagnóstico.
 - [ ] Piloto real en CAMPUS.
 
+## Instalación desatendida en Ubuntu
+
+La vía recomendada para producción es el **bootstrap desatendido**. Puede ejecutarse sobre un servidor Ubuntu limpio: instala las dependencias mínimas, clona este repositorio, crea los secretos, instala/activa Docker, levanta PostgreSQL + FastAPI + Nginx, habilita Cloudflare Tunnel si se proporciona un token, aprovisiona el catálogo y ejecuta el autodiagnóstico final.
+
+### Requisitos previos
+
+- servidor Ubuntu con `sudo`/root;
+- salida a Internet para APT, GitHub, Docker Hub y, si se utiliza, Cloudflare;
+- una URL pública HTTPS, por ejemplo `https://lms.midominio.es`;
+- opcionalmente, un token de Cloudflare Tunnel ya creado.
+
+No es necesario instalar previamente Git, Docker, Docker Compose, PostgreSQL, Python ni Nginx.
+
+### Opción A — una sola orden
+
+Sin Cloudflare gestionado por esta instalación:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/atreyu1968/LMS-Adminidtracion-y-Gestion/main/scripts/bootstrap-ubuntu.sh \
+  | sudo bash -s -- --url https://lms.midominio.es
+```
+
+El sistema queda instalado por defecto en:
+
+```text
+/opt/lms-administracion-y-gestion
+```
+
+Si el dominio/túnel ya está gestionado externamente, basta con hacer que el proxy/túnel dirija el tráfico HTTPS hacia:
+
+```text
+http://127.0.0.1:8080
+```
+
+### Opción B — desatendida con Cloudflare Tunnel
+
+Es preferible guardar el token fuera del historial del shell:
+
+```bash
+sudo install -m 600 /dev/null /root/cloudflare-lms.token
+sudo nano /root/cloudflare-lms.token
+```
+
+Pega únicamente el token del túnel, guarda el fichero y ejecuta:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/atreyu1968/LMS-Adminidtracion-y-Gestion/main/scripts/bootstrap-ubuntu.sh \
+  -o /tmp/lms-bootstrap.sh
+
+sudo bash /tmp/lms-bootstrap.sh \
+  --url https://lms.midominio.es \
+  --cloudflare-token-file /root/cloudflare-lms.token
+```
+
+Cuando se utiliza el contenedor `cloudflared`, el hostname público del túnel debe apuntar al servicio interno:
+
+```text
+http://web:8080
+```
+
+No a `localhost:8080` dentro de la configuración del contenedor.
+
+### Opción C — fichero de configuración para cloud-init/Ansible
+
+El repositorio incluye:
+
+```text
+deploy/unattended.env.example
+```
+
+Ejemplo de fichero `/root/lms-install.env`:
+
+```bash
+LMS_PUBLIC_BASE_URL=https://lms.midominio.es
+CLOUDFLARE_TUNNEL_TOKEN=TOKEN_DEL_TUNEL
+LMS_INSTALL_DIR=/opt/lms-administracion-y-gestion
+LMS_INSTALL_REPOSITORY=https://github.com/atreyu1968/LMS-Adminidtracion-y-Gestion.git
+LMS_INSTALL_BRANCH=main
+LMS_INSTALL_PROVISION=1
+```
+
+Protégelo:
+
+```bash
+sudo chmod 600 /root/lms-install.env
+```
+
+Y ejecuta el bootstrap sin interacción:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/atreyu1968/LMS-Adminidtracion-y-Gestion/main/scripts/bootstrap-ubuntu.sh \
+  -o /tmp/lms-bootstrap.sh
+
+sudo bash /tmp/lms-bootstrap.sh --config /root/lms-install.env
+```
+
+Este formato es adecuado para aprovisionamiento automatizado mediante cloud-init, Ansible u otra herramienta de despliegue.
+
+### Qué realiza automáticamente
+
+El proceso:
+
+1. instala `ca-certificates`, `curl`, `git`, Docker y Docker Compose;
+2. clona el LMS en el directorio indicado;
+3. genera aleatoriamente contraseña PostgreSQL, secreto de sesión, token administrativo y secreto de cifrado de IA;
+4. crea `.env` con permisos `600`;
+5. genera la clave RSA de la herramienta LTI dentro del volumen persistente;
+6. construye y levanta PostgreSQL, FastAPI y Nginx;
+7. levanta `cloudflared` cuando existe un token de túnel;
+8. aplica automáticamente las migraciones de base de datos;
+9. aprovisiona GTH y NOMINASOL salvo que se indique `--no-provision`;
+10. comprueba salud, versión, JWKS, esquema, almacenamiento, Nginx y autodiagnóstico;
+11. deja un informe de instalación en:
+
+```text
+/var/log/lms-administracion-y-gestion-install.txt
+```
+
+El informe no contiene contraseñas ni tokens.
+
+### Desactivar el aprovisionamiento inicial
+
+Para instalar solo el motor LMS:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/atreyu1968/LMS-Adminidtracion-y-Gestion/main/scripts/bootstrap-ubuntu.sh \
+  | sudo bash -s -- \
+      --url https://lms.midominio.es \
+      --no-provision
+```
+
+### Verificación después de instalar
+
+El instalador ya ejecuta esta comprobación. Puede repetirse en cualquier momento:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/verify-installation.sh
+```
+
+El resultado correcto termina con:
+
+```text
+OK: instalación interna operativa.
+```
+
+También deben responder:
+
+```text
+https://lms.midominio.es/
+https://lms.midominio.es/api/health
+https://lms.midominio.es/lti/jwks
+```
+
+`/api/health` debe devolver `"ok": true` y la misma versión indicada en `VERSION`.
+
+### Consultar la configuración administrativa
+
+Los secretos no se muestran durante la instalación. Para consultar el token administrativo desde el propio servidor:
+
+```bash
+sudo grep '^LMS_ADMIN_TOKEN=' /opt/lms-administracion-y-gestion/.env
+```
+
+No publiques ni copies el contenido completo de `.env`.
+
+### Una instalación ya existe
+
+El bootstrap **no sobrescribe** una instalación existente. Si encuentra un repositorio en el directorio destino, se detiene deliberadamente.
+
+Para actualizar:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/update-ubuntu.sh
+```
+
+La actualización crea primero un backup, hace `git pull --ff-only`, reconstruye los contenedores, aplica las migraciones y vuelve a verificar el sistema.
+
+### Backup y restauración
+
+Copia manual:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/backup.sh
+```
+
+Restauración:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/restore.sh backups/FECHA --yes
+```
+
+La copia incluye PostgreSQL, almacenamiento persistente, secretos necesarios, versión y hashes de integridad.
+
+### Diagnóstico rápido
+
+```bash
+cd /opt/lms-administracion-y-gestion
+set -a
+source .env
+set +a
+
+curl -fsS \
+  -H "X-Admin-Token: $LMS_ADMIN_TOKEN" \
+  http://127.0.0.1:8080/api/admin/readiness
+```
+
+`code_ready: true` confirma que la instalación interna está preparada.
+
+`campus_ready` permanecerá en `false` hasta que exista una URL HTTPS pública válida y se haya registrado una plataforma LTI Moodle/CAMPUS.
+
+### Ficheros importantes
+
+```text
+/opt/lms-administracion-y-gestion/.env
+    secretos y configuración; permisos 600
+
+/var/log/lms-administracion-y-gestion-install.txt
+    informe de la última instalación
+
+/opt/lms-administracion-y-gestion/backups/
+    copias realizadas antes de actualizaciones o manualmente
+
+deploy/unattended.env.example
+    plantilla para instalaciones automatizadas
+```
+
 ## Arranque local
 
 ```bash
@@ -202,12 +436,6 @@ Restauración:
 
 ```bash
 sudo bash scripts/restore.sh backups/FECHA --yes
-```
-
-Copia de seguridad:
-
-```bash
-bash scripts/backup.sh
 ```
 
 ### Lo que aún depende de terceros
