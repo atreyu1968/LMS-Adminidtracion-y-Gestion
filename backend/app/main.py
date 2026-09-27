@@ -21,6 +21,7 @@ from .scorm import router as scorm_router
 from .scorm_editor import router as scorm_editor_router
 from .lti_keys import ensure_private_key
 from .settings import get_settings
+from .version import __version__
 
 
 settings = get_settings()
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LMS Administración y Gestión",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
