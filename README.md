@@ -63,14 +63,14 @@ CAMPUS / Moodle
 - [x] Repositorio independiente.
 - [x] Diseño multi-módulo y multi-profesor.
 - [x] PostgreSQL + FastAPI + Docker.
-- [x] Esqueleto LTI 1.3.
+- [x] LTI 1.3 Core: OIDC, JWKS, lanzamiento, identidad y roles.
 - [x] Modelo de datos inicial.
 - [ ] Migración completa de GTH.
-- [ ] Reproductor SCORM genérico con persistencia.
-- [ ] Panel docente.
-- [ ] AGS completo y probado contra Moodle.
-- [ ] NRPS completo y probado contra Moodle.
-- [ ] Deep Linking.
+- [x] Reproductor SCORM 1.2 genérico con subida, versionado, registro y persistencia.
+- [ ] Panel docente completo (la API multi-profesor y permisos ya está implementada).
+- [x] AGS implementado para retorno de notas; pendiente validación contra Moodle/CAMPUS.
+- [x] NRPS implementado con paginación; pendiente validación contra Moodle/CAMPUS.
+- [x] Deep Linking implementado y cubierto por pruebas locales.
 - [ ] Instalador Ubuntu + Cloudflare Tunnel.
 - [ ] Piloto real en CAMPUS.
 
@@ -104,7 +104,7 @@ storage/             volumen local (no versionado)
 La primera migración se realizará desde:
 
 ```text
-https://github.com/atreyu1968/CFGSAF/tree/main/grh0652
+https://github.com/atreyu1968/CFGSAF/tree/6eaa240ce13a69e328c5b8d11ae2bdca99be7d17/grh0652
 ```
 
 La aplicación original seguirá siendo la referencia funcional de GTH hasta que la nueva versión supere sus pruebas de regresión.
