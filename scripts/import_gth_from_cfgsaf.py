@@ -13,7 +13,8 @@ import urllib.request
 from pathlib import Path
 
 
-GTH_SOURCE_COMMIT = "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17"\nARCHIVE = f"https://codeload.github.com/atreyu1968/CFGSAF/tar.gz/{GTH_SOURCE_COMMIT}"
+GTH_SOURCE_COMMIT = "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17"
+ARCHIVE = f"https://codeload.github.com/atreyu1968/CFGSAF/tar.gz/{GTH_SOURCE_COMMIT}"
 TARGET = Path(__file__).resolve().parents[1] / "modules" / "gth0652" / "legacy"
 ALLOWED_PREFIXES = (
     "grh0652/scorm/",
