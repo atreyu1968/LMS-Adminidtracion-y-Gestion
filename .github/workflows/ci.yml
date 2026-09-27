@@ -22,6 +22,11 @@ jobs:
           pip install -r requirements.txt pytest
       - name: Compile
         run: python -m compileall -q app
+      - name: Validate release version
+        run: |
+          EXPECTED="$(tr -d '[:space:]' < ../VERSION)"
+          ACTUAL="$(python -c 'from app.version import __version__; print(__version__)')"
+          test "$EXPECTED" = "$ACTUAL"
       - name: Validate deployment scripts
         working-directory: ${{ github.workspace }}
         run: |
