@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     scorm_content_base_url: str = ""
     max_scorm_upload_mb: int = 512
     max_media_upload_mb: int = 2048
+    max_evidence_upload_mb: int = 256
     cors_origins: str = "http://localhost:8080"
 
     @property
