@@ -1,3 +1,6 @@
+import re
+import unicodedata
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -146,11 +149,33 @@ def seed_gth(db: Session = Depends(get_db)) -> dict:
 
 
 class ModuleCreate(BaseModel):
-    slug: str = Field(min_length=2, max_length=120, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    slug: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=120,
+        pattern=r"^[a-z0-9][a-z0-9-]*$",
+    )
     code: str | None = Field(default=None, max_length=80)
     title: str = Field(min_length=2, max_length=300)
     description: str = ""
     module_type: str = "scorm"
+
+
+def _slugify(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii").lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text).strip("-")
+    return (slug or "modulo")[:100]
+
+
+def _unique_module_slug(db: Session, desired: str, user_id: int) -> str:
+    base = _slugify(desired)
+    candidates = [base, f"{base}-u{user_id}"]
+    candidates.extend(f"{base}-u{user_id}-{n}" for n in range(2, 100))
+    for candidate in candidates:
+        if not db.scalar(select(Module.id).where(Module.slug == candidate)):
+            return candidate
+    raise HTTPException(status_code=409, detail="Could not allocate a unique module identifier")
 
 
 def _teacher_membership(db: Session, course_id: int, user_id: int) -> Membership:
@@ -184,11 +209,10 @@ def create_module(
     session: dict = Depends(require_teacher),
     db: Session = Depends(get_db),
 ) -> dict:
-    if db.scalar(select(Module).where(Module.slug == payload.slug)):
-        raise HTTPException(status_code=409, detail="Module slug already exists")
     user_id = int(session["sub"])
+    slug = _unique_module_slug(db, payload.slug or payload.title, user_id)
     module = Module(
-        slug=payload.slug,
+        slug=slug,
         code=payload.code,
         title=payload.title,
         description=payload.description,
