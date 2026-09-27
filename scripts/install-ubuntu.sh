@@ -132,7 +132,7 @@ if [[ $PROVISION -eq 1 ]]; then
   curl -fsS -X POST -H "X-Admin-Token: ${LMS_ADMIN_TOKEN}"     http://127.0.0.1:8080/api/admin/catalog/nominasol2026/provision >/dev/null     || echo "Aviso: no se pudo aprovisionar NOMINASOL automáticamente."
 fi
 
-./scripts/verify-installation.sh
+bash ./scripts/verify-installation.sh
 
 echo
 echo "Instalación completada."
