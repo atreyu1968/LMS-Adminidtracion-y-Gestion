@@ -3131,3 +3131,114 @@ def test_admin_readiness_distinguishes_internal_and_external_requirements():
         assert checks["admin_token"]["ok"] is True
         assert checks["catalog"]["ok"] is True
         assert checks["public_https"]["external"] is True
+
+
+def test_release_dates_audience_and_exam_extra_time():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("release-dates-time")
+        with SessionLocal() as db:
+            student_a = User(display_name="Alumno Fecha A", email="fecha-a@example.test")
+            student_b = User(display_name="Alumno Fecha B", email="fecha-b@example.test")
+            cm = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={
+                    "evaluation": {
+                        "exam_enabled": True,
+                        "exam_questions_per_ce": 1,
+                        "exam_minutes": 10,
+                        "exam_max_attempts": 1,
+                    }
+                },
+                active=True,
+            )
+            lr = LearningResult(module_id=module_id, code="RA-F", title="RA Fecha", position=1, active=True)
+            db.add_all([student_a, student_b, cm, lr]); db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="F.a",
+                title="CE fecha",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce); db.flush()
+            portfolio = AssessmentItem(
+                criterion_id=ce.id, instrument="portfolio", item_key="fecha-port",
+                item_type="choice", prompt="Portfolio fecha", options_json=["A","B"],
+                evaluable=True, max_attempts=2, active=True,
+            )
+            exam = AssessmentItem(
+                criterion_id=ce.id, instrument="exam", item_key="fecha-exam",
+                item_type="choice", prompt="Examen fecha", options_json=["A","B"],
+                evaluable=True, max_attempts=1, active=True,
+            )
+            db.add_all([portfolio, exam]); db.flush()
+            db.add_all([
+                AssessmentKey(item_id=portfolio.id, answer_json={"value": 0}, active=True),
+                AssessmentKey(item_id=exam.id, answer_json={"value": 0}, active=True),
+                Membership(course_id=course_id, user_id=student_a.id, role="student", lti_roles=["Learner"], active=True),
+                Membership(course_id=course_id, user_id=student_b.id, role="student", lti_roles=["Learner"], active=True),
+            ])
+            db.commit()
+            db.refresh(cm); db.refresh(lr); db.refresh(portfolio)
+            cmid, lrid, itemid, aid, bid = cm.id, lr.id, portfolio.id, student_a.id, student_b.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        future = datetime.now(timezone.utc) + timedelta(days=1)
+        rule = client.put(
+            f"/api/learning/course-modules/{cmid}/rules/item/{itemid}",
+            json={
+                "open_at": future.isoformat(),
+                "requirements": [],
+                "audience": {"user_ids": [aid]},
+            },
+        )
+        assert rule.status_code == 200, rule.text
+        exception = client.put(
+            f"/api/learning/course-modules/{cmid}/students/{aid}/exceptions/item/{itemid}",
+            json={
+                "open_at_override": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
+                "extra_attempts": 0,
+                "extra_time_minutes": 0,
+                "notes": "Apertura individual",
+            },
+        )
+        assert exception.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(aid, course_id, role="student"))
+        access_a = client.get(f"/api/learning/course-modules/{cmid}/access/item/{itemid}")
+        assert access_a.status_code == 200
+        assert access_a.json()["available"] is True
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(bid, course_id, role="student"))
+        access_b = client.get(f"/api/learning/course-modules/{cmid}/access/item/{itemid}")
+        assert access_b.status_code == 200
+        assert access_b.json()["available"] is False
+        assert "seleccionado" in access_b.json()["reason"].lower()
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        exam_exception = client.put(
+            f"/api/learning/course-modules/{cmid}/students/{aid}/exceptions/learning_result/{lrid}",
+            json={
+                "extra_attempts": 0,
+                "extra_time_minutes": 15,
+                "notes": "15 minutos adicionales",
+            },
+        )
+        assert exam_exception.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(aid, course_id, role="student"))
+        started = client.post(
+            f"/api/evaluation/course-modules/{cmid}/learning-results/{lrid}/exam/start"
+        )
+        assert started.status_code == 200, started.text
+        payload = started.json()
+        started_at = datetime.fromisoformat(payload["started_at"])
+        deadline_at = datetime.fromisoformat(payload["deadline_at"])
+        assert 24.5 <= (deadline_at - started_at).total_seconds() / 60 <= 25.5
