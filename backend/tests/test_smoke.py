@@ -46,6 +46,7 @@ from app.models import (
     Module,
     ModulePermission,
     RecoveryPlan,
+    ScormRegistration,
     TeacherAISettings,
     User,
 )
@@ -2474,3 +2475,151 @@ def test_ags_sync_sends_only_definitive_ra_grades(monkeypatch):
             assert records[0].score_given == 74.0
             assert records[0].grading_progress == "FullyGraded"
             assert all(record.user_id != pending_id for record in records)
+
+
+def test_teacher_dashboard_aggregates_pending_work_across_course_module():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("dashboard-activity")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course.source_type = "lti"
+
+            student = User(
+                display_name="Alumno Dashboard",
+                email="dashboard-student@example.test",
+            )
+            cm = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA-DASH",
+                title="RA Dashboard",
+                position=1,
+                active=True,
+            )
+            db.add_all([student, cm, lr])
+            db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="D.a",
+                title="Criterio dashboard",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce)
+            db.flush()
+            item = AssessmentItem(
+                criterion_id=ce.id,
+                instrument="portfolio",
+                item_key="dash-free",
+                item_type="free",
+                prompt="Explica el procedimiento.",
+                evaluable=True,
+                max_attempts=2,
+                active=True,
+            )
+            db.add(item)
+            db.flush()
+            attempt = AssessmentAttempt(
+                course_module_id=cm.id,
+                user_id=student.id,
+                item_id=item.id,
+                attempt_no=1,
+                status="submitted",
+                response_json={"value": "Respuesta"},
+                pending_review=True,
+                submitted_at=datetime.now(timezone.utc),
+            )
+            db.add(attempt)
+            db.flush()
+            db.add_all([
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                ),
+                AssessmentReview(
+                    attempt_id=attempt.id,
+                    source="teacher",
+                    status="pending",
+                    feedback="Pendiente",
+                ),
+                RecoveryPlan(
+                    course_module_id=cm.id,
+                    user_id=student.id,
+                    learning_result_id=lr.id,
+                    criteria_json=["D.a"],
+                    status="pending",
+                ),
+                ScormRegistration(
+                    course_module_id=cm.id,
+                    package_id=1,
+                    user_id=student.id,
+                    lesson_status="incomplete",
+                    lesson_location="tema-1",
+                    suspend_data="",
+                    cmi_json={},
+                ),
+            ])
+
+            platform = LTIPlatform(
+                name="CAMPUS Dashboard",
+                issuer="https://campus-dashboard.example.test",
+                client_id="dashboard-client",
+                auth_url="https://campus-dashboard.example.test/auth",
+                token_url="https://campus-dashboard.example.test/token",
+                jwks_url="https://campus-dashboard.example.test/jwks",
+                active=True,
+            )
+            db.add(platform)
+            db.flush()
+            link = LTIResourceLink(
+                platform_id=platform.id,
+                deployment_id="dash-deployment",
+                resource_link_id="dash-ra",
+                course_id=course_id,
+                course_module_id=cm.id,
+                learning_result_id=lr.id,
+                lineitem_url="https://campus-dashboard.example.test/lineitem/ra",
+                scopes=[],
+            )
+            db.add(link)
+            db.add(
+                EvaluationResult(
+                    course_module_id=cm.id,
+                    user_id=student.id,
+                    learning_result_id=lr.id,
+                    portfolio_score=80,
+                    exam_score=70,
+                    final_score=74,
+                    criteria_passed=1,
+                    criteria_total=1,
+                    passed=True,
+                    details_json={"status": "passed"},
+                )
+            )
+            db.commit()
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        response = client.get("/api/dashboard/teacher")
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["summary"]["groups"] >= 1
+        assert data["summary"]["students"] >= 1
+        assert data["summary"]["pending_reviews"] >= 1
+        assert data["summary"]["recoveries"] >= 1
+        assert data["summary"]["campus_pending"] >= 1
+        assert data["summary"]["scorm_in_progress"] >= 1
+        kinds = {item["kind"] for item in data["items"]}
+        assert {"review", "recovery", "campus", "scorm"}.issubset(kinds)
+        review = next(item for item in data["items"] if item["kind"] == "review")
+        assert "tab=reviews" in review["href"]
