@@ -2,7 +2,7 @@
   "project_id": "nominasol-2026-anual",
   "title": "Un año en Recursos Humanos con NOMINASOL 2026",
   "subtitle": "Proyecto profesional guiado · ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
-  "version": "2026.11",
+  "version": "2026.12",
   "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
   "approach": "Aprender haciendo y corrigiendo hasta conseguir el resultado",
   "introduction": "Este curso no presupone que conozcas NOMINASOL. Tampoco espera que memorices botones. Durante todo el año el SCORM permanecerá a tu lado como un tutor de trabajo: primero te contará qué ocurre en la empresa, después te enseñará dónde actuar en la aplicación, te ayudará a comprobar el resultado y finalmente te pedirá una evidencia. Si te equivocas, el objetivo no es penalizar el error, sino localizarlo, corregirlo y continuar con una empresa coherente.",
@@ -907,14 +907,14 @@
   "operational_dossier": "printable-personalized-2026.8",
   "teacher_master_state": "private-personalized-2026.9",
   "educational_download": {
-    "url": "https://academy.sdelsol.com/course/view.php?id=8",
+    "url": "https://www.sdelsol.com/paraninfo/",
     "fallback_url": "https://www.sdelsol.com/universidades-y-cc-ff/",
-    "provider": "DELSOL Academy / TeamSystem",
-    "resource": "Versión educativa",
+    "provider": "Software DELSOL / TeamSystem",
+    "resource": "Paraninfo · versión educativa",
     "product": "TeamSystem Nominasol",
     "year": 2026,
     "platform": "Windows",
-    "requires_login": true,
-    "instruction": "Abre «Versión educativa» en DELSOL Academy. Si no dispones todavía de acceso, usa la alternativa pública de Universidades y centros de formación y selecciona TeamSystem Nominasol 2026 para Windows."
+    "requires_login": false,
+    "instruction": "Abre Paraninfo y descarga TeamSystem Nominasol 2026 · Versión Educativa para Windows. No es necesario registrarse."
   }
 }
