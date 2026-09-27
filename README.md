@@ -166,13 +166,13 @@ El funcionamiento del editor, el versionado no destructivo, la biblioteca multim
 El estado, las reglas conservadas, el aprovisionamiento del catálogo y la carga separada de bancos privados se documentan en `docs/GTH_MIGRATION.md`.
 
 
-## Release candidata 1.0.0-rc1
+## Release candidata 1.0.0-rc2
 
-La versión actual es **1.0.0-rc1**.
+La versión actual es **1.0.0-rc2**.
 
-El software bajo control del repositorio se encuentra operativo y cubierto por CI. La documentación de instalación, autodiagnóstico, copia de seguridad y criterios para promover la release a 1.0.0 definitiva está en:
+El software bajo control del repositorio se encuentra operativo y cubierto por CI funcional y por una prueba del stack Docker completo. La documentación de instalación, autodiagnóstico, copia de seguridad y criterios para promover la release a 1.0.0 definitiva está en:
 
-`docs/RELEASE_1.0.0-RC1.md`
+`docs/RELEASE_1.0.0-RC2.md`
 
 Instalación Ubuntu:
 
@@ -184,6 +184,24 @@ Verificación:
 
 ```bash
 bash scripts/verify-installation.sh
+```
+
+Actualización segura:
+
+```bash
+sudo bash scripts/update-ubuntu.sh
+```
+
+Copia de seguridad:
+
+```bash
+sudo bash scripts/backup.sh
+```
+
+Restauración:
+
+```bash
+sudo bash scripts/restore.sh backups/FECHA --yes
 ```
 
 Copia de seguridad:
