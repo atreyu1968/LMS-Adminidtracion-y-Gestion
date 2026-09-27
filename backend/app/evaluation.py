@@ -595,6 +595,168 @@ class PrivateKeysIn(BaseModel):
     source: str = Field(default="private-bank", max_length=80)
 
 
+class ExamQuestionIn(BaseModel):
+    id: str = Field(min_length=1, max_length=160)
+    ce: str = Field(min_length=2, max_length=40)
+    q: str = Field(min_length=1, max_length=10000)
+    options: list[object] = []
+    answer: object
+    type: str = Field(default="choice", pattern=r"^(choice|tf|multi)$")
+    feedback: str = Field(default="", max_length=5000)
+
+
+class ExamBankIn(BaseModel):
+    questions: list[ExamQuestionIn]
+    source: str = Field(default="private-exam-bank", max_length=80)
+
+
+class ExamDraftIn(BaseModel):
+    answers: dict[str, object] = {}
+
+
+class ExamEventIn(BaseModel):
+    event: str = Field(min_length=1, max_length=80)
+    detail: dict = {}
+
+
+class ExamSubmitIn(BaseModel):
+    answers: dict[str, object] = {}
+    timeout: bool = False
+
+
+def _load_exam_bank(
+    db: Session,
+    module_id: int,
+    learning_result_id: int,
+    payload: ExamBankIn,
+) -> dict:
+    lr = db.get(LearningResult, learning_result_id)
+    if not lr or lr.module_id != module_id or not lr.active:
+        raise HTTPException(status_code=404, detail="RA no encontrado en el módulo")
+
+    criteria = list(
+        db.scalars(
+            select(AssessmentCriterion).where(
+                AssessmentCriterion.learning_result_id == learning_result_id,
+                AssessmentCriterion.active.is_(True),
+            )
+        )
+    )
+    by_code = {criterion.code: criterion for criterion in criteria}
+    supplied_keys = set()
+    imported = 0
+
+    for position, question in enumerate(payload.questions, start=1):
+        criterion = by_code.get(question.ce)
+        if not criterion:
+            raise HTTPException(
+                status_code=400,
+                detail=f"El CE {question.ce} no pertenece a {lr.code}",
+            )
+        if question.type == "choice":
+            if (
+                not isinstance(question.answer, int)
+                or isinstance(question.answer, bool)
+                or question.answer < 0
+                or question.answer >= len(question.options)
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Respuesta choice no válida: {question.id}",
+                )
+        elif question.type == "tf":
+            if not isinstance(question.answer, bool):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Respuesta V/F no válida: {question.id}",
+                )
+        elif question.type == "multi":
+            if (
+                not isinstance(question.answer, list)
+                or not question.answer
+                or any(
+                    not isinstance(index, int)
+                    or isinstance(index, bool)
+                    or index < 0
+                    or index >= len(question.options)
+                    for index in question.answer
+                )
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Respuesta múltiple no válida: {question.id}",
+                )
+
+        supplied_keys.add((criterion.id, question.id))
+        item = db.scalar(
+            select(AssessmentItem).where(
+                AssessmentItem.criterion_id == criterion.id,
+                AssessmentItem.instrument == "exam",
+                AssessmentItem.item_key == question.id,
+            )
+        )
+        if not item:
+            item = AssessmentItem(
+                criterion_id=criterion.id,
+                instrument="exam",
+                item_key=question.id,
+            )
+            db.add(item)
+            db.flush()
+        item.item_type = question.type
+        item.prompt = question.q
+        item.options_json = question.options or []
+        item.public_hash = None
+        item.evaluable = True
+        item.max_attempts = 1
+        item.position = position
+        item.metadata_json = {"source": payload.source}
+        item.active = True
+
+        key = db.scalar(select(AssessmentKey).where(AssessmentKey.item_id == item.id))
+        if not key:
+            key = AssessmentKey(item_id=item.id)
+            db.add(key)
+        key.answer_json = {"value": question.answer}
+        key.feedback = question.feedback
+        key.public_hash = None
+        key.source = payload.source
+        key.active = True
+        key.updated_at = _now()
+        imported += 1
+
+    existing = db.execute(
+        select(AssessmentItem, AssessmentCriterion)
+        .join(
+            AssessmentCriterion,
+            AssessmentCriterion.id == AssessmentItem.criterion_id,
+        )
+        .where(
+            AssessmentCriterion.learning_result_id == learning_result_id,
+            AssessmentItem.instrument == "exam",
+            AssessmentItem.active.is_(True),
+        )
+    ).all()
+    deactivated = 0
+    for item, criterion in existing:
+        if (criterion.id, item.item_key) not in supplied_keys:
+            item.active = False
+            key = db.scalar(
+                select(AssessmentKey).where(AssessmentKey.item_id == item.id)
+            )
+            if key:
+                key.active = False
+            deactivated += 1
+
+    db.commit()
+    return {
+        "module_id": module_id,
+        "learning_result_id": learning_result_id,
+        "questions": imported,
+        "deactivated": deactivated,
+    }
+
+
 def _load_private_keys(
     db: Session,
     module_id: int,
