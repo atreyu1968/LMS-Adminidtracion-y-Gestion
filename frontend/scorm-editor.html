@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor SCORM · LMS Administración y Gestión</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb;--ink:#10233f;--line:#dfe6ef;--muted:#64748b;--brand:#18508f}
+*{box-sizing:border-box}body{margin:0}.top{background:var(--ink);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}.top h1{font-size:1.25rem;margin:0}.top a{color:#fff}.wrap{padding:16px;max-width:1800px;margin:auto}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.btn{border:0;border-radius:9px;background:var(--brand);color:#fff;padding:9px 13px;font-weight:700;cursor:pointer;text-decoration:none}.btn.secondary{background:#e9eef5;color:#203652}.btn.danger{background:#a52b32}.btn:disabled{opacity:.5;cursor:wait}.grid{display:grid;grid-template-columns:300px minmax(420px,1fr) minmax(360px,1fr);gap:12px;min-height:74vh}.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 5px 20px rgba(20,40,70,.05)}.head{padding:12px 14px;border-bottom:1px solid var(--line);font-weight:800}.body{padding:12px}.files{height:65vh;overflow:auto}.file{display:flex;gap:8px;align-items:center;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:.88rem;word-break:break-all}.file:hover,.file.active{background:#eef5ff}.folder{font-weight:700;color:#475569}.editor{display:flex;flex-direction:column;height:100%}textarea.code{width:100%;height:58vh;border:0;resize:none;padding:14px;font:13px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none;tab-size:2}.preview{width:100%;height:63vh;border:0;background:#fff}.muted{color:var(--muted)}.tiny{font-size:.8rem}.notice{padding:10px 12px;border-radius:10px;background:#eef6ff;color:#23466f;margin-bottom:10px}.error{background:#fff1f2;color:#9f1239}.ok{background:#ecfdf5;color:#166534}.meta{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:12px}.meta input,.meta select,.meta textarea,.upload input,.upload select{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font:inherit}.meta textarea{grid-column:1/-1;min-height:55px}.upload{display:grid;gap:8px;padding:10px;border-top:1px solid var(--line)}.media-list{max-height:220px;overflow:auto;display:grid;gap:7px}.media-item{border:1px solid var(--line);border-radius:9px;padding:8px}.history{max-height:200px;overflow:auto}@media(max-width:1100px){.grid{grid-template-columns:260px 1fr}.preview-card{grid-column:1/-1}.preview{height:50vh}}@media(max-width:700px){.grid{grid-template-columns:1fr}.files{height:35vh}.preview-card{grid-column:auto}}
+</style>
+</head>
+<body>
+<header class="top"><div><h1>Editor SCORM</h1><div class="tiny" id="subtitle">Cargando…</div></div><a href="/teacher.html">Volver al panel docente</a></header>
+<main class="wrap">
+<div id="flash"></div>
+<div class="toolbar">
+  <button class="btn" id="saveBtn" disabled>Guardar archivo</button>
+  <button class="btn secondary" id="refreshPreviewBtn">Actualizar vista previa</button>
+  <a class="btn secondary" id="exportDraftBtn" href="#">Exportar borrador ZIP</a>
+  <button class="btn" id="publishBtn">Publicar nueva revisión</button>
+</div>
+<div class="meta">
+  <input id="title" placeholder="Título del SCORM">
+  <select id="visibility"><option value="private">Privado</option><option value="shared">Compartido</option></select>
+  <textarea id="description" placeholder="Descripción"></textarea>
+</div>
+<div class="grid">
+  <section class="card">
+    <div class="head">Archivos</div>
+    <div class="body files" id="files"></div>
+    <div class="upload">
+      <strong class="tiny">Añadir o sustituir archivo</strong>
+      <input id="targetPath" placeholder="media/video.mp4">
+      <input id="replacementFile" type="file">
+      <button class="btn secondary" id="uploadFileBtn">Subir al borrador</button>
+    </div>
+  </section>
+  <section class="card editor">
+    <div class="head"><span id="currentPath">Selecciona un archivo editable</span></div>
+    <textarea class="code" id="code" spellcheck="false" disabled></textarea>
+    <div class="upload">
+      <button class="btn danger" id="deleteFileBtn" disabled>Eliminar archivo seleccionado</button>
+    </div>
+  </section>
+  <section class="card preview-card">
+    <div class="head">Vista previa</div>
+    <iframe id="preview" class="preview" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+    <div class="upload">
+      <strong>Biblioteca multimedia</strong>
+      <div class="tiny muted">El recurso se copia dentro del SCORM para que el ZIP exportado siga siendo autónomo.</div>
+      <input id="mediaTargetPath" placeholder="media/recurso.ext">
+      <div id="mediaList" class="media-list"></div>
+    </div>
+    <div class="upload">
+      <strong>Historial de revisiones</strong>
+      <div id="history" class="history"></div>
+    </div>
+  </section>
+</div>
+</main>
+<script>
+const qs=new URLSearchParams(location.search);
+const draftId=qs.get("draft");
+let info=null,currentFile=null,media=[];
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",5000)}
+async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const data=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(data?.detail||data||("HTTP "+r.status));return data}
+function json(method,body){return{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}}
+function formatSize(n){if(n<1024)return n+" B";if(n<1048576)return(n/1024).toFixed(1)+" KB";return(n/1048576).toFixed(1)+" MB"}
+
+async function load(){
+ if(!draftId){flash("No se ha indicado un borrador SCORM.","error");return}
+ try{
+   info=await api("/api/scorm-editor/"+draftId);
+   document.querySelector("#subtitle").textContent=info.base_package.title+" · revisión base "+info.base_package.revision_number;
+   document.querySelector("#title").value=info.title||"";
+   document.querySelector("#description").value=info.description||"";
+   document.querySelector("#visibility").value=info.visibility||"private";
+   document.querySelector("#exportDraftBtn").href="/api/scorm-editor/"+draftId+"/export";
+   renderFiles();
+   refreshPreview();
+   media=await api("/api/media-library?scope=all");
+   renderMedia();
+   await loadHistory();
+ }catch(e){flash(e.message,"error")}
+}
+function renderFiles(){
+ const root=document.querySelector("#files");
+ root.innerHTML=info.files.map(f=>f.type==="folder"
+   ?'<div class="file folder">📁 '+esc(f.path)+'</div>'
+   :'<div class="file '+(currentFile===f.path?"active":"")+'" onclick="selectFile('+JSON.stringify(f.path).replace(/"/g,"&quot;")+','+f.editable+')">'+(f.editable?"📝":"📄")+" "+esc(f.path)+' <span class="muted tiny">('+formatSize(f.size)+')</span></div>'
+ ).join("");
+}
+async function selectFile(path,editable){
+ currentFile=path;renderFiles();document.querySelector("#currentPath").textContent=path;document.querySelector("#targetPath").value=path;
+ const code=document.querySelector("#code"),save=document.querySelector("#saveBtn"),del=document.querySelector("#deleteFileBtn");
+ del.disabled=path==="imsmanifest.xml";
+ if(!editable){code.value="Este archivo no se edita como texto. Puedes sustituirlo con el selector de archivos o con un recurso multimedia.";code.disabled=true;save.disabled=true;return}
+ try{const d=await api("/api/scorm-editor/"+draftId+"/file?path="+encodeURIComponent(path));code.value=d.content;code.disabled=false;save.disabled=false}catch(e){flash(e.message,"error")}
+}
+document.querySelector("#saveBtn").addEventListener("click",async()=>{
+ if(!currentFile)return;
+ try{await api("/api/scorm-editor/"+draftId+"/file",json("PUT",{path:currentFile,content:document.querySelector("#code").value}));flash("Archivo guardado.");await reloadInfo(false)}catch(e){flash(e.message,"error")}
+});
+document.querySelector("#deleteFileBtn").addEventListener("click",async()=>{
+ if(!currentFile||currentFile==="imsmanifest.xml"||!confirm("¿Eliminar este archivo del borrador?"))return;
+ try{await api("/api/scorm-editor/"+draftId+"/file?path="+encodeURIComponent(currentFile),{method:"DELETE"});currentFile=null;document.querySelector("#code").value="";document.querySelector("#code").disabled=true;await reloadInfo(false);flash("Archivo eliminado.")}catch(e){flash(e.message,"error")}
+});
+document.querySelector("#uploadFileBtn").addEventListener("click",async()=>{
+ const file=document.querySelector("#replacementFile").files[0],path=document.querySelector("#targetPath").value.trim();
+ if(!file||!path){flash("Selecciona un archivo e indica su ruta dentro del SCORM.","error");return}
+ const fd=new FormData();fd.append("target_path",path);fd.append("file",file);
+ try{await api("/api/scorm-editor/"+draftId+"/upload",{method:"POST",body:fd});document.querySelector("#replacementFile").value="";await reloadInfo(false);flash("Archivo incorporado al borrador.")}catch(e){flash(e.message,"error")}
+});
+async function saveMetadata(){
+ return api("/api/scorm-editor/"+draftId,json("PATCH",{title:document.querySelector("#title").value,description:document.querySelector("#description").value,visibility:document.querySelector("#visibility").value}));
+}
+["#title","#description","#visibility"].forEach(sel=>document.querySelector(sel).addEventListener("change",()=>saveMetadata().catch(e=>flash(e.message,"error"))));
+function refreshPreview(){if(!info)return;document.querySelector("#preview").src=info.preview_entrypoint+"?t="+Date.now()}
+document.querySelector("#refreshPreviewBtn").addEventListener("click",refreshPreview);
+document.querySelector("#publishBtn").addEventListener("click",async()=>{
+ if(!confirm("Publicar una nueva revisión. Los alumnos que ya iniciaron la revisión anterior conservarán esa versión y sus calificaciones. ¿Continuar?"))return;
+ try{
+   await saveMetadata();
+   const result=await api("/api/scorm-editor/"+draftId+"/publish",{method:"POST"});
+   alert("Revisión "+result.package.revision_number+" publicada. Intentos preservados: "+result.preserved_registrations+".");
+   location.href="/teacher.html";
+ }catch(e){flash(e.message,"error")}
+});
+async function reloadInfo(preview=true){info=await api("/api/scorm-editor/"+draftId);renderFiles();if(preview)refreshPreview()}
+function renderMedia(){
+ const root=document.querySelector("#mediaList");
+ root.innerHTML=media.length?media.map(m=>'<div class="media-item"><strong>'+esc(m.title)+'</strong><div class="tiny muted">'+esc(m.media_type)+" · "+formatSize(m.size_bytes)+'</div><button class="btn secondary" onclick="insertMedia('+m.id+','+JSON.stringify(m.original_filename).replace(/"/g,"&quot;")+')">Insertar</button></div>').join(""):'<div class="muted tiny">No hay recursos multimedia disponibles.</div>';
+}
+async function insertMedia(id,filename){
+ let target=document.querySelector("#mediaTargetPath").value.trim();
+ if(!target)target="media/"+filename;
+ try{await api("/api/scorm-editor/"+draftId+"/insert-media/"+id,json("POST",{target_path:target}));document.querySelector("#mediaTargetPath").value=target;await reloadInfo(false);flash("Recurso multimedia copiado al SCORM.")}catch(e){flash(e.message,"error")}
+}
+async function loadHistory(){
+ try{const rows=await api("/api/scorm-library/"+info.base_package.id+"/history");document.querySelector("#history").innerHTML=rows.map(r=>'<div class="media-item"><strong>Revisión '+r.revision_number+'</strong> · '+esc(r.lifecycle_status)+'<div class="tiny muted">'+esc(r.standard)+" · "+esc(r.version)+'</div><a class="btn secondary" href="/api/scorm-library/'+r.id+'/export">Exportar</a></div>').join("")}catch(e){document.querySelector("#history").innerHTML='<span class="muted tiny">'+esc(e.message)+'</span>'}
+}
+load();
+</script>
+</body>
+</html>
