@@ -11,11 +11,26 @@
 </head>
 <body>
 <header class="top"><div><h1>Actividades y evaluación</h1><div id="subtitle" class="tiny">Cargando…</div></div><a href="/">Volver</a></header>
-<main class="wrap">
-<div id="flash"></div>
+<a href="#mainContent" style="position:absolute;left:-9999px;top:auto" onfocus="this.style.left='12px';this.style.top='12px';this.style.zIndex='1000'" onblur="this.style.left='-9999px'">Saltar al contenido</a>
+<main class="wrap" id="mainContent" tabindex="-1">
+<div id="flash" aria-live="polite" aria-atomic="true"></div>
 <div id="summary" class="metrics"></div>
 <section id="nextAction" class="card" style="margin-top:14px"></section>
-<nav id="raNav" class="card" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"></nav>
+<section class="card" style="margin-top:14px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+    <div>
+      <h2>Buscar en este módulo</h2>
+      <form id="moduleSearchForm" role="search">
+        <label for="moduleSearchInput">Texto de búsqueda</label>
+        <div style="display:flex;gap:8px"><input id="moduleSearchInput" name="q" minlength="2" required placeholder="RA, CE, actividad, SCORM…"><button class="btn">Buscar</button></div>
+      </form>
+      <div id="moduleSearchResults" class="items" style="margin-top:10px"></div>
+    </div>
+    <div><h2>Avisos</h2><div id="studentNotifications" class="items"></div></div>
+    <div><h2>Próximas fechas</h2><div id="studentCalendar" class="items"></div></div>
+  </div>
+</section>
+<nav id="raNav" class="card" aria-label="Resultados de aprendizaje" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"></nav>
 <div id="content"></div>
 <section class="card"><details><summary><strong>Mi actividad reciente</strong></summary><div id="timeline" class="items" style="margin-top:12px"></div></details></section>
 </main>
@@ -31,7 +46,7 @@
 
 <script>
 const cmid=Number(new URLSearchParams(location.search).get("course_module"));
-let structure=null,results=[],overview=null,currentExam=null,examTimer=null,autosaveTimer=null,examSubmitting=false;
+let structure=null,results=[],overview=null,studentNotifications={items:[]},studentCalendar={events:[]},currentExam=null,examTimer=null,autosaveTimer=null,examSubmitting=false;
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
@@ -40,10 +55,12 @@ function json(method,body){return{method,headers:{"Content-Type":"application/js
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo.</div>';return}
  try{
-   [structure,results,overview]=await Promise.all([
+   [structure,results,overview,studentNotifications,studentCalendar]=await Promise.all([
      api("/api/evaluation/course-modules/"+cmid+"/structure"),
      api("/api/evaluation/course-modules/"+cmid+"/my-results"),
-     api("/api/evaluation/course-modules/"+cmid+"/my-overview")
+     api("/api/evaluation/course-modules/"+cmid+"/my-overview"),
+     api("/api/experience/notifications"),
+     api("/api/experience/calendar?course_module_id="+cmid)
    ]);
    document.querySelector("#subtitle").textContent="Grupo-módulo "+cmid;
    render();
@@ -57,7 +74,7 @@ function render(){
    ["RA superados",passed],
    ["Revisiones pendientes",results.reduce((n,r)=>n+Object.values(r.criteria||{}).reduce((x,c)=>x+Number(c.pending_review||0),0),0)]
  ].map(x=>'<div class="metric"><span class="tiny muted">'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
- renderStudentOverview();
+ renderStudentOverview();renderStudentUtilities();
  const byId=new Map(results.map(r=>[r.learning_result_id,r]));
  document.querySelector("#content").innerHTML=(structure.learning_results||[]).map(ra=>{
    const rr=byId.get(ra.id);
@@ -75,6 +92,15 @@ function render(){
      +'<div style="display:flex;justify-content:space-between;gap:8px;margin-top:12px"><button class="btn secondary" type="button" onclick="goRelative('+ra.id+',-1)">Anterior</button><button class="btn secondary" type="button" onclick="goRelative('+ra.id+',1)">Siguiente</button></div></details></section>';
  }).join("");
 }
+function renderStudentUtilities(){
+ document.querySelector("#studentNotifications").innerHTML=(studentNotifications?.items||[]).filter(x=>!x.href||x.href.includes("course_module="+cmid)).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong>'+(x.at?'<div class="tiny muted">'+esc(new Date(x.at).toLocaleString())+'</div>':'')+(x.href?'<a class="btn secondary" href="'+esc(x.href)+'">Abrir</a>':'')+'</div>').join("")||'<div class="muted">No tienes avisos pendientes en este módulo.</div>';
+ document.querySelector("#studentCalendar").innerHTML=(studentCalendar?.events||[]).slice(0,12).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(new Date(x.at).toLocaleString())+'</div></div>').join("")||'<div class="muted">No hay fechas configuradas.</div>';
+}
+document.querySelector("#moduleSearchForm")?.addEventListener("submit",async e=>{
+ e.preventDefault();const q=e.currentTarget.elements.q.value.trim(),root=document.querySelector("#moduleSearchResults");
+ root.innerHTML='<div class="muted">Buscando…</div>';
+ try{const r=await api("/api/experience/search?course_module_id="+cmid+"&q="+encodeURIComponent(q));root.innerHTML=(r.results||[]).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(x.kind)+' · '+esc(x.subtitle||"")+'</div><a class="btn secondary" href="'+esc(x.href)+'">Abrir</a></div>').join("")||'<div class="muted">Sin resultados.</div>'}catch(err){root.innerHTML='<div class="notice error">'+esc(err.message)+'</div>'}
+});
 function renderStudentOverview(){
  const action=overview?.next_action;
  const box=document.querySelector("#nextAction");
