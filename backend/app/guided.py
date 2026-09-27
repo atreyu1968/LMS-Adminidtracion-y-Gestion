@@ -276,6 +276,7 @@ def _evidence_dict(row: GuidedEvidence) -> dict:
         "filename": row.original_filename,
         "mime_type": row.mime_type,
         "size_bytes": row.size_bytes,
+        "sha256": row.sha256,
         "status": row.status,
         "ai": row.ai_json or {},
         "teacher_comment": row.teacher_comment or "",

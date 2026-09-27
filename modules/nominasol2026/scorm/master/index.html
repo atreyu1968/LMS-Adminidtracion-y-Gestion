@@ -83,6 +83,7 @@ textarea{min-height:92px;resize:vertical}
     <div class="progress"><div id="bar"></div></div>
     <div id="summary" class="summary">Cargando progreso…</div>
     <button id="glossaryBtn" class="btn secondary glossary-btn" type="button">Consultar glosario</button>
+    <button id="portfolioBtn" class="btn secondary portfolio-btn" type="button">Ver mi evolución</button>
     <div id="milestones" style="margin-top:12px"></div>
   </aside>
   <main>
@@ -102,6 +103,14 @@ textarea{min-height:92px;resize:vertical}
     <div class="modal-head"><strong>Glosario de trabajo</strong><button id="glossaryModalClose" class="modal-close">Cerrar</button></div>
     <p class="small">Consulta un concepto cuando lo necesites. No es necesario memorizarlo antes de empezar a trabajar.</p>
     <div id="glossaryList" class="glossary-list"></div>
+  </div>
+</div>
+<div id="portfolioModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Mi evolución">
+  <div class="modal-box">
+    <div class="modal-head"><strong>Mi evolución en el proyecto</strong><button id="portfolioModalClose" class="modal-close">Cerrar</button></div>
+    <div id="portfolioSummary"></div>
+    <div class="actions" style="margin:12px 0"><button id="portfolioPrintBtn" class="btn">Preparar informe imprimible</button><button id="portfolioJsonBtn" class="btn secondary">Guardar registro JSON</button></div>
+    <div id="portfolioList" class="portfolio-list"></div>
   </div>
 </div>
 <script>
@@ -236,6 +245,76 @@ function openGlossary(){
   }).join(""):'<p class="small">El glosario todavía no está disponible.</p>';
   document.getElementById("glossaryModal").classList.remove("hidden");
 }
+function evidenceStatusLabel(status){
+  var map={submitted:"Enviada",accepted:"Aceptada",retry:"Devuelta para corregir",teacher_review:"Pendiente del profesor"};
+  return map[status]||status||"";
+}
+function buildPortfolioRows(){
+  if(!data)return "";
+  return (data.project.milestones||[]).map(function(m){
+    var st=stateFor(m.key), attempts=(data.evidence&&data.evidence[m.key])||[];
+    var klass=st.status==="completed"?"completed":"pending";
+    var detail=attempts.length?attempts.map(function(e){
+      var ai=e.ai||{};
+      return '<div class="portfolio-attempt"><strong>Intento '+Number(e.attempt_no||0)+' · '+esc(evidenceStatusLabel(e.status))+'</strong>'
+        +'<small>'+esc(e.filename||"")+(e.submitted_at?' · '+esc(new Date(e.submitted_at).toLocaleString("es-ES")):'')+'</small>'
+        +(ai.summary?'<p><strong>Revisión IA:</strong> '+esc(ai.summary)+'</p>':'')
+        +(ai.next_hint?'<p><strong>Pista recibida:</strong> '+esc(ai.next_hint)+'</p>':'')
+        +(e.teacher_comment?'<p><strong>Profesor:</strong> '+esc(e.teacher_comment)+'</p>':'')
+        +(e.sha256?'<small>Huella de evidencia: '+esc(String(e.sha256).slice(0,16))+'…</small>':'')
+        +'</div>';
+    }).join(""):'<p class="small">Todavía no has presentado una evidencia para este hito.</p>';
+    return '<div class="portfolio-row '+klass+'"><strong>'+esc(m.key)+' · '+esc(m.title)+'</strong>'
+      +'<div class="small">Estado: '+esc(statusLabel(st.status))+' · Intentos: '+Number(st.attempts||0)+'</div>'+detail+'</div>';
+  }).join("");
+}
+function openPortfolio(){
+  if(!data)return;
+  var s=data.summary||{};
+  document.getElementById("portfolioSummary").innerHTML='<div class="notice"><strong>'+esc(data.learner?.name||"Alumno/a")+'</strong><br>'
+    +esc(data.project.title||"Proyecto NOMINASOL")+'<br>'+Number(s.completed||0)+' de '+Number(s.total||0)+' hitos superados · '+Number(s.percentage||0)+' %</div>';
+  document.getElementById("portfolioList").innerHTML=buildPortfolioRows();
+  document.getElementById("portfolioModal").classList.remove("hidden");
+}
+function printablePortfolioHtml(){
+  var s=data.summary||{}, rows=(data.project.milestones||[]).map(function(m){
+    var st=stateFor(m.key), attempts=(data.evidence&&data.evidence[m.key])||[];
+    var ev=attempts.map(function(e){
+      var ai=e.ai||{};
+      return '<div class="attempt"><b>Intento '+Number(e.attempt_no||0)+' · '+esc(evidenceStatusLabel(e.status))+'</b>'
+        +'<div>'+esc(e.filename||"")+(e.submitted_at?' · '+esc(new Date(e.submitted_at).toLocaleString("es-ES")):'')+'</div>'
+        +(ai.summary?'<p><b>Revisión IA:</b> '+esc(ai.summary)+'</p>':'')
+        +(ai.next_hint?'<p><b>Pista:</b> '+esc(ai.next_hint)+'</p>':'')
+        +(e.teacher_comment?'<p><b>Profesor:</b> '+esc(e.teacher_comment)+'</p>':'')
+        +(e.sha256?'<small>SHA-256: '+esc(e.sha256)+'</small>':'')+'</div>';
+    }).join("");
+    return '<section><h2>'+esc(m.key)+' · '+esc(m.title)+'</h2><p><b>Estado:</b> '+esc(statusLabel(st.status))+' · <b>Intentos:</b> '+Number(st.attempts||0)+'</p>'+ev+'</section>';
+  }).join("");
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Portafolio NOMINASOL</title><style>'
+    +'body{font-family:Arial,sans-serif;color:#172033;max-width:900px;margin:32px auto;line-height:1.45}header{border-bottom:3px solid #1d5f9d;padding-bottom:14px}section{break-inside:avoid;border-bottom:1px solid #ddd;padding:12px 0}h1{font-size:24px}h2{font-size:17px}.attempt{background:#f5f7fa;border-radius:8px;padding:10px;margin:7px 0}small{color:#555}button{padding:10px 14px;margin-bottom:16px}@media print{button{display:none}}</style></head><body>'
+    +'<button onclick="window.print()">Imprimir / Guardar como PDF</button><header><h1>'+esc(data.project.title||"Proyecto NOMINASOL")+'</h1>'
+    +'<p><b>Alumno/a:</b> '+esc(data.learner?.name||"")+'<br><b>Progreso:</b> '+Number(s.completed||0)+'/'+Number(s.total||0)+' · '+Number(s.percentage||0)+' %</p>'
+    +'<p>Este informe documenta la evolución del proyecto: intentos, evidencias, correcciones y validaciones. No sustituye a la copia final restaurable de NOMINASOL.</p></header>'+rows+'</body></html>';
+}
+function printPortfolio(){
+  var w=window.open("","_blank");
+  if(!w){alert("El navegador ha bloqueado la ventana del informe. Permite ventanas emergentes para este sitio.");return;}
+  w.document.open();w.document.write(printablePortfolioHtml());w.document.close();
+}
+function downloadPortfolioJson(){
+  var payload={
+    generated_at:new Date().toISOString(),
+    learner:data.learner,
+    project:{id:data.project.project_id,title:data.project.title,version:data.project.version},
+    summary:data.summary,
+    progress:data.progress,
+    evidence:data.evidence
+  };
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="portafolio-nominasol-"+String(data.learner?.id||"alumno")+".json";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},500);
+}
 function renderFeedback(st){
   var ai=st.ai||{};
   var html="";
@@ -356,11 +435,16 @@ async function reload(preferred){
 }
 async function boot(){
   document.getElementById("glossaryBtn").addEventListener("click",openGlossary);
+  document.getElementById("portfolioBtn").addEventListener("click",openPortfolio);
+  document.getElementById("portfolioPrintBtn").addEventListener("click",printPortfolio);
+  document.getElementById("portfolioJsonBtn").addEventListener("click",downloadPortfolioJson);
   document.getElementById("imageModalClose").addEventListener("click",function(){document.getElementById("imageModal").classList.add("hidden");});
   document.getElementById("glossaryModalClose").addEventListener("click",function(){document.getElementById("glossaryModal").classList.add("hidden");});
+  document.getElementById("portfolioModalClose").addEventListener("click",function(){document.getElementById("portfolioModal").classList.add("hidden");});
   document.getElementById("imageModal").addEventListener("click",function(e){if(e.target===this)this.classList.add("hidden");});
   document.getElementById("glossaryModal").addEventListener("click",function(e){if(e.target===this)this.classList.add("hidden");});
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"){document.getElementById("imageModal").classList.add("hidden");document.getElementById("glossaryModal").classList.add("hidden");}});
+  document.getElementById("portfolioModal").addEventListener("click",function(e){if(e.target===this)this.classList.add("hidden");});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){document.getElementById("imageModal").classList.add("hidden");document.getElementById("glossaryModal").classList.add("hidden");document.getElementById("portfolioModal").classList.add("hidden");}});
   runtime=findRuntime();
   api12=findScorm();
   if(api12){try{api12.LMSInitialize("");}catch(e){}}
