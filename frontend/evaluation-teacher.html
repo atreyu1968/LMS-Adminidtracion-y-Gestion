@@ -17,6 +17,7 @@
 <nav class="tabs">
   <button class="tab active" data-tab="gradebook">Cuaderno</button>
   <button class="tab" data-tab="reviews">Revisiones</button>
+  <button class="tab" data-tab="progress">Progreso</button>
   <button class="tab" data-tab="structure">RA y CE</button>
   <button class="tab" data-tab="config">Configuración</button>
   <button class="tab" data-tab="readiness">Preparación</button>
@@ -29,6 +30,14 @@
   </div>
   <div id="campusSyncResult"></div>
   <div id="gradebook"></div>
+</section>
+
+<section id="panel-progress" class="panel card">
+  <div class="actions" style="justify-content:space-between;align-items:flex-start">
+    <div><h2>Progreso del grupo</h2><p class="muted">Estado uniforme por alumno y RA: no iniciado, en curso o completado.</p></div>
+    <select id="progressFilter" style="width:auto"><option value="all">Todos</option><option value="not_started">No iniciados</option><option value="in_progress">En curso</option><option value="completed">Completados</option></select>
+  </div>
+  <div id="progressMatrix"></div>
 </section>
 
 <section id="panel-reviews" class="panel card">
@@ -81,12 +90,18 @@
   <div id="centralBankNotice" class="notice hidden">Este módulo usa bancos privados administrados centralmente. Puedes consultar el semáforo, pero no modificar las claves del módulo oficial.</div>
 </section>
 </main>
+<div id="studentDetailDrawer" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:50">
+  <aside style="position:absolute;right:0;top:0;bottom:0;width:min(760px,96vw);background:#fff;overflow:auto;padding:20px;box-shadow:-8px 0 30px rgba(15,23,42,.18)">
+    <div class="actions" style="justify-content:space-between;align-items:flex-start"><div><h2 id="studentDetailTitle">Detalle del alumno</h2><div id="studentDetailMeta" class="muted"></div></div><button class="btn secondary" id="closeStudentDetailBtn">Cerrar</button></div>
+    <div id="studentDetailBody" style="margin-top:16px"></div>
+  </aside>
+</div>
 
 <script>
 const pageParams=new URLSearchParams(location.search);
 const cmid=Number(pageParams.get("course_module"));
 const requestedTab=pageParams.get("tab");
-let structure=null,readiness=null,gradebook=null,configData=null,reviews=[];
+let structure=null,readiness=null,gradebook=null,configData=null,reviews=[],progressMatrix=null;
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
@@ -101,12 +116,13 @@ function activateTab(name){
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo del grupo.</div>';return}
  try{
-  [structure,readiness,gradebook,configData,reviews]=await Promise.all([
+  [structure,readiness,gradebook,configData,reviews,progressMatrix]=await Promise.all([
    api("/api/evaluation/course-modules/"+cmid+"/structure"),
    api("/api/evaluation/course-modules/"+cmid+"/readiness"),
    api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
    api("/api/evaluation/course-modules/"+cmid+"/config"),
-   api("/api/evaluation/course-modules/"+cmid+"/reviews")
+   api("/api/evaluation/course-modules/"+cmid+"/reviews"),
+   api("/api/evaluation/course-modules/"+cmid+"/progress-matrix")
   ]);
   const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
   document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
@@ -114,7 +130,7 @@ async function load(){
   if(requestedTab)activateTab(requestedTab);
  }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
-function renderAll(){renderMetrics();renderGradebook();renderReviews();renderStructure();renderConfig();renderReadiness()}
+function renderAll(){renderMetrics();renderGradebook();renderProgress();renderReviews();renderStructure();renderConfig();renderReadiness()}
 function renderMetrics(){
  const pending=reviews.length,students=gradebook.students.length,total=readiness.items_total,keys=readiness.keys_loaded;
  document.querySelector("#metrics").innerHTML=[
@@ -124,9 +140,39 @@ function renderMetrics(){
 function renderGradebook(){
  const lrs=structure.learning_results||[];
  let head='<tr><th>Alumno/a</th><th>Revisiones</th>'+lrs.map(r=>'<th>'+esc(r.code)+'</th>').join("")+'</tr>';
- let body=(gradebook.students||[]).map(s=>'<tr><td><strong>'+esc(s.display_name)+'</strong><div class="tiny muted">'+esc(s.email||"")+'</div></td><td>'+esc(s.pending_reviews)+'</td>'+s.learning_results.map(r=>'<td><strong>'+esc(r.portfolio_score.toFixed(2))+'</strong><div class="tiny muted">Portafolio · '+esc(r.criteria_passed)+'/'+esc(r.criteria_total)+' CE</div><span class="badge">'+esc(r.status)+'</span></td>').join("")+'</tr>').join("");
+ let body=(gradebook.students||[]).map(student=>'<tr><td><button class="btn secondary" onclick="openStudentDetail('+student.user_id+')">'+esc(student.display_name)+'</button><div class="tiny muted">'+esc(student.email||"")+'</div></td><td>'+esc(student.pending_reviews)+'</td>'+student.learning_results.map(r=>'<td><strong>'+esc(r.final_score===null||r.final_score===undefined?"—":Number(r.final_score).toFixed(2))+'</strong><div class="tiny muted">Portafolio '+esc(Number(r.portfolio_score||0).toFixed(1))+' · '+esc(r.criteria_passed)+'/'+esc(r.criteria_total)+' CE</div><span class="badge">'+esc(r.status)+'</span></td>').join("")+'</tr>').join("");
  document.querySelector("#gradebook").innerHTML='<div class="table-wrap"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
 }
+function progressLabel(state){return state==="completed"?"Completado":state==="in_progress"?"En curso":"No iniciado"}
+function renderProgress(){
+ const root=document.querySelector("#progressMatrix");if(!root||!progressMatrix)return;
+ const filter=document.querySelector("#progressFilter")?.value||"all";
+ const lrs=progressMatrix.learning_results||[];
+ let head='<tr><th>Alumno/a</th>'+lrs.map(r=>'<th>'+esc(r.code)+'</th>').join("")+'</tr>';
+ const rows=(progressMatrix.students||[]).filter(student=>filter==="all"||student.learning_results.some(r=>r.state===filter)).map(student=>{
+   const cells=student.learning_results.map(r=>'<td><div><strong>'+esc(progressLabel(r.state))+'</strong></div><div style="height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:6px 0"><div style="height:100%;width:'+Math.max(0,Math.min(100,Number(r.progress_percent||0)))+'%;background:#18508f"></div></div><div class="tiny muted">'+esc(r.completed_items)+'/'+esc(r.total_items)+' actividades · '+esc(r.progress_percent)+'%'+(r.pending_review?' · '+esc(r.pending_review)+' pendientes':'')+'</div></td>').join("");
+   return '<tr><td><button class="btn secondary" onclick="openStudentDetail('+student.user_id+')">'+esc(student.display_name)+'</button><div class="tiny muted">'+esc(student.email||"")+'</div></td>'+cells+'</tr>';
+ }).join("");
+ root.innerHTML='<div class="table-wrap"><table><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+}
+document.querySelector("#progressFilter")?.addEventListener("change",renderProgress);
+async function openStudentDetail(userId){
+ const drawer=document.querySelector("#studentDetailDrawer"),body=document.querySelector("#studentDetailBody");
+ drawer.classList.remove("hidden");body.innerHTML='<div class="notice">Cargando detalle…</div>';
+ try{
+   const d=await api("/api/evaluation/course-modules/"+cmid+"/students/"+userId+"/detail");
+   document.querySelector("#studentDetailTitle").textContent=d.student.display_name;
+   document.querySelector("#studentDetailMeta").textContent=d.student.email||"";
+   const ras=(d.learning_results||[]).map(r=>'<div class="item"><div class="actions"><span class="badge">'+esc(r.code)+'</span><span class="badge">'+esc(r.status)+'</span></div><strong>Nota: '+esc(r.final_score===null||r.final_score===undefined?"—":Number(r.final_score).toFixed(2))+'/100</strong><div class="tiny muted">Portafolio '+esc(Number(r.portfolio_score||0).toFixed(1))+' · Examen '+esc(r.exam_score===null||r.exam_score===undefined?"—":Number(r.exam_score).toFixed(1))+' · CE '+esc(r.criteria_passed)+'/'+esc(r.criteria_total)+'</div></div>').join("");
+   const attempts=(d.attempts||[]).slice(0,80).map(a=>'<div class="item"><strong>'+esc(a.learning_result?.code||"")+' · '+esc(a.criterion?.code||"")+' · '+esc(a.item.key)+'</strong><div class="tiny muted">'+esc(a.item.instrument)+' · intento '+esc(a.attempt_no)+' · '+esc(a.status)+' · nota '+esc(a.score===null||a.score===undefined?"—":a.score)+'</div><div class="response">'+esc(typeof a.response==="object"?JSON.stringify(a.response,null,2):a.response)+'</div>'+(a.review?'<div class="notice"><strong>'+esc(a.review.source)+'</strong> · propuesta '+esc(a.review.proposed_score??"—")+' · confianza '+esc(a.review.confidence===null||a.review.confidence===undefined?"—":Math.round(a.review.confidence*100)+"%")+'<br>'+esc(a.review.teacher_feedback||a.review.feedback||"")+'</div>':"")+'</div>').join("");
+   const exams=(d.exams||[]).map(x=>'<div class="item"><strong>'+esc(x.learning_result||"Examen")+' · intento '+esc(x.attempt_no)+'</strong><div class="tiny muted">'+esc(x.status)+' · '+esc(x.score===null||x.score===undefined?"—":x.score)+'/100 · incidencias '+esc((x.security_events||[]).length)+'</div></div>').join("");
+   const scorm=(d.scorm||[]).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">revisión '+esc(x.revision_number||"—")+' · '+esc(x.lesson_status)+' · '+esc(x.score_raw===null||x.score_raw===undefined?"sin nota":x.score_raw)+'</div></div>').join("");
+   const timeline=(d.timeline||[]).slice(0,80).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(x.kind)+' · '+esc(x.detail||"")+' · '+esc(x.at?new Date(x.at).toLocaleString():"")+(x.score===null||x.score===undefined?"":" · "+esc(x.score)+"/100")+'</div></div>').join("");
+   body.innerHTML='<h3>Resultados de aprendizaje</h3><div class="list">'+(ras||'<div class="muted">Sin resultados.</div>')+'</div><h3 style="margin-top:18px">Entregas e intentos</h3><div class="list">'+(attempts||'<div class="muted">Sin entregas.</div>')+'</div><h3 style="margin-top:18px">Exámenes</h3><div class="list">'+(exams||'<div class="muted">Sin exámenes.</div>')+'</div><h3 style="margin-top:18px">SCORM</h3><div class="list">'+(scorm||'<div class="muted">Sin intentos SCORM.</div>')+'</div><h3 style="margin-top:18px">Cronología</h3><div class="list">'+(timeline||'<div class="muted">Sin actividad registrada.</div>')+'</div>';
+ }catch(e){body.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+document.querySelector("#closeStudentDetailBtn").addEventListener("click",()=>document.querySelector("#studentDetailDrawer").classList.add("hidden"));
+document.querySelector("#studentDetailDrawer").addEventListener("click",e=>{if(e.target.id==="studentDetailDrawer")e.currentTarget.classList.add("hidden")});
 function renderReviews(){
  const root=document.querySelector("#reviews");
  root.innerHTML=reviews.length?reviews.map(r=>'<article class="item review"><div><div class="actions"><span class="badge">'+esc(r.learning_result.code)+'</span><span class="badge">'+esc(r.criterion.code)+'</span><span class="badge">'+esc(r.source)+'</span></div><h3>'+esc(r.student.display_name)+'</h3><p><strong>'+esc(r.item.item_key)+' · '+esc(r.item.prompt)+'</strong></p><div class="response">'+esc(typeof r.response==="object"?JSON.stringify(r.response,null,2):r.response)+'</div>'+(r.proposed_score!==null&&r.proposed_score!==undefined?'<div class="notice"><strong>Propuesta IA: '+esc(r.proposed_score)+'/100</strong> · confianza '+esc(Math.round((r.confidence||0)*100))+'%<br>'+esc(r.feedback||"")+'</div>':'<div class="notice warn">'+esc(r.feedback||"Pendiente de valoración docente.")+'</div>')+'</div><div><label>Puntuación<input id="score-'+r.review_id+'" type="number" min="0" max="100" step="0.1" value="'+esc(r.proposed_score??"")+'"></label><label style="margin-top:8px">Comentario<textarea id="feedback-'+r.review_id+'">'+esc(r.feedback||"")+'</textarea></label><div class="actions" style="margin-top:9px"><button class="btn" onclick="decide('+r.review_id+',\'accepted\')">Aceptar puntuación</button><button class="btn danger" onclick="decide('+r.review_id+',\'rejected\')">Rechazar</button></div></div></article>').join(""):'<div class="notice ok">No hay respuestas pendientes de revisión.</div>';
@@ -136,11 +182,12 @@ async function decide(id,status){
  try{await api("/api/evaluation/reviews/"+id,json("PUT",{score,feedback,status}));flash("Revisión registrada.");await reloadDynamic()}catch(e){flash(e.message,"error")}
 }
 async function reloadDynamic(){
- [reviews,gradebook,readiness]=await Promise.all([
+ [reviews,gradebook,readiness,progressMatrix]=await Promise.all([
   api("/api/evaluation/course-modules/"+cmid+"/reviews"),
   api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
-  api("/api/evaluation/course-modules/"+cmid+"/readiness")
- ]);renderMetrics();renderGradebook();renderReviews();renderReadiness();
+  api("/api/evaluation/course-modules/"+cmid+"/readiness"),
+  api("/api/evaluation/course-modules/"+cmid+"/progress-matrix")
+ ]);renderMetrics();renderGradebook();renderProgress();renderReviews();renderReadiness();
 }
 document.querySelector("#reloadReviews").addEventListener("click",reloadDynamic);
 document.querySelector("#syncCampusGradesBtn").addEventListener("click",async()=>{
