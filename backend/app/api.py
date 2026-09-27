@@ -204,3 +204,130 @@ def course_modules(
         }
         for course_module, module in rows
     ]
+
+
+class ModulePermissionGrant(BaseModel):
+    user_id: int
+    permission: str = Field(default="editor", pattern=r"^(owner|editor|viewer)$")
+
+
+def _module_owner(db: Session, module_id: int, user_id: int) -> ModulePermission:
+    permission = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == module_id,
+            ModulePermission.user_id == user_id,
+            ModulePermission.permission == "owner",
+        )
+    )
+    if not permission:
+        raise HTTPException(status_code=403, detail="Module owner permission required")
+    return permission
+
+
+@router.get("/modules/{module_id}/permissions")
+def module_permissions(
+    module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    _module_editor(db, module_id, int(session["sub"]))
+    rows = db.execute(
+        select(ModulePermission, User)
+        .join(User, User.id == ModulePermission.user_id)
+        .where(ModulePermission.module_id == module_id)
+        .order_by(User.display_name)
+    ).all()
+    return [
+        {
+            "user_id": user.id,
+            "display_name": user.display_name,
+            "email": user.email,
+            "permission": permission.permission,
+        }
+        for permission, user in rows
+    ]
+
+
+@router.post("/modules/{module_id}/permissions")
+def grant_module_permission(
+    module_id: int,
+    payload: ModulePermissionGrant,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    owner_id = int(session["sub"])
+    _module_owner(db, module_id, owner_id)
+    if not db.get(User, payload.user_id):
+        raise HTTPException(status_code=404, detail="User not found")
+    row = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == module_id,
+            ModulePermission.user_id == payload.user_id,
+        )
+    )
+    if row:
+        row.permission = payload.permission
+    else:
+        row = ModulePermission(
+            module_id=module_id,
+            user_id=payload.user_id,
+            permission=payload.permission,
+        )
+        db.add(row)
+    db.commit()
+    return {
+        "module_id": module_id,
+        "user_id": payload.user_id,
+        "permission": payload.permission,
+    }
+
+
+@router.delete("/modules/{module_id}/permissions/{user_id}")
+def revoke_module_permission(
+    module_id: int,
+    user_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    owner_id = int(session["sub"])
+    _module_owner(db, module_id, owner_id)
+    if user_id == owner_id:
+        raise HTTPException(status_code=409, detail="An owner cannot revoke their own ownership here")
+    row = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == module_id,
+            ModulePermission.user_id == user_id,
+        )
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Module permission not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post(
+    "/admin/modules/{module_id}/owners/{user_id}",
+    dependencies=[Depends(require_admin)],
+)
+def admin_grant_module_owner(
+    module_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    if not db.get(Module, module_id):
+        raise HTTPException(status_code=404, detail="Module not found")
+    if not db.get(User, user_id):
+        raise HTTPException(status_code=404, detail="User not found")
+    row = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == module_id,
+            ModulePermission.user_id == user_id,
+        )
+    )
+    if row:
+        row.permission = "owner"
+    else:
+        db.add(ModulePermission(module_id=module_id, user_id=user_id, permission="owner"))
+    db.commit()
+    return {"module_id": module_id, "user_id": user_id, "permission": "owner"}
