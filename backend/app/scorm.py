@@ -296,13 +296,25 @@ def launch_scorm(
 
     token = create_scorm_token(registration.id, user_id)
     split = urlsplit(package.entrypoint)
-    base_path = f"{settings.content_base_url}/{package.storage_path}/{quote(split.path, safe='/%')}"
-    query = list(parse_qsl(split.query, keep_blank_values=True))
-    query.extend([
-        ("lms_registration", str(registration.id)),
-        ("lms_token", token),
-    ])
-    url = urlunsplit(("", "", base_path, urlencode(query), split.fragment))
+    content_url = f"{settings.content_base_url}/{package.storage_path}/{quote(split.path, safe='/%')}"
+    if split.query:
+        content_url += "?" + split.query
+    if split.fragment:
+        content_url += "#" + split.fragment
+
+    content_base = urlsplit(settings.content_base_url)
+    content_origin = (
+        f"{content_base.scheme}://{content_base.netloc}"
+        if content_base.scheme and content_base.netloc
+        else settings.base_url
+    )
+    url = content_origin + "/runtime/scorm-player.html?" + urlencode(
+        {
+            "launch": content_url,
+            "lms_registration": str(registration.id),
+            "lms_token": token,
+        }
+    )
     return {"registration_id": registration.id, "url": url}
 
 
