@@ -70,7 +70,10 @@ CAMPUS / Moodle
 - [x] Importación de alumnado por CSV y profesores colaboradores.
 - [x] Panel docente para grupos, módulos y biblioteca SCORM.
 - [ ] Migración completa de GTH.
-- [x] Reproductor SCORM 1.2 y SCORM 2004 con subida, versionado, registro y persistencia.
+- [x] Reproductor SCORM 1.2 y SCORM 2004 con subida, registro y persistencia.
+- [x] Editor SCORM versionado: los intentos iniciados quedan fijados a su revisión.
+- [x] Exportación individual, de borradores y de toda la biblioteca SCORM.
+- [x] Biblioteca multimedia para vídeo, audio, imágenes y PDF con streaming HTTP Range.
 - [ ] Panel docente completo (la API multi-profesor y permisos ya está implementada).
 - [x] AGS implementado para retorno de notas; pendiente validación contra Moodle/CAMPUS.
 - [x] NRPS implementado con paginación; pendiente validación contra Moodle/CAMPUS.
@@ -123,3 +126,8 @@ El panel docente se sirve en:
 ```text
 /teacher.html
 ```
+
+
+## Edición y exportación SCORM
+
+El funcionamiento del editor, el versionado no destructivo, la biblioteca multimedia y la exportación están documentados en `docs/SCORM_EDITOR.md`.
