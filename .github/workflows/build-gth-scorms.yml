@@ -1,0 +1,53 @@
+name: Build GTH SCORM finals
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-gth-scorms.sh"
+      - ".github/workflows/build-gth-scorms.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout LMS
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install packaging tools
+        run: sudo apt-get update -y && sudo apt-get install -y zip
+
+      - name: Checkout fixed GTH source
+        run: |
+          git clone https://github.com/atreyu1968/CFGSAF.git /tmp/CFGSAF
+          git -C /tmp/CFGSAF checkout 6eaa240ce13a69e328c5b8d11ae2bdca99be7d17
+
+      - name: Build and validate final SCORM packages
+        env:
+          GTH_SOURCE_DIR: /tmp/CFGSAF
+          GTH_SOURCE_COMMIT: 6eaa240ce13a69e328c5b8d11ae2bdca99be7d17
+        run: |
+          bash scripts/build-gth-scorms.sh downloads/gth0652
+          unzip -t downloads/gth0652/GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip
+          unzip -t downloads/gth0652/GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip
+          unzip -t downloads/gth0652/GTH_RA3_Seguridad_Social_SCORM_1.2.zip
+          unzip -t downloads/gth0652/GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip
+          unzip -t downloads/gth0652/GTH_SCORM_4_UNIDADES_COMPLETO.zip
+
+      - name: Commit generated packages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/gth0652
+          if git diff --cached --quiet; then
+            echo "No hay cambios en los paquetes."
+            exit 0
+          fi
+          git commit -m "Build: publicar SCORM finales GTH RA1-RA4 [skip ci]"
+          git push
