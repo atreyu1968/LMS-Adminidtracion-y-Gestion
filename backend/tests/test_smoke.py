@@ -36,6 +36,10 @@ from app.models import (
     AssessmentKey,
     AssessmentReview,
     LearningResult,
+    LTIResourceLink,
+    GradeRecord,
+    ExternalIdentity,
+    EvaluationResult,
     LTIDeepLinkRequest,
     LTIPlatform,
     Membership,
@@ -2295,3 +2299,178 @@ def test_private_bank_bundle_imports_portfolio_exam_recovery_and_keeps_them_secr
         )
         assert "Pregunta privada" not in serialized
         assert "Recuperación privada" not in serialized
+
+
+def test_ags_sync_sends_only_definitive_ra_grades(monkeypatch):
+    import app.integrations as integrations_module
+
+    sent = []
+
+    async def fake_post_score(
+        platform,
+        lineitem_url,
+        lti_user_id,
+        score_given,
+        score_maximum=100.0,
+        comment=None,
+    ):
+        sent.append(
+            {
+                "platform_id": platform.id,
+                "lineitem_url": lineitem_url,
+                "lti_user_id": lti_user_id,
+                "score_given": score_given,
+                "score_maximum": score_maximum,
+                "comment": comment,
+            }
+        )
+        return {"status_code": 204, "endpoint": lineitem_url.rstrip("/") + "/scores"}
+
+    monkeypatch.setattr(integrations_module, "post_score", fake_post_score)
+
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("ags-ra-sync")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course.source_type = "lti"
+
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            student_done = User(
+                display_name="Alumno definitivo",
+                email="done@example.test",
+            )
+            student_pending = User(
+                display_name="Alumno pendiente",
+                email="pending@example.test",
+            )
+            platform = LTIPlatform(
+                name="CAMPUS test",
+                issuer="https://campus.example.test",
+                client_id="campus-client",
+                auth_url="https://campus.example.test/auth",
+                token_url="https://campus.example.test/token",
+                jwks_url="https://campus.example.test/jwks",
+                active=True,
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA para AGS",
+                position=1,
+                active=True,
+            )
+            db.add_all([course_module, student_done, student_pending, platform, lr])
+            db.flush()
+
+            db.add_all([
+                Membership(
+                    course_id=course_id,
+                    user_id=student_done.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                ),
+                Membership(
+                    course_id=course_id,
+                    user_id=student_pending.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                ),
+                ExternalIdentity(
+                    user_id=student_done.id,
+                    issuer=platform.issuer,
+                    subject="campus-student-done",
+                    client_id=platform.client_id,
+                ),
+                ExternalIdentity(
+                    user_id=student_pending.id,
+                    issuer=platform.issuer,
+                    subject="campus-student-pending",
+                    client_id=platform.client_id,
+                ),
+            ])
+            db.flush()
+
+            link = LTIResourceLink(
+                platform_id=platform.id,
+                deployment_id="deployment-1",
+                resource_link_id="resource-ra1",
+                course_id=course_id,
+                course_module_id=course_module.id,
+                learning_result_id=lr.id,
+                lineitem_url="https://campus.example.test/lineitems/ra1",
+                scopes=[],
+            )
+            db.add(link)
+            db.flush()
+
+            db.add_all([
+                EvaluationResult(
+                    course_module_id=course_module.id,
+                    user_id=student_done.id,
+                    learning_result_id=lr.id,
+                    portfolio_score=80,
+                    exam_score=70,
+                    final_score=74,
+                    criteria_passed=8,
+                    criteria_total=9,
+                    passed=True,
+                    details_json={"status": "passed"},
+                ),
+                EvaluationResult(
+                    course_module_id=course_module.id,
+                    user_id=student_pending.id,
+                    learning_result_id=lr.id,
+                    portfolio_score=90,
+                    exam_score=None,
+                    final_score=None,
+                    criteria_passed=0,
+                    criteria_total=9,
+                    passed=False,
+                    details_json={"status": "exam-pending"},
+                ),
+            ])
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(lr)
+            db.refresh(student_done)
+            db.refresh(student_pending)
+            course_module_id = course_module.id
+            lr_id = lr.id
+            done_id = student_done.id
+            pending_id = student_pending.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        response = client.post(
+            f"/api/lti/course-modules/{course_module_id}/learning-results/{lr_id}/sync-grades"
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["sent"] == 1
+        assert data["pending"] == 1
+        assert data["missing_identity"] == 0
+        assert len(sent) == 1
+        assert sent[0]["lti_user_id"] == "campus-student-done"
+        assert sent[0]["score_given"] == 74.0
+        assert sent[0]["score_maximum"] == 100.0
+        assert "RA1" in sent[0]["comment"]
+
+        with SessionLocal() as db:
+            records = list(
+                db.scalars(
+                    __import__("sqlalchemy").select(GradeRecord)
+                )
+            )
+            assert len(records) == 1
+            assert records[0].user_id == done_id
+            assert records[0].score_given == 74.0
+            assert records[0].grading_progress == "FullyGraded"
+            assert all(record.user_id != pending_id for record in records)
