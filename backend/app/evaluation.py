@@ -341,6 +341,7 @@ def recompute_learning_result(
     exam_values: list[float] = []
     final_values: list[float] = []
     passed_count = 0
+    portfolio_passed_count = 0
     all_portfolio_complete = True
     all_exam_complete = bool(latest_exam)
 
@@ -380,6 +381,12 @@ def recompute_learning_result(
         all_portfolio_complete = all_portfolio_complete and portfolio_complete
         portfolio_ce = round(sum(scored) / len(scored), 2) if scored else 0.0
         portfolio_values.append(portfolio_ce)
+        portfolio_passed = (
+            portfolio_complete
+            and portfolio_ce >= float(criterion.pass_score)
+        )
+        if portfolio_passed:
+            portfolio_passed_count += 1
 
         exam_data = exam_by_ce.get(criterion.code) or {}
         exam_n = int(exam_data.get("n") or 0)
@@ -412,6 +419,7 @@ def recompute_learning_result(
             "portfolio_items_scored": len(scored),
             "pending_review": pending,
             "portfolio_complete": portfolio_complete,
+            "portfolio_passed": portfolio_passed,
             "exam": exam_ce,
             "exam_questions": exam_n,
             "final": final_ce,
@@ -511,6 +519,7 @@ def recompute_learning_result(
     result.details_json = {
         "status": final_state,
         "criteria_needed": needed,
+        "portfolio_criteria_passed": portfolio_passed_count,
         "criteria": details,
         "recovery": failed_criteria,
         "exam_attempt": latest_exam.attempt_no if latest_exam else None,
@@ -535,6 +544,7 @@ def recompute_learning_result(
         "criteria_passed": passed_count,
         "criteria_total": criteria_total,
         "criteria_needed": needed,
+        "portfolio_criteria_passed": portfolio_passed_count,
         "passed": ra_passed,
         "status": final_state,
         "recovery": failed_criteria,
