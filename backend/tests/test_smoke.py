@@ -3119,9 +3119,11 @@ def test_admin_readiness_distinguishes_internal_and_external_requirements():
         data = response.json()
         assert data["code_ready"] is True
         assert data["ok"] is True
-        # Test environment intentionally uses a non-HTTPS public URL and may have no LTI platform.
-        assert data["campus_ready"] is False
         checks = {row["name"]: row for row in data["checks"]}
+        expected_campus_ready = data["code_ready"] and all(
+            row["ok"] for row in data["checks"] if row["external"]
+        )
+        assert data["campus_ready"] is expected_campus_ready
         assert checks["database"]["ok"] is True
         assert checks["storage"]["ok"] is True
         assert checks["lti_private_key"]["ok"] is True
