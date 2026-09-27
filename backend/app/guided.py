@@ -140,6 +140,10 @@ def _load_support(package: ScormPackage) -> dict:
     return _load_guided_json(package, "support.json")
 
 
+def _load_master_state(package: ScormPackage) -> dict:
+    return _load_guided_json(package, "master-state.json")
+
+
 def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
     if not variants:
         return None
@@ -251,6 +255,46 @@ def _personalized_audit(
         "checks": checks,
         "variant_key": variant_key,
     }
+
+
+def _personalized_master_state(
+    package: ScormPackage,
+    user: User,
+    milestone_key: str | None = None,
+    project: dict | None = None,
+) -> dict:
+    master = deepcopy(_load_master_state(package))
+    personalized = project
+    if personalized is None:
+        personalized, _ = _personalized_project(package, user)
+    project_by_key = {
+        str(row.get("key")): row
+        for row in personalized.get("milestones") or []
+    }
+    states = deepcopy(master.get("milestones") or {})
+    for key, state in states.items():
+        milestone = project_by_key.get(str(key)) or {}
+        variant = deepcopy(milestone.get("variant") or {})
+        if variant:
+            state["assigned_variant"] = {
+                "key": variant.get("key"),
+                "title": variant.get("title"),
+                "note": variant.get("note"),
+                "overrides": variant.get("overrides") or {},
+            }
+    if milestone_key is not None:
+        return {
+            "version": master.get("version"),
+            "teacher_only": True,
+            "project_id": master.get("project_id"),
+            "company": master.get("company"),
+            "principles": deepcopy(master.get("principles") or []),
+            "milestone_key": milestone_key,
+            "state": deepcopy(states.get(milestone_key) or {}),
+        }
+    master["milestones"] = states
+    master["learner"] = {"id": user.id, "name": user.display_name}
+    return master
 
 
 def _milestone(project: dict, key: str) -> dict:
@@ -529,6 +573,7 @@ async def _ai_review_image(
         "case_variant": milestone.get("variant") or {},
         "case_documents": milestone.get("documents") or [],
         "hidden_audit": audit_context or {},
+        "hidden_master_state": milestone.get("_master_state") or {},
         "student_notes": notes,
         "teacher_rubric": ai.get("default_rubric") or "",
     }
@@ -539,7 +584,7 @@ async def _ai_review_image(
         "Devuelve exclusivamente JSON válido con las claves verdict, confidence, summary, checks y next_hint. "
         "verdict solo puede ser pass, retry o review. confidence debe estar entre 0 y 1. "
         "checks debe ser una lista de objetos con label, status y detail; status solo pass, fail o uncertain. "
-        "Las reglas de hidden_audit son un solucionario técnico privado: úsalas para decidir, pero no copies al alumno "
+        "Las reglas de hidden_audit y hidden_master_state son referencias técnicas privadas: úsalas para decidir, pero no copies al alumno "
         "los valores esperados que todavía no haya alcanzado. Si falla una comprobación, explica qué campo o proceso debe "
         "revisar sin darle la cifra o dato exacto que debe escribir. Si un requisito crítico no puede verificarse en la "
         "captura, usa verdict=review. Si hidden_audit.manual_validation es true, nunca presentes tu revisión como decisión "
@@ -714,6 +759,9 @@ async def runtime_submit_evidence(
     project, _ = _personalized_project(package, user)
     milestone = _milestone(project, milestone_key)
     audit_context = _personalized_audit(package, user, milestone_key, project)
+    milestone["_master_state"] = _personalized_master_state(
+        package, user, milestone_key, project
+    )
     mime = (file.content_type or "application/octet-stream").lower()
     suffix = Path(file.filename or "").suffix.lower()
     if mime not in ALLOWED_EVIDENCE and suffix not in SAFE_EXTENSIONS:
@@ -956,6 +1004,24 @@ def teacher_progress(
 
 
 
+@router.get("/api/guided/registrations/{registration_id}/master-state")
+def teacher_master_state(
+    registration_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    registration = db.get(ScormRegistration, registration_id)
+    if not registration:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    _teacher_registration(db, registration, int(session["sub"]))
+    user = db.get(User, registration.user_id)
+    package = db.get(ScormPackage, registration.package_id)
+    if not user or not package:
+        raise HTTPException(status_code=404, detail="No se puede reconstruir el estado maestro")
+    project, _ = _personalized_project(package, user)
+    return _personalized_master_state(package, user, project=project)
+
+
 @router.get("/api/guided/registrations/{registration_id}/dossier.zip")
 def teacher_dossier_zip(
     registration_id: int,
@@ -1127,6 +1193,7 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
         "support.json",
         "teacher-guide.json",
         "audit-rules.json",
+        "master-state.json",
     ]
     config_bytes: dict[str, bytes] = {}
     config_hashes: dict[str, str] = {}
