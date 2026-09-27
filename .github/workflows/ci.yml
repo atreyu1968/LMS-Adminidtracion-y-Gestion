@@ -22,6 +22,12 @@ jobs:
           pip install -r requirements.txt pytest
       - name: Compile
         run: python -m compileall -q app
+      - name: Validate deployment scripts
+        working-directory: ..
+        run: |
+          bash -n scripts/install-ubuntu.sh
+          bash -n scripts/verify-installation.sh
+          docker compose config >/dev/null
       - name: Test
         env:
           PYTHONPATH: .
