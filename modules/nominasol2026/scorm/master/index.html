@@ -155,9 +155,8 @@ function renderSidebar(){
 function screenshotBlock(step){
   if(!step.screenshot) return "";
   var src=/^https?:\/\//i.test(step.screenshot)?step.screenshot:("assets/screenshots/"+encodeURIComponent(step.screenshot));
-  return '<div class="shot"><img src="'+src+'" alt="Captura real de NOMINASOL: '+esc(step.title)+'" '
-   +'onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'block\\';">'
-   +'<div class="small" style="padding:8px 12px;border-top:1px solid #e2e8f0">Captura real de NOMINASOL · fuente oficial TeamSystem</div>'
+  return '<div class="shot"><img data-real-shot="1" src="'+src+'" alt="Captura real de NOMINASOL: '+esc(step.title)+'">'
+   +'<div class="shot-source small" style="padding:8px 12px;border-top:1px solid #e2e8f0">Captura real de NOMINASOL · fuente oficial TeamSystem</div>'
    +'<div class="missing" style="display:none"><strong>Captura real todavía no incorporada</strong>'
    +'No la sustituimos por una imagen inventada. Sigue la ruta de menú y la explicación de la izquierda; '
    +'esta pantalla se completará únicamente con una captura real de NOMINASOL 2026.</div></div>';
@@ -205,6 +204,7 @@ function openMilestone(key){
   var html='<section class="card"><div class="eyebrow">'+esc(m.period)+'</div><h2>'+esc(m.title)+'</h2>'
     +'<p class="story">'+esc(m.story)+'</p>'
     +'<div class="callout"><strong>Qué vas a conseguir</strong><br>'+esc(m.objective)+'</div>'
+    +'<div class="look"><strong>Cómo sabrás que has terminado bien</strong><br>'+esc(m.expected_result||"")+'</div>'
     +'<p>'+esc(m.guide_intro||"")+'</p>'
     +'<div class="statusline"><span class="pill">Estado: '+esc(statusLabel(st.status))+'</span>'
     +'<span class="pill">Intentos de evidencia: '+Number(st.attempts||0)+'</span></div>'
@@ -221,6 +221,15 @@ function openMilestone(key){
     +'<div id="sendStatus"></div>'+renderFeedback(st)+'</section>';
   var root=document.getElementById("content");
   root.innerHTML=html;
+  Array.prototype.forEach.call(root.querySelectorAll("img[data-real-shot]"),function(img){
+    img.addEventListener("error",function(){
+      img.style.display="none";
+      var source=img.parentNode.querySelector(".shot-source");
+      var missing=img.parentNode.querySelector(".missing");
+      if(source)source.style.display="none";
+      if(missing)missing.style.display="block";
+    });
+  });
   root.classList.remove("hidden");
   document.getElementById("loading").classList.add("hidden");
   document.getElementById("startBtn").addEventListener("click",async function(){
@@ -230,6 +239,11 @@ function openMilestone(key){
     }catch(e){showInline(e.message,"review");}
   });
   document.getElementById("submitBtn").addEventListener("click",async function(){
+    var checks=Array.prototype.slice.call(document.querySelectorAll(".selfcheck"));
+    if(checks.length && checks.some(function(x){return !x.checked;})){
+      showInline("Antes de entregar, completa tu lista de comprobación. No es un trámite: sirve para que revises el trabajo tú mismo antes de pedir a la IA o al profesor que lo audite.","retry");
+      return;
+    }
     var file=document.getElementById("evidenceFile").files[0];
     if(!file){showInline("Selecciona primero la captura, PDF o archivo que demuestra tu trabajo.","retry");return;}
     var btn=this;btn.disabled=true;btn.textContent="Comprobando…";
