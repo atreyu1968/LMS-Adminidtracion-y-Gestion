@@ -184,3 +184,14 @@ Cuando el alumno tiene una variante individual, el estado maestro se personaliza
 La IA recibe únicamente el estado maestro del hito que está auditando, como contexto privado adicional a las reglas de auditoría. Se le prohíbe reproducir la solución exacta al alumno: debe utilizarla para detectar discrepancias y orientar hacia el dato o proceso que necesita revisión.
 
 `master-state.json` se incluye en la instantánea privada e inmutable de cada revisión. No se empaqueta dentro del SCORM público, no aparece en el expediente del alumno y no se incluye en el ZIP documental.
+
+
+## Descarga oficial al inicio del SCORM
+
+La versión 2026.10 incorpora, antes del primer hito, un bloque visible de instalación con acceso a la página oficial de TeamSystem / Software DELSOL para **Universidades y centros de formación**:
+
+https://www.sdelsol.com/universidades-y-cc-ff/
+
+La página oficial ofrece **TeamSystem Nominasol 2026 para Windows** y el formulario **Solicitar gratis la Versión Educativa**. El SCORM explica expresamente al alumnado qué producto y ejercicio debe seleccionar.
+
+Se enlaza la página oficial estable en lugar de un ejecutable directo temporal. De este modo, si TeamSystem actualiza el instalador, el enlace del curso sigue llevando al canal oficial correcto.
