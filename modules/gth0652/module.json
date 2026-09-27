@@ -1,0 +1,21 @@
+{
+  "slug": "gth-0652",
+  "code": "0652",
+  "title": "Gestión de Recursos Humanos",
+  "source": {
+    "repository": "atreyu1968/CFGSAF",
+    "ref": "main",
+    "path": "grh0652"
+  },
+  "migration": {
+    "status": "planned",
+    "preserve_source": true,
+    "target_model": "native+scorm"
+  },
+  "learning_results": [
+    {"id": "RA1", "legacy_course_id": "GRH0652_UT1"},
+    {"id": "RA2", "legacy_course_id": "GRH0652_UT2"},
+    {"id": "RA3", "legacy_course_id": "GRH0652_UT3"},
+    {"id": "RA4", "legacy_course_id": "GRH0652_UT4"}
+  ]
+}
