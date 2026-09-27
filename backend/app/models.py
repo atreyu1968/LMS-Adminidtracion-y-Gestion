@@ -298,3 +298,195 @@ class MediaAsset(Base):
     visibility: Mapped[str] = mapped_column(String(30), default="private", index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LearningResult(Base):
+    __tablename__ = "learning_results"
+    __table_args__ = (UniqueConstraint("module_id", "code", name="uq_learning_result_module_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), index=True)
+    code: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class AssessmentCriterion(Base):
+    __tablename__ = "assessment_criteria"
+    __table_args__ = (UniqueConstraint("learning_result_id", "code", name="uq_criterion_lr_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    learning_result_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_results.id", ondelete="CASCADE"), index=True
+    )
+    code: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(500), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    pass_score: Mapped[float] = mapped_column(Float, default=5.0)
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class AssessmentItem(Base):
+    __tablename__ = "assessment_items"
+    __table_args__ = (
+        UniqueConstraint("criterion_id", "instrument", "item_key", name="uq_assessment_item"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    criterion_id: Mapped[int] = mapped_column(
+        ForeignKey("assessment_criteria.id", ondelete="CASCADE"), index=True
+    )
+    instrument: Mapped[str] = mapped_column(String(40), index=True)
+    item_key: Mapped[str] = mapped_column(String(160))
+    item_type: Mapped[str] = mapped_column(String(40), default="choice")
+    prompt: Mapped[str] = mapped_column(Text)
+    options_json: Mapped[list] = mapped_column(JSON, default=list)
+    public_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    evaluable: Mapped[bool] = mapped_column(Boolean, default=True)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=1)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class AssessmentKey(Base):
+    __tablename__ = "assessment_keys"
+    __table_args__ = (UniqueConstraint("item_id", name="uq_assessment_key_item"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("assessment_items.id", ondelete="CASCADE"), index=True)
+    answer_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    feedback: Mapped[str] = mapped_column(Text, default="")
+    public_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source: Mapped[str] = mapped_column(String(80), default="private-bank")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class EvaluationConfig(Base):
+    __tablename__ = "evaluation_configs"
+    __table_args__ = (
+        UniqueConstraint("course_module_id", "version", name="uq_eval_config_course_module_version"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    config_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    frozen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AssessmentAttempt(Base):
+    __tablename__ = "assessment_attempts"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "item_id", "attempt_no",
+            name="uq_assessment_attempt",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("assessment_items.id", ondelete="CASCADE"), index=True)
+    attempt_no: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(40), default="started", index=True)
+    response_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    pending_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ExamSession(Base):
+    __tablename__ = "exam_sessions"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "learning_result_id", "attempt_no",
+            name="uq_exam_session",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    learning_result_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_results.id", ondelete="CASCADE"), index=True
+    )
+    attempt_no: Mapped[int] = mapped_column(Integer, default=1)
+    status: Mapped[str] = mapped_column(String(40), default="started", index=True)
+    question_ids_json: Mapped[list] = mapped_column(JSON, default=list)
+    question_snapshot_json: Mapped[list] = mapped_column(JSON, default=list)
+    response_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    security_events_json: Mapped[list] = mapped_column(JSON, default=list)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EvaluationResult(Base):
+    __tablename__ = "evaluation_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "learning_result_id",
+            name="uq_evaluation_result",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    learning_result_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_results.id", ondelete="CASCADE"), index=True
+    )
+    portfolio_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exam_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    final_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    criteria_passed: Mapped[int] = mapped_column(Integer, default=0)
+    criteria_total: Mapped[int] = mapped_column(Integer, default=0)
+    passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    details_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RecoveryPlan(Base):
+    __tablename__ = "recovery_plans"
+    __table_args__ = (
+        UniqueConstraint(
+            "course_module_id", "user_id", "learning_result_id",
+            name="uq_recovery_plan",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    learning_result_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_results.id", ondelete="CASCADE"), index=True
+    )
+    criteria_json: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(40), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
