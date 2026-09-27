@@ -452,6 +452,29 @@ class ReviewDecisionIn(BaseModel):
     status: str = Field(default="accepted", pattern=r"^(accepted|rejected)$")
 
 
+class EvaluationConfigIn(BaseModel):
+    practice_max_attempts: int | None = Field(default=None, ge=1, le=20)
+    portfolio_max_attempts: int | None = Field(default=None, ge=1, le=20)
+    exam_max_attempts: int | None = Field(default=None, ge=1, le=10)
+    recovery_max_attempts: int | None = Field(default=None, ge=1, le=10)
+    portfolio_weight: float | None = Field(default=None, ge=0, le=100)
+    exam_weight: float | None = Field(default=None, ge=0, le=100)
+    pass_score: float | None = Field(default=None, ge=0, le=100)
+    ce_pass_score: float | None = Field(default=None, ge=0, le=100)
+    ce_pass_percent: int | None = Field(default=None, ge=0, le=100)
+    require_both_instruments: bool | None = None
+    exam_enabled: bool | None = None
+    exam_questions_per_ce: int | None = Field(default=None, ge=1, le=20)
+    exam_minutes: int | None = Field(default=None, ge=1, le=300)
+    exam_integrity_enabled: bool | None = None
+    exam_fullscreen_required: bool | None = None
+    exam_incident_limit: int | None = Field(default=None, ge=0, le=20)
+    exam_incident_policy: str | None = Field(
+        default=None,
+        pattern=r"^(submit|warn|log)$",
+    )
+
+
 class PrivateKeyItemIn(BaseModel):
     id: str = Field(min_length=1, max_length=160)
     ce: str | None = Field(default=None, max_length=40)
@@ -535,6 +558,81 @@ def _load_private_keys(
         imported += 1
     db.commit()
     return {"module_id": module_id, "items": imported, "strict": payload.strict}
+
+
+@router.get("/course-modules/{course_module_id}/config")
+def get_evaluation_config(
+    course_module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    course_module = _teacher_course_module(
+        db, course_module_id, int(session["sub"])
+    )
+    latest = db.scalar(
+        select(EvaluationConfig)
+        .where(
+            EvaluationConfig.course_module_id == course_module_id,
+            EvaluationConfig.active.is_(True),
+        )
+        .order_by(EvaluationConfig.version.desc())
+    )
+    return {
+        "course_module_id": course_module_id,
+        "version": latest.version if latest else 0,
+        "config": _effective_config(db, course_module),
+        "frozen_at": latest.frozen_at if latest else None,
+    }
+
+
+@router.put("/course-modules/{course_module_id}/config")
+def put_evaluation_config(
+    course_module_id: int,
+    payload: EvaluationConfigIn,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    course_module = _teacher_course_module(
+        db, course_module_id, int(session["sub"])
+    )
+    current = _effective_config(db, course_module)
+    changes = payload.model_dump(exclude_unset=True)
+    current.update({k: v for k, v in changes.items() if v is not None})
+
+    if abs(
+        float(current.get("portfolio_weight", 0))
+        + float(current.get("exam_weight", 0))
+        - 100.0
+    ) > 0.001:
+        raise HTTPException(
+            status_code=400,
+            detail="Los pesos de Portafolio y examen deben sumar 100",
+        )
+
+    previous = list(
+        db.scalars(
+            select(EvaluationConfig).where(
+                EvaluationConfig.course_module_id == course_module_id,
+                EvaluationConfig.active.is_(True),
+            )
+        )
+    )
+    next_version = max([row.version for row in previous], default=0) + 1
+    for row in previous:
+        row.active = False
+    snapshot = EvaluationConfig(
+        course_module_id=course_module_id,
+        version=next_version,
+        config_json=current,
+        active=True,
+    )
+    db.add(snapshot)
+    db.commit()
+    return {
+        "course_module_id": course_module_id,
+        "version": next_version,
+        "config": current,
+    }
 
 
 @router.get("/course-modules/{course_module_id}/structure")
@@ -917,6 +1015,77 @@ def my_results(
         results.append(recompute_learning_result(db, course_module_id, user_id, lr.id))
     db.commit()
     return results
+
+
+@router.get("/course-modules/{course_module_id}/gradebook")
+def gradebook(
+    course_module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    teacher_id = int(session["sub"])
+    course_module = _teacher_course_module(db, course_module_id, teacher_id)
+    students = db.execute(
+        select(Membership, User)
+        .join(User, User.id == Membership.user_id)
+        .where(
+            Membership.course_id == course_module.course_id,
+            Membership.active.is_(True),
+            Membership.role == "student",
+            User.active.is_(True),
+        )
+        .order_by(User.display_name)
+    ).all()
+    lrs = list(
+        db.scalars(
+            select(LearningResult)
+            .where(
+                LearningResult.module_id == course_module.module_id,
+                LearningResult.active.is_(True),
+            )
+            .order_by(LearningResult.position, LearningResult.id)
+        )
+    )
+    pending_counts = dict(
+        db.execute(
+            select(
+                AssessmentAttempt.user_id,
+                func.count(AssessmentReview.id),
+            )
+            .join(
+                AssessmentReview,
+                AssessmentReview.attempt_id == AssessmentAttempt.id,
+            )
+            .where(
+                AssessmentAttempt.course_module_id == course_module_id,
+                AssessmentReview.status == "pending",
+            )
+            .group_by(AssessmentAttempt.user_id)
+        ).all()
+    )
+    rows = []
+    for _, user in students:
+        ra_results = [
+            recompute_learning_result(
+                db, course_module_id, user.id, lr.id
+            )
+            for lr in lrs
+        ]
+        rows.append(
+            {
+                "user_id": user.id,
+                "display_name": user.display_name,
+                "email": user.email,
+                "pending_reviews": int(pending_counts.get(user.id, 0)),
+                "learning_results": ra_results,
+            }
+        )
+    db.commit()
+    return {
+        "course_module_id": course_module_id,
+        "module_id": course_module.module_id,
+        "students": rows,
+    }
 
 
 @router.get("/course-modules/{course_module_id}/reviews")
