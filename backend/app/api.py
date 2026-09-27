@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from .db import get_db
 from .models import Course, CourseModule, Membership, Module, ModulePermission, User
 from .security import read_session, require_admin, require_teacher
+from .version import __version__
 
 
 router = APIRouter(prefix="/api")
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/health")
 def health() -> dict:
-    return {"ok": True, "service": "lms-administracion-gestion", "phase": "foundation"}
+    return {"ok": True, "service": "lms-administracion-gestion", "version": __version__, "phase": "release-candidate"}
 
 
 @router.get("/me")
