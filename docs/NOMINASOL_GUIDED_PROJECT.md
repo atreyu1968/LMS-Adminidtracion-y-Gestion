@@ -78,3 +78,18 @@ La IA recibe también el contexto de la variante y los documentos de ese alumno,
 `teacher-guide.json` aporta al profesorado un recorrido paralelo. Desde el propio grupo puede abrir la Guía docente y consultar qué pretende cada hito, cuál es el estado que se espera encontrar, qué conviene revisar y cuáles requieren validación manual.
 
 El objetivo es que el proyecto pueda impartirse aunque el docente todavía esté aprendiendo NOMINASOL.
+
+
+## Solucionario técnico oculto
+
+La versión 2026.3 incorpora `audit-rules.json`. Este archivo no forma parte del contenido visible del alumno y actúa como referencia técnica para la revisión con IA y para la guía docente.
+
+Las reglas describen, hito por hito, qué estado debe poder observarse en la empresa, qué datos son críticos, qué errores impiden continuar y qué comprobaciones cambian según la variante individual del alumno.
+
+La IA recibe estas reglas como contexto privado. Se le ordena expresamente utilizarlas para decidir si una evidencia es compatible con el estado esperado, pero no revelar al alumno la cifra o el dato exacto que todavía no haya conseguido. La devolución debe orientar hacia el campo, proceso o pantalla que necesita revisión.
+
+Los hitos críticos marcados como `manual_validation` no pueden completarse automáticamente aunque la IA devuelva una confianza alta. En esos casos la evidencia pasa a revisión docente.
+
+Actualmente requieren validación docente obligatoria, entre otros, la configuración de la empresa, la plantilla inicial, la actualización de tablas y atrasos, vacaciones y sustitución, y la auditoría final del ejercicio.
+
+La Guía docente muestra el solucionario técnico únicamente al profesorado: operador de comprobación, valor esperado, gravedad y reglas específicas de cada variante.
