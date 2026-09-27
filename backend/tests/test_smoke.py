@@ -1356,7 +1356,13 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert master_payload["milestones"]["M06"]["assigned_variant"]["key"] in {"IT-A", "IT-B", "IT-C"}
         assert master_payload["milestones"]["M14"]["assigned_variant"]["key"] in {"NOV-A", "NOV-B", "NOV-C"}
         assert "master_state" not in payload["project"]
-        assert "_master_state" not in __import__("json").dumps(payload["project"])
+        assert all(
+            "_master_state" not in milestone
+            for milestone in payload["project"]["milestones"]
+        )
+        assert "active_workers_carried_to_2027" not in __import__("json").dumps(
+            payload["project"]
+        )
 
         dossier = client.get(
             f"/api/guided/registrations/{registration_id}/dossier.zip"
