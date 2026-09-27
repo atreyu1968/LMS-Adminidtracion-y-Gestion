@@ -90,6 +90,17 @@ def modules(session: dict = Depends(read_session), db: Session = Depends(get_db)
             "description": row.description,
             "module_type": row.module_type,
             "version": row.version,
+            "course_module_id": (
+                db.scalar(
+                    select(CourseModule.id).where(
+                        CourseModule.course_id == course_id,
+                        CourseModule.module_id == row.id,
+                        CourseModule.active.is_(True),
+                    )
+                )
+                if course_id
+                else None
+            ),
         }
         for row in rows
     ]
