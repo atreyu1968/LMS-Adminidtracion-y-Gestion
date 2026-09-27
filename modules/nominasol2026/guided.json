@@ -2,14 +2,14 @@
   "project_id": "nominasol-2026-anual",
   "title": "Un año en Recursos Humanos con NOMINASOL 2026",
   "subtitle": "Proyecto profesional guiado · ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
-  "version": "2026.6",
+  "version": "2026.7",
   "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
   "approach": "Aprender haciendo y corrigiendo hasta conseguir el resultado",
   "introduction": "Este curso no presupone que conozcas NOMINASOL. Tampoco espera que memorices botones. Durante todo el año el SCORM permanecerá a tu lado como un tutor de trabajo: primero te contará qué ocurre en la empresa, después te enseñará dónde actuar en la aplicación, te ayudará a comprobar el resultado y finalmente te pedirá una evidencia. Si te equivocas, el objetivo no es penalizar el error, sino localizarlo, corregirlo y continuar con una empresa coherente.",
   "teacher_note": "El proyecto evalúa la consecución de hitos y la evolución del alumno. La IA puede realizar una primera comprobación de capturas reales; los hitos críticos o de baja confianza pasan a revisión docente.",
   "screenshot_policy": {
     "mode": "real-only",
-    "explanation": "El recorrido utiliza capturas reales de NOMINASOL procedentes del Centro de Ayuda oficial de TeamSystem cuando están disponibles. Se han incorporado pantallas reales de nueva empresa, datos generales, centro de trabajo, convenio, trabajador, contrato, cálculo y análisis de nómina, IT, pagas extraordinarias, atrasos, modelos fiscales, finiquitos, copias y apertura de ejercicio. Las pantallas que aún no dispongan de captura se explican con texto y ruta exacta, sin recreaciones ficticias.",
+    "explanation": "El recorrido utiliza capturas reales y específicas de NOMINASOL procedentes del Centro de Ayuda oficial de TeamSystem. Se prioriza la pantalla exacta de cada operación: acceso 2026, situación del trabajador, conceptos retributivos, retribuciones especiales, kilometraje, categorías de convenio, regularización de IRPF, retribución en especie, vacaciones, nacimiento y cuidado del menor y las tres variantes de noviembre, además de las capturas ya incorporadas para contratos, nóminas, IT, pagas, atrasos, modelos fiscales, finiquitos, copias y apertura de ejercicio.",
     "asset_prefix": "assets/screenshots/"
   },
   "evidence_policy": {
@@ -40,7 +40,9 @@
           "route": "Inicio de NOMINASOL",
           "look_for": "La versión 2026 y el acceso de usuario deben ser visibles.",
           "common_mistake": "Confundir una instalación antigua con la edición 2026. Si la versión no coincide, no continúes porque las tablas y pantallas pueden variar.",
-          "screenshot": "00-inicio-sesion.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/49542390665361",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1798 · Cómo instalar el programa"
         },
         {
           "title": "Recorre la pantalla principal",
@@ -217,8 +219,9 @@
           "route": "Ficha de trabajador / Situación laboral",
           "look_for": "Categoría, grupo y centro coinciden con la ficha maestra.",
           "common_mistake": "Elegir una categoría solo porque produce el salario esperado.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081237263889",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1825 · Salario, categoría, convenio y trabajador"
         },
         {
           "title": "Crea el contrato",
@@ -235,8 +238,9 @@
           "route": "Ficha de trabajador / Retribuciones e IRPF",
           "look_for": "La ficha contiene los conceptos y datos fiscales previstos antes de calcular enero.",
           "common_mistake": "Modificar una cifra para forzar el líquido de la nómina. Primero debe ser correcta la configuración.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081226817809",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1825 · Conceptos retributivos del trabajador"
         }
       ],
       "checklist": [
@@ -325,8 +329,9 @@
           "route": "Retribuciones mensuales / Incidencias",
           "look_for": "La variable aparece asociada solo al trabajador y mes correctos.",
           "common_mistake": "Modificar el salario fijo para incluir una cantidad que solo corresponde a febrero.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080150576017",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1729 · Retribuciones especiales de mes"
         },
         {
           "title": "Comprueba kilometraje o dieta",
@@ -334,8 +339,9 @@
           "route": "Retribuciones / Conceptos",
           "look_for": "El concepto está identificado y la nómina refleja el tratamiento previsto.",
           "common_mistake": "Crear un concepto nuevo duplicando otro sin revisar sus indicadores.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
-          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080339614353",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N872 · Configuración de kilometraje"
         }
       ],
       "checklist": [
@@ -466,8 +472,9 @@
           "route": "Convenio / Categorías / Conceptos",
           "look_for": "Las nuevas cuantías quedan disponibles para el cálculo futuro.",
           "common_mistake": "Modificar trabajador por trabajador cuando el cambio procede del convenio y debe mantenerse de forma coherente.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080539778449",
-          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081254574865",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1825 · Categorías del convenio"
         },
         {
           "title": "Calcula atrasos",
@@ -484,8 +491,9 @@
           "route": "Trabajador / IRPF / Regularización",
           "look_for": "La retención futura refleja la nueva previsión cuando corresponda.",
           "common_mistake": "Cambiar manualmente el porcentaje sin usar la lógica de regularización.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/33202923596561",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080711233553",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N185 · Regularizar I.R.P.F."
         }
       ],
       "checklist": [
@@ -520,8 +528,9 @@
           "route": "Trabajador / Situación laboral o conceptos",
           "look_for": "Junio refleja la nueva situación sin alterar meses cerrados.",
           "common_mistake": "Sobrescribir un concepto sin controlar la fecha de vigencia.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081237263889",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N1825 · Situación del trabajador"
         },
         {
           "title": "Configura la retribución en especie",
@@ -529,8 +538,9 @@
           "route": "Conceptos retributivos / En especie",
           "look_for": "La nómina identifica el concepto y su efecto fiscal/cotizable.",
           "common_mistake": "Tratar la especie como si fuera un simple plus dinerario.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
-          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080437534225",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N010 · Retribución en especie"
         }
       ],
       "checklist": [
@@ -608,8 +618,9 @@
           "route": "Calendario / Ausencias",
           "look_for": "Los días están marcados con la causa correcta.",
           "common_mistake": "Registrar vacaciones como enfermedad o ausencia injustificada.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082541235345",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32083334630673",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N528 · Registrar vacaciones"
         },
         {
           "title": "Gestiona la sustitución",
@@ -691,13 +702,14 @@
       "guide_intro": "Lee la comunicación del trabajador y fíjate en las fechas. Una suspensión tiene principio y final; no debe convertirse en una baja definitiva por error.",
       "steps": [
         {
-          "title": "Registra la situación temporal",
-          "body": "Usa la opción adecuada de incidencias/suspensiones y completa las fechas.",
-          "route": "Trabajador / Incidencias",
-          "look_for": "La situación queda acotada temporalmente.",
-          "common_mistake": "Utilizar la opción de baja definitiva.",
-          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082541235345",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
+          "title": "Registra el descanso por nacimiento y cuidado",
+          "body": "En NOMINASOL esta situación se registra mediante un parte de incapacidad temporal asociado al descanso por nacimiento y cuidado del menor. Selecciona al trabajador, elige la contingencia correspondiente y completa las fechas del supuesto. La relación laboral no se extingue.",
+          "route": "Procesos / Asistencia / Incapacidades",
+          "look_for": "El parte pertenece a T02, la contingencia es Descanso por maternidad / paternidad y las fechas coinciden con el supuesto.",
+          "common_mistake": "Dar de baja definitivamente al trabajador o registrar la situación como una ausencia genérica.",
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/43436409677585",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_source_page": "N032 · Descanso por nacimiento y cuidado"
         },
         {
           "title": "Comprueba octubre",
@@ -736,12 +748,22 @@
       "steps": [
         {
           "title": "Identifica la naturaleza del movimiento",
-          "body": "Decide si el documento representa una deducción, un anticipo, una retribución variable u otro tratamiento previsto.",
-          "route": "Documento de incidencia / Ficha del trabajador",
-          "look_for": "Sabes explicar por qué se registra en una zona concreta.",
-          "common_mistake": "Copiar el procedimiento de otro alumno con una incidencia distinta.",
+          "body": "Lee primero la incidencia que te ha sido asignada. El SCORM adapta la captura a tu caso: anticipo, bonus o embargo simulado. Fíjate en la naturaleza del concepto antes de introducir ningún importe.",
+          "route": "Según tu variante: Retribución especial / Bonus / Embargos",
+          "look_for": "La pantalla y el tipo de concepto deben corresponder a tu variante individual de noviembre.",
+          "common_mistake": "Seguir la captura o el procedimiento de otro compañero que tiene una variante diferente.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
-          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL",
+          "screenshot_by_variant": {
+            "NOV-A": "https://ayuda.teamsystem.es/hc/article_attachments/32079045102609",
+            "NOV-B": "https://ayuda.teamsystem.es/hc/article_attachments/32079840702225",
+            "NOV-C": "https://ayuda.teamsystem.es/hc/article_attachments/32079870768017"
+          },
+          "screenshot_source_page_by_variant": {
+            "NOV-A": "N1207 · Cómo configurar un anticipo",
+            "NOV-B": "N1205 · Cómo calcular una nómina de bonus",
+            "NOV-C": "N1226 · Cómo calcula el programa un embargo"
+          }
         },
         {
           "title": "Registra y recalcula",
@@ -880,5 +902,6 @@
   "audit_rules": "hidden-2026.3",
   "didactic_support": "contextual-2026.4",
   "learning_portfolio": "evidence-history-2026.5",
-  "revision_snapshot": "private-config-2026.6"
+  "revision_snapshot": "private-config-2026.6",
+  "visual_guide": "official-specific-screens-2026.7"
 }
