@@ -424,8 +424,6 @@ async def sync_learning_result_grades(
     course_module = db.get(CourseModule, course_module_id)
     if not course_module or not course_module.active:
         raise HTTPException(status_code=404, detail="Módulo del grupo no encontrado")
-    if int(session.get("course_id") or 0) != course_module.course_id:
-        raise HTTPException(status_code=403, detail="Course context mismatch")
     _teacher_membership(db, course_module.course_id, teacher_id)
 
     lr = db.get(LearningResult, learning_result_id)
@@ -458,8 +456,6 @@ async def sync_all_learning_result_grades(
     course_module = db.get(CourseModule, course_module_id)
     if not course_module or not course_module.active:
         raise HTTPException(status_code=404, detail="Módulo del grupo no encontrado")
-    if int(session.get("course_id") or 0) != course_module.course_id:
-        raise HTTPException(status_code=403, detail="Course context mismatch")
     _teacher_membership(db, course_module.course_id, teacher_id)
 
     lrs = list(
