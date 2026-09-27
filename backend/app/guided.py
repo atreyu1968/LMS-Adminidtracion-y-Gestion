@@ -6,6 +6,7 @@ import io
 import json
 import re
 import zipfile
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -79,6 +80,95 @@ def _load_project(package: ScormPackage) -> dict:
         raise HTTPException(status_code=500, detail="guided.json no es JSON válido") from exc
     project["_folder"] = folder
     return project
+
+
+def _load_scenario(package: ScormPackage) -> dict:
+    folder = _project_folder(package)
+    root = Path(settings.modules_root).resolve()
+    path = (root / folder / "scenario.json").resolve()
+    if root not in path.parents or not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="scenario.json no es JSON válido") from exc
+
+
+def _load_teacher_guide(package: ScormPackage) -> dict:
+    folder = _project_folder(package)
+    root = Path(settings.modules_root).resolve()
+    path = (root / folder / "teacher-guide.json").resolve()
+    if root not in path.parents or not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="teacher-guide.json no es JSON válido") from exc
+
+
+def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
+    if not variants:
+        return None
+    seed = f"{project_id}:{user_id}:{milestone_key}".encode("utf-8")
+    digest = hashlib.sha256(seed).digest()
+    index = int.from_bytes(digest[:4], "big") % len(variants)
+    return deepcopy(variants[index])
+
+
+def _merge_document(base: dict, patch: dict) -> dict:
+    result = deepcopy(base)
+    for key, value in (patch or {}).items():
+        if key == "fields" and isinstance(value, dict):
+            result["fields"] = {**(result.get("fields") or {}), **value}
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
+def _personalized_project(package: ScormPackage, user: User) -> tuple[dict, dict]:
+    project = _load_project(package)
+    scenario = _load_scenario(package)
+    documents_by_milestone = scenario.get("milestone_documents") or {}
+    variants_by_milestone = scenario.get("variants") or {}
+    personalized = deepcopy(project)
+    project_id = str(project.get("project_id") or _project_folder(package))
+
+    for milestone in personalized.get("milestones") or []:
+        key = str(milestone.get("key") or "")
+        documents = deepcopy(documents_by_milestone.get(key) or [])
+        variant = _variant_for(
+            project_id,
+            int(user.id),
+            key,
+            list(variants_by_milestone.get(key) or []),
+        )
+        if variant:
+            overrides = variant.get("document_overrides") or {}
+            documents = [
+                _merge_document(document, overrides.get(str(document.get("id"))) or {})
+                for document in documents
+            ]
+            documents.extend(deepcopy(variant.get("extra_documents") or []))
+            milestone["variant"] = {
+                "key": variant.get("key"),
+                "title": variant.get("title"),
+                "note": variant.get("note"),
+                "overrides": variant.get("overrides") or {},
+            }
+        milestone["documents"] = documents
+
+    scenario_public = {
+        "scenario_id": scenario.get("scenario_id"),
+        "title": scenario.get("title"),
+        "warning": scenario.get("warning"),
+        "company": scenario.get("company") or {},
+        "workers": scenario.get("workers") or [],
+        "salary_tables": scenario.get("salary_tables") or {},
+        "salary_policy": scenario.get("salary_policy") or {},
+        "sources": scenario.get("sources") or [],
+    }
+    personalized["scenario"] = scenario_public
+    return personalized, scenario_public
 
 
 def _milestone(project: dict, key: str) -> dict:
@@ -191,6 +281,8 @@ async def _ai_review_image(
         "objective": milestone.get("objective"),
         "expected_result": milestone.get("expected_result") or "",
         "checks": checks,
+        "case_variant": milestone.get("variant") or {},
+        "case_documents": milestone.get("documents") or [],
         "student_notes": notes,
         "teacher_rubric": ai.get("default_rubric") or "",
     }
@@ -296,7 +388,7 @@ def runtime_project(
     db: Session = Depends(get_db),
 ) -> dict:
     registration, user, package = _get_registration(registration_id, authorization, db)
-    project = _load_project(package)
+    project, scenario = _personalized_project(package, user)
     progress_rows = list(
         db.scalars(
             select(GuidedMilestoneProgress).where(
@@ -322,6 +414,7 @@ def runtime_project(
     )
     return {
         "project": {k: v for k, v in project.items() if not k.startswith("_")},
+        "scenario": scenario,
         "learner": {"id": user.id, "name": user.display_name},
         "progress": progress,
         "evidence": evidence,
@@ -340,8 +433,8 @@ def runtime_start_milestone(
     authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> dict:
-    registration, _, package = _get_registration(registration_id, authorization, db)
-    project = _load_project(package)
+    registration, user, package = _get_registration(registration_id, authorization, db)
+    project, _ = _personalized_project(package, user)
     milestone = _milestone(project, milestone_key)
     previous_key = milestone.get("requires")
     if previous_key:
@@ -367,8 +460,8 @@ async def runtime_submit_evidence(
     authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> dict:
-    registration, _, package = _get_registration(registration_id, authorization, db)
-    project = _load_project(package)
+    registration, user, package = _get_registration(registration_id, authorization, db)
+    project, _ = _personalized_project(package, user)
     milestone = _milestone(project, milestone_key)
     mime = (file.content_type or "application/octet-stream").lower()
     suffix = Path(file.filename or "").suffix.lower()
@@ -484,6 +577,40 @@ def _teacher_registration(
     return course_module
 
 
+
+@router.get("/api/guided/course-modules/{course_module_id}/guide")
+def teacher_guide(
+    course_module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    teacher_id = int(session["sub"])
+    cm = db.get(CourseModule, course_module_id)
+    if not cm:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.course_id == cm.course_id,
+            Membership.user_id == teacher_id,
+            Membership.active.is_(True),
+            Membership.role.in_(["teacher", "admin"]),
+        )
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="No eres profesor de este grupo")
+    package = db.scalar(
+        select(ScormPackage)
+        .where(
+            ScormPackage.module_id == cm.module_id,
+            ScormPackage.active.is_(True),
+        )
+        .order_by(ScormPackage.id.desc())
+    )
+    if not package or not (package.manifest_json or {}).get("guided_project_folder"):
+        raise HTTPException(status_code=404, detail="Este módulo no tiene una guía docente asociada")
+    return _load_teacher_guide(package)
+
+
 @router.get("/api/guided/course-modules/{course_module_id}/progress")
 def teacher_progress(
     course_module_id: int,
@@ -516,7 +643,7 @@ def teacher_progress(
         package = db.get(ScormPackage, registration.package_id)
         if not package or not (package.manifest_json or {}).get("guided_project_folder"):
             continue
-        project = _load_project(package)
+        project, _ = _personalized_project(package, user)
         states = list(
             db.scalars(
                 select(GuidedMilestoneProgress).where(
@@ -537,6 +664,11 @@ def teacher_progress(
                 "total": total,
                 "percentage": round((completed / total * 100), 1) if total else 0,
                 "pending_review": pending_review,
+                "variants": {
+                    m["key"]: (m.get("variant") or {}).get("key")
+                    for m in project.get("milestones") or []
+                    if m.get("variant")
+                },
                 "milestones": {
                     m["key"]: _progress_dict(state_map.get(m["key"]))
                     for m in project.get("milestones") or []

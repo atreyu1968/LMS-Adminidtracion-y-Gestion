@@ -1,0 +1,1112 @@
+{
+  "scenario_id": "agi-2026",
+  "title": "ATLÁNTICO GESTIÓN INTEGRAL, S.L. · Expediente laboral 2026",
+  "warning": "Todos los datos personales, identificadores y documentos son ficticios y exclusivamente educativos. No realizar comunicaciones reales.",
+  "company": {
+    "code": "AGI",
+    "tax_id_practice": "B12345674",
+    "legal_name": "ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+    "trade_name": "Atlántico Gestión",
+    "address": "Calle del Alisio, 18",
+    "postal_code": "38680",
+    "city": "Guía de Isora",
+    "province": "Santa Cruz de Tenerife",
+    "phone": "922 000 000",
+    "email": "rrhh@atlantico-gestion.example",
+    "activity": "Servicios de consultoría, soporte administrativo, gestión de recursos humanos y back-office",
+    "work_center": {
+      "code": "CT01",
+      "name": "Centro Tenerife Sur",
+      "city": "Guía de Isora"
+    },
+    "collective_agreement": {
+      "name": "XIX Convenio colectivo estatal de empresas de consultoría, tecnologías de la información y estudios de mercado y de la opinión pública",
+      "code": "99001355011983",
+      "valid_until": "31/12/2027"
+    }
+  },
+  "salary_tables": {
+    "source_2025": "BOE-A-2025-7766",
+    "update_2026": "BOE-A-2026-9024",
+    "convenio_code": "99001355011983",
+    "note": "Las tablas originales 2026 se publicaron en 2025. El BOE de 24/04/2026 actualiza determinados niveles con efectos económicos desde 01/01/2026.",
+    "area1": {
+      "A1": {
+        "original": {
+          "base": 19997.34,
+          "plus": 2559.93,
+          "total": 22557.27
+        },
+        "updated": {
+          "base": 19997.34,
+          "plus": 2559.93,
+          "total": 22557.27
+        }
+      },
+      "B1": {
+        "original": {
+          "base": 18555.85,
+          "plus": 2079.48,
+          "total": 20635.33
+        },
+        "updated": {
+          "base": 18555.85,
+          "plus": 2079.48,
+          "total": 20635.33
+        }
+      },
+      "B2": {
+        "original": {
+          "base": 16650.25,
+          "plus": 2008.68,
+          "total": 18658.93
+        },
+        "updated": {
+          "base": 16650.25,
+          "plus": 2008.68,
+          "total": 18658.93
+        }
+      },
+      "C1": {
+        "original": {
+          "base": 15334.39,
+          "plus": 2315.69,
+          "total": 17650.08
+        },
+        "updated": {
+          "base": 15337.8,
+          "plus": 2316.2,
+          "total": 17654
+        }
+      },
+      "C2": {
+        "original": {
+          "base": 15020.37,
+          "plus": 2547.31,
+          "total": 17567.68
+        },
+        "updated": {
+          "base": 15025.77,
+          "plus": 2548.23,
+          "total": 17574
+        }
+      },
+      "D2": {
+        "original": {
+          "base": 14769.17,
+          "plus": 2551.31,
+          "total": 17320.48
+        },
+        "updated": {
+          "base": 14780.7,
+          "plus": 2553.3,
+          "total": 17334
+        }
+      },
+      "E2": {
+        "original": {
+          "base": 13964.24,
+          "plus": 3109.04,
+          "total": 17073.28
+        },
+        "updated": {
+          "base": 13981.19,
+          "plus": 3112.81,
+          "total": 17094
+        }
+      }
+    },
+    "area2": {
+      "C1": {
+        "original": {
+          "base": 15337.68,
+          "plus": 2529.6,
+          "total": 17867.28
+        },
+        "updated": {
+          "base": 15337.68,
+          "plus": 2529.6,
+          "total": 17867.28
+        }
+      }
+    }
+  },
+  "workers": [
+    {
+      "code": "T01",
+      "name": "Alicia Moreno Santana",
+      "nif_practica": "10000001S",
+      "birth": "1981-02-14",
+      "role": "Directora de operaciones",
+      "area": "1",
+      "group": "A",
+      "level": "1",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2020-09-01",
+      "children": 0,
+      "notes": "Complemento personal elevado para practicar tope máximo de cotización y, cuando proceda, cotización adicional de solidaridad."
+    },
+    {
+      "code": "T02",
+      "name": "Marcos Medina León",
+      "nif_practica": "10000002Q",
+      "birth": "1988-11-03",
+      "role": "Responsable de Recursos Humanos",
+      "area": "1",
+      "group": "B",
+      "level": "1",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2022-03-14",
+      "children": 2,
+      "notes": "Complemento de puesto mensual."
+    },
+    {
+      "code": "T03",
+      "name": "Lucía Vera Padrón",
+      "nif_practica": "10000003V",
+      "birth": "1992-06-21",
+      "role": "Técnica de nóminas",
+      "area": "1",
+      "group": "B",
+      "level": "2",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2023-01-09",
+      "children": 0,
+      "notes": "Complemento funcional mensual."
+    },
+    {
+      "code": "T04",
+      "name": "Elena Martín Armas",
+      "nif_practica": "10000004H",
+      "birth": "1994-04-19",
+      "role": "Administrativa de personal",
+      "area": "1",
+      "group": "C",
+      "level": "1",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2024-02-01",
+      "children": 1,
+      "notes": "Trabajadora que protagoniza la IT de marzo."
+    },
+    {
+      "code": "T05",
+      "name": "Daniel Hernández Ramos",
+      "nif_practica": "10000005L",
+      "birth": "2001-09-07",
+      "role": "Auxiliar administrativo",
+      "area": "1",
+      "group": "E",
+      "level": "2",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2025-06-02",
+      "children": 0,
+      "notes": "Nivel especialmente útil para practicar la actualización salarial de 2026."
+    },
+    {
+      "code": "T06",
+      "name": "Sara López Cabrera",
+      "nif_practica": "10000006C",
+      "birth": "1998-12-16",
+      "role": "Atención al cliente",
+      "area": "1",
+      "group": "D",
+      "level": "2",
+      "workday": 60,
+      "contract": "Indefinido a tiempo parcial",
+      "start": "2025-09-15",
+      "children": 0,
+      "notes": "Jornada parcial del 60 %. No confundir salario anual de tabla con retribución proporcional a jornada."
+    },
+    {
+      "code": "T07",
+      "name": "Iván Rodríguez Díaz",
+      "nif_practica": "10000007K",
+      "birth": "1990-08-28",
+      "role": "Técnico de soporte TI",
+      "area": "2",
+      "group": "C",
+      "level": "1",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2021-05-10",
+      "children": 1,
+      "notes": "Área funcional tecnológica con complemento de puesto."
+    },
+    {
+      "code": "T08",
+      "name": "Sergio Déniz Morales",
+      "nif_practica": "10000008E",
+      "birth": "1996-01-30",
+      "role": "Consultor junior",
+      "area": "1",
+      "group": "C",
+      "level": "2",
+      "workday": 100,
+      "contract": "Indefinido ordinario",
+      "start": "2024-10-07",
+      "children": 0,
+      "notes": "Realiza desplazamientos y genera dietas/kilometraje."
+    }
+  ],
+  "salary_policy": {
+    "pay_frequency": "14 pagas",
+    "july_extra": "Paga extraordinaria de julio",
+    "december_extra": "Paga extraordinaria de diciembre",
+    "company_complements": {
+      "T01": "Complemento personal suficiente para que la retribución mensual supere la base máxima; se parametrizará con la ficha docente.",
+      "T02": "650,00 €/mes de complemento de puesto.",
+      "T03": "500,00 €/mes de complemento funcional hasta mayo; +125,00 €/mes desde junio.",
+      "T07": "900,00 €/mes de complemento técnico."
+    }
+  },
+  "milestone_documents": {
+    "M02": [
+      {
+        "id": "M02-D01",
+        "type": "Ficha de empresa",
+        "from": "Dirección",
+        "subject": "Datos de alta de ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+        "body": "La dirección solicita crear la empresa de prácticas para el ejercicio 2026. Todos los datos son ficticios y deben utilizarse únicamente dentro del entorno educativo.",
+        "fields": {
+          "codigo": "AGI",
+          "nif_practica": "B12345674",
+          "razon_social": "ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+          "nombre_comercial": "Atlántico Gestión",
+          "ejercicio": "2026"
+        }
+      },
+      {
+        "id": "M02-D02",
+        "type": "Ficha de localización",
+        "from": "Dirección",
+        "subject": "Domicilio y contacto de prácticas",
+        "body": "Utiliza estos datos como localización de la empresa. No los sustituyas por datos personales reales.",
+        "fields": {
+          "domicilio": "Calle del Alisio, 18",
+          "cp": "38680",
+          "municipio": "Guía de Isora",
+          "provincia": "Santa Cruz de Tenerife",
+          "telefono": "922 000 000",
+          "email": "rrhh@atlantico-gestion.example"
+        }
+      },
+      {
+        "id": "M02-D03",
+        "type": "Instrucción de configuración",
+        "from": "Responsable de RRHH",
+        "subject": "Convenio colectivo aplicable",
+        "body": "La empresa queda encuadrada en el XIX Convenio colectivo estatal de empresas de consultoría, tecnologías de la información y estudios de mercado y de la opinión pública.",
+        "fields": {
+          "codigo_convenio": "99001355011983",
+          "boe": "BOE-A-2025-7766"
+        }
+      },
+      {
+        "id": "M02-D04",
+        "type": "Ficha de centro",
+        "from": "Dirección",
+        "subject": "Centro de trabajo principal",
+        "body": "Crea un único centro inicial. Utiliza el calendario laboral que el docente tenga configurado para Canarias y vincúlalo al centro.",
+        "fields": {
+          "codigo": "CT01",
+          "nombre": "Centro Tenerife Sur",
+          "municipio": "Guía de Isora",
+          "jornada_referencia": "Jornada completa según convenio y calendario aplicable"
+        }
+      },
+      {
+        "id": "M02-D05",
+        "type": "Aviso didáctico",
+        "from": "Administración",
+        "subject": "Cuenta bancaria de prácticas",
+        "body": "No se deben usar cuentas bancarias reales. Para los ejercicios de pagos se trabajará con una cuenta de práctica que el docente podrá parametrizar en el grupo.",
+        "fields": {
+          "iban": "NO UTILIZAR IBAN REAL EN EL PROYECTO"
+        }
+      },
+      {
+        "id": "M02-D06",
+        "type": "Nota de seguridad",
+        "from": "Coordinación del curso",
+        "subject": "Datos ficticios",
+        "body": "NIF, teléfonos, domicilios y demás identificadores del caso son datos de simulación. No se utilizarán para realizar comunicaciones reales con AEAT, TGSS, SEPE, entidades bancarias ni otras administraciones.",
+        "fields": {}
+      }
+    ],
+    "M03": [
+      {
+        "id": "M03-D00",
+        "type": "Organigrama",
+        "from": "Dirección",
+        "subject": "Plantilla inicial a 1 de enero",
+        "body": "Da de alta a las ocho personas de la plantilla inicial. Trabaja una ficha cada vez y vuelve al listado para comprobar que quedó guardada.",
+        "fields": {
+          "plantilla": "T01 a T08"
+        }
+      },
+      {
+        "id": "M03-T01",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T01 · Alicia Moreno Santana",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Directora de operaciones",
+          "area": "1",
+          "grupo": "A",
+          "nivel": "1",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2020-09-01",
+          "hijos": 0,
+          "observaciones": "Complemento personal elevado para practicar tope máximo de cotización y, cuando proceda, cotización adicional de solidaridad.",
+          "nif_practica": "10000001S"
+        }
+      },
+      {
+        "id": "M03-T02",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T02 · Marcos Medina León",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Responsable de Recursos Humanos",
+          "area": "1",
+          "grupo": "B",
+          "nivel": "1",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2022-03-14",
+          "hijos": 2,
+          "observaciones": "Complemento de puesto mensual.",
+          "nif_practica": "10000002Q"
+        }
+      },
+      {
+        "id": "M03-T03",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T03 · Lucía Vera Padrón",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Técnica de nóminas",
+          "area": "1",
+          "grupo": "B",
+          "nivel": "2",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2023-01-09",
+          "hijos": 0,
+          "observaciones": "Complemento funcional mensual.",
+          "nif_practica": "10000003V"
+        }
+      },
+      {
+        "id": "M03-T04",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T04 · Elena Martín Armas",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Administrativa de personal",
+          "area": "1",
+          "grupo": "C",
+          "nivel": "1",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2024-02-01",
+          "hijos": 1,
+          "observaciones": "Trabajadora que protagoniza la IT de marzo.",
+          "nif_practica": "10000004H"
+        }
+      },
+      {
+        "id": "M03-T05",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T05 · Daniel Hernández Ramos",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Auxiliar administrativo",
+          "area": "1",
+          "grupo": "E",
+          "nivel": "2",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2025-06-02",
+          "hijos": 0,
+          "observaciones": "Nivel especialmente útil para practicar la actualización salarial de 2026.",
+          "nif_practica": "10000005L"
+        }
+      },
+      {
+        "id": "M03-T06",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T06 · Sara López Cabrera",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Atención al cliente",
+          "area": "1",
+          "grupo": "D",
+          "nivel": "2",
+          "jornada": "60 %",
+          "contrato": "Indefinido a tiempo parcial",
+          "alta": "2025-09-15",
+          "hijos": 0,
+          "observaciones": "Jornada parcial del 60 %. No confundir salario anual de tabla con retribución proporcional a jornada.",
+          "nif_practica": "10000006C"
+        }
+      },
+      {
+        "id": "M03-T07",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T07 · Iván Rodríguez Díaz",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Técnico de soporte TI",
+          "area": "2",
+          "grupo": "C",
+          "nivel": "1",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2021-05-10",
+          "hijos": 1,
+          "observaciones": "Área funcional tecnológica con complemento de puesto.",
+          "nif_practica": "10000007K"
+        }
+      },
+      {
+        "id": "M03-T08",
+        "type": "Ficha de trabajador",
+        "from": "Expediente de personal",
+        "subject": "T08 · Sergio Déniz Morales",
+        "body": "Crea la ficha de esta persona usando exclusivamente los datos de práctica y las condiciones laborales indicadas.",
+        "fields": {
+          "puesto": "Consultor junior",
+          "area": "1",
+          "grupo": "C",
+          "nivel": "2",
+          "jornada": "100 %",
+          "contrato": "Indefinido ordinario",
+          "alta": "2024-10-07",
+          "hijos": 0,
+          "observaciones": "Realiza desplazamientos y genera dietas/kilometraje.",
+          "nif_practica": "10000008E"
+        }
+      }
+    ],
+    "M04": [
+      {
+        "id": "M04-D01",
+        "type": "Orden de cierre",
+        "from": "Dirección financiera",
+        "subject": "Cierre de nóminas de enero",
+        "body": "Calcula las nóminas de toda la plantilla activa a 31 de enero. Enero se utilizará como mes patrón para comparar incidencias posteriores.",
+        "fields": {
+          "periodo": "01/2026"
+        }
+      },
+      {
+        "id": "M04-D02",
+        "type": "Control interno",
+        "from": "Responsable de RRHH",
+        "subject": "Trabajadores a revisar con atención",
+        "body": "Comprueba especialmente a T06 por su jornada parcial y a T01 por su retribución elevada. No modifiques importes para 'forzar' un resultado.",
+        "fields": {
+          "especiales": "T01 y T06"
+        }
+      },
+      {
+        "id": "M04-D03",
+        "type": "Archivo",
+        "from": "Administración",
+        "subject": "Copia de seguridad de enero",
+        "body": "Al finalizar, crea una copia identificable como cierre de enero. El objetivo es poder volver a un estado estable si una incidencia posterior se registra mal.",
+        "fields": {
+          "nombre_sugerido": "AGI_2026_M01_CIERRE"
+        }
+      }
+    ],
+    "M05": [
+      {
+        "id": "M05-D01",
+        "type": "Parte de variable",
+        "from": "Dirección de operaciones",
+        "subject": "Incentivo mensual de Elena Martín Armas",
+        "body": "Se autoriza un incentivo puntual por cierre documental. Debe figurar únicamente en febrero y no convertirse en salario fijo.",
+        "fields": {
+          "trabajador": "T04 · Elena Martín Armas",
+          "importe": "175,00 €",
+          "periodo": "02/2026"
+        }
+      },
+      {
+        "id": "M05-D02",
+        "type": "Hoja de desplazamiento",
+        "from": "Sergio Déniz Morales",
+        "subject": "Desplazamiento profesional de febrero",
+        "body": "Se comunica un desplazamiento profesional. Registra el kilometraje conforme al importe por kilómetro que resulte aplicable al supuesto docente.",
+        "fields": {
+          "trabajador": "T08 · Sergio Déniz Morales",
+          "kilometros": "186 km",
+          "fecha": "18/02/2026"
+        }
+      },
+      {
+        "id": "M05-D03",
+        "type": "Control de cierre",
+        "from": "Responsable de RRHH",
+        "subject": "Comparación febrero / enero",
+        "body": "Después de calcular febrero, comprueba que las diferencias se concentran en quienes han tenido incidencias. El resto debe conservar una estructura coherente con enero.",
+        "fields": {}
+      }
+    ],
+    "M06": [
+      {
+        "id": "M06-D01",
+        "type": "Comunicación de IT",
+        "from": "Elena Martín Armas",
+        "subject": "Baja médica por enfermedad común",
+        "body": "La trabajadora comunica un proceso de incapacidad temporal por enfermedad común. Registra la incidencia antes de calcular la nómina.",
+        "fields": {
+          "trabajador": "T04 · Elena Martín Armas",
+          "contingencia": "Enfermedad común",
+          "inicio": "12/03/2026",
+          "fin": "18/03/2026"
+        }
+      },
+      {
+        "id": "M06-D02",
+        "type": "Parte de reincorporación",
+        "from": "Elena Martín Armas",
+        "subject": "Reincorporación al puesto",
+        "body": "La trabajadora se reincorpora el 19 de marzo. Comprueba que la incidencia no se prolonga más allá de la fecha de alta médica.",
+        "fields": {
+          "reincorporacion": "19/03/2026"
+        }
+      },
+      {
+        "id": "M06-D03",
+        "type": "Control pedagógico",
+        "from": "Responsable de RRHH",
+        "subject": "No corrijas la nómina a mano",
+        "body": "Si el resultado no coincide, vuelve a la IT y revisa contingencia, fechas y datos previos del trabajador. Una edición manual del recibo escondería el error de origen.",
+        "fields": {}
+      }
+    ],
+    "M07": [
+      {
+        "id": "M07-D01",
+        "type": "Solicitud de contratación",
+        "from": "Dirección",
+        "subject": "Refuerzo administrativo de primavera",
+        "body": "Se aprueba incorporar una persona de apoyo temporal por incremento ocasional de tareas.",
+        "fields": {
+          "inicio": "08/04/2026",
+          "fin_previsto": "15/09/2026",
+          "jornada": "100 %",
+          "puesto": "Auxiliar de apoyo administrativo"
+        }
+      },
+      {
+        "id": "M07-D02",
+        "type": "Ficha de incorporación",
+        "from": "Expediente de personal",
+        "subject": "T09 · Paula Santana Pérez",
+        "body": "Crea a la nueva trabajadora con los datos de práctica indicados.",
+        "fields": {
+          "nif_practica": "10000009T",
+          "alta": "08/04/2026",
+          "puesto": "Auxiliar de apoyo administrativo",
+          "area": "1",
+          "grupo": "E",
+          "nivel": "2",
+          "contrato": "Temporal por circunstancias de la producción, conforme al supuesto"
+        }
+      },
+      {
+        "id": "M07-D03",
+        "type": "Cierre fiscal",
+        "from": "Administración",
+        "subject": "Primer trimestre: revisión previa",
+        "body": "Antes de generar el modelo 111 de práctica, comprueba acumulados de enero, febrero y marzo. Si aparece una diferencia, localiza la nómina de origen.",
+        "fields": {
+          "trimestre": "1T 2026"
+        }
+      },
+      {
+        "id": "M07-D04",
+        "type": "Aviso de simulación",
+        "from": "Coordinación del curso",
+        "subject": "No presentar modelos reales",
+        "body": "Los modelos y ficheros se generan únicamente como práctica. No se realizará ninguna presentación telemática ni envío a organismos externos.",
+        "fields": {}
+      }
+    ],
+    "M08": [
+      {
+        "id": "M08-D01",
+        "type": "Boletín normativo",
+        "from": "Responsable de RRHH",
+        "subject": "Actualización de tablas salariales 2026",
+        "body": "Se ha publicado la actualización de las tablas salariales del convenio. Tiene efectos económicos desde el 1 de enero de 2026 y obliga a abonar las diferencias derivadas de los niveles afectados.",
+        "fields": {
+          "publicacion": "BOE de 24/04/2026",
+          "referencia": "BOE-A-2026-9024",
+          "efectos": "01/01/2026"
+        }
+      },
+      {
+        "id": "M08-D02",
+        "type": "Instrucción de proceso",
+        "from": "Dirección",
+        "subject": "Regularización mediante atrasos",
+        "body": "No sustituyas las nóminas históricas ya cerradas. Actualiza las tablas y genera una liquidación de atrasos para las diferencias devengadas.",
+        "fields": {
+          "periodo_atrasos": "Enero-abril 2026"
+        }
+      },
+      {
+        "id": "M08-D03",
+        "type": "Control fiscal",
+        "from": "Responsable de RRHH",
+        "subject": "Revisión de IRPF tras la actualización",
+        "body": "Una vez actualizada la previsión retributiva anual, revisa si corresponde regularizar la retención de los trabajadores afectados.",
+        "fields": {}
+      }
+    ],
+    "M09": [
+      {
+        "id": "M09-D01",
+        "type": "Comunicación de promoción",
+        "from": "Dirección",
+        "subject": "Cambio profesional de Lucía Vera Padrón",
+        "body": "Desde junio, Lucía asume funciones de coordinación de nóminas y se autoriza un complemento funcional adicional.",
+        "fields": {
+          "trabajador": "T03 · Lucía Vera Padrón",
+          "efecto": "01/06/2026",
+          "complemento_adicional": "125,00 €/mes"
+        }
+      },
+      {
+        "id": "M09-D02",
+        "type": "Beneficio social",
+        "from": "Dirección",
+        "subject": "Seguro médico como retribución en especie",
+        "body": "Desde junio se reconoce a Marcos Medina León un seguro médico satisfecho por la empresa. Debe configurarse como retribución en especie conforme al tratamiento indicado en el ejercicio.",
+        "fields": {
+          "trabajador": "T02 · Marcos Medina León",
+          "valor_mensual": "48,00 €",
+          "inicio": "01/06/2026"
+        }
+      },
+      {
+        "id": "M09-D03",
+        "type": "Cierre semestral",
+        "from": "Responsable de RRHH",
+        "subject": "Revisión de vigencias",
+        "body": "Comprueba que los cambios de junio no han modificado enero-mayo. La historia salarial debe conservarse.",
+        "fields": {}
+      }
+    ],
+    "M10": [
+      {
+        "id": "M10-D01",
+        "type": "Calendario retributivo",
+        "from": "Convenio colectivo",
+        "subject": "Paga extraordinaria de julio",
+        "body": "El convenio establece dos pagas extraordinarias, una en julio y otra en diciembre. Revisa el periodo de devengo y la configuración de conceptos antes de calcular.",
+        "fields": {
+          "paga": "Julio 2026"
+        }
+      },
+      {
+        "id": "M10-D02",
+        "type": "Control de cálculo",
+        "from": "Responsable de RRHH",
+        "subject": "Casos que no tienen por qué coincidir",
+        "body": "Compara una persona con todo el semestre trabajado, la persona incorporada en abril y la trabajadora a tiempo parcial. Las cuantías pueden diferir por razones correctas.",
+        "fields": {
+          "comparar": "T02, T06 y T09"
+        }
+      }
+    ],
+    "M11": [
+      {
+        "id": "M11-D01",
+        "type": "Solicitud de vacaciones",
+        "from": "Sara López Cabrera",
+        "subject": "Vacaciones de agosto",
+        "body": "La trabajadora solicita y tiene aprobadas vacaciones en el periodo indicado.",
+        "fields": {
+          "trabajador": "T06 · Sara López Cabrera",
+          "inicio": "03/08/2026",
+          "fin": "14/08/2026"
+        }
+      },
+      {
+        "id": "M11-D02",
+        "type": "Solicitud de vacaciones",
+        "from": "Iván Rodríguez Díaz",
+        "subject": "Vacaciones de agosto",
+        "body": "Se aprueba el segundo turno de vacaciones.",
+        "fields": {
+          "trabajador": "T07 · Iván Rodríguez Díaz",
+          "inicio": "17/08/2026",
+          "fin": "28/08/2026"
+        }
+      },
+      {
+        "id": "M11-D03",
+        "type": "Solicitud de sustitución",
+        "from": "Dirección",
+        "subject": "Cobertura temporal de atención al cliente",
+        "body": "Se autoriza una contratación temporal de sustitución durante el periodo definido en el supuesto.",
+        "fields": {
+          "inicio": "03/08/2026",
+          "fin": "14/08/2026",
+          "puesto": "Apoyo atención al cliente"
+        }
+      },
+      {
+        "id": "M11-D04",
+        "type": "Ficha de incorporación",
+        "from": "Expediente de personal",
+        "subject": "T10 · Diego Marrero Cruz",
+        "body": "Crea el expediente de sustitución con datos de práctica.",
+        "fields": {
+          "nif_practica": "10000010R",
+          "puesto": "Apoyo atención al cliente",
+          "jornada": "60 %",
+          "alta": "03/08/2026",
+          "baja_prevista": "14/08/2026"
+        }
+      }
+    ],
+    "M12": [
+      {
+        "id": "M12-D01",
+        "type": "Aviso de vencimiento",
+        "from": "Administración",
+        "subject": "Fin previsto del contrato de Paula Santana Pérez",
+        "body": "El contrato temporal de T09 alcanza su fecha prevista de finalización. No elimines su ficha: tramita la baja y conserva su historial.",
+        "fields": {
+          "trabajador": "T09 · Paula Santana Pérez",
+          "ultimo_dia": "15/09/2026"
+        }
+      },
+      {
+        "id": "M12-D02",
+        "type": "Orden de liquidación",
+        "from": "Responsable de RRHH",
+        "subject": "Finiquito de T09",
+        "body": "Calcula el finiquito desde la información acumulada y revisa salarios pendientes, vacaciones y partes proporcionales que procedan según el supuesto.",
+        "fields": {}
+      },
+      {
+        "id": "M12-D03",
+        "type": "Archivo",
+        "from": "Administración",
+        "subject": "Documentación de salida",
+        "body": "Genera la documentación de práctica asociada al cese y archívala con la evidencia del hito. No se realizará ninguna comunicación real.",
+        "fields": {}
+      }
+    ],
+    "M13": [
+      {
+        "id": "M13-D01",
+        "type": "Comunicación de suspensión",
+        "from": "Marcos Medina León",
+        "subject": "Nacimiento y cuidado del menor",
+        "body": "Se comunica una situación de suspensión temporal. Registra las fechas indicadas sin extinguir la relación laboral.",
+        "fields": {
+          "trabajador": "T02 · Marcos Medina León",
+          "inicio": "05/10/2026",
+          "fin": "01/11/2026"
+        }
+      },
+      {
+        "id": "M13-D02",
+        "type": "Control de reincorporación",
+        "from": "Responsable de RRHH",
+        "subject": "Revisión del estado del trabajador",
+        "body": "La ficha debe conservar la relación laboral y permitir reincorporación al finalizar la suspensión.",
+        "fields": {}
+      }
+    ],
+    "M15": [
+      {
+        "id": "M15-D01",
+        "type": "Orden de cierre",
+        "from": "Dirección financiera",
+        "subject": "Nómina ordinaria de diciembre",
+        "body": "Cierra las nóminas ordinarias del último mes antes de preparar la paga extraordinaria.",
+        "fields": {
+          "periodo": "12/2026"
+        }
+      },
+      {
+        "id": "M15-D02",
+        "type": "Calendario retributivo",
+        "from": "Convenio colectivo",
+        "subject": "Paga extraordinaria de diciembre",
+        "body": "Calcula la paga extraordinaria del segundo semestre respetando altas, bajas y cambios de jornada.",
+        "fields": {
+          "paga": "Diciembre 2026"
+        }
+      },
+      {
+        "id": "M15-D03",
+        "type": "Auditoría previa",
+        "from": "Responsable de RRHH",
+        "subject": "Revisión de acumulados",
+        "body": "Antes de pasar al cierre anual, todo importe acumulado debe poder explicarse por el historial del trabajador. No utilices diciembre para compensar manualmente errores de meses anteriores.",
+        "fields": {}
+      }
+    ],
+    "M16": [
+      {
+        "id": "M16-D01",
+        "type": "Cierre fiscal",
+        "from": "Administración",
+        "subject": "Modelo 190 y certificados de práctica",
+        "body": "Genera y revisa la documentación anual sin realizar presentación telemática.",
+        "fields": {
+          "ejercicio": "2026"
+        }
+      },
+      {
+        "id": "M16-D02",
+        "type": "Archivo definitivo",
+        "from": "Dirección",
+        "subject": "Copia maestra del ejercicio 2026",
+        "body": "Crea una copia final restaurable y conserva también las copias de control anteriores.",
+        "fields": {
+          "nombre_sugerido": "AGI_2026_FINAL"
+        }
+      },
+      {
+        "id": "M16-D03",
+        "type": "Continuidad",
+        "from": "Dirección",
+        "subject": "Apertura del ejercicio 2027",
+        "body": "Abre el nuevo ejercicio dentro de la misma empresa. La apertura no debe impedir volver a consultar 2026.",
+        "fields": {
+          "nuevo_ejercicio": "2027"
+        }
+      }
+    ]
+  },
+  "variants": {
+    "M05": [
+      {
+        "key": "F02-A",
+        "title": "Variante A · incentivo de calidad",
+        "note": "Además de los documentos comunes, T04 recibe un incentivo de 175 € en febrero.",
+        "extra_documents": []
+      },
+      {
+        "key": "F02-B",
+        "title": "Variante B · variable de proyecto",
+        "note": "Sustituye el incentivo de T04 por un variable de 210 € para T03. El resto del hito permanece igual.",
+        "overrides": {
+          "variable_worker": "T03 · Lucía Vera Padrón",
+          "variable_amount": "210,00 €"
+        },
+        "document_overrides": {
+          "M05-D01": {
+            "subject": "Variable de proyecto de Lucía Vera Padrón",
+            "body": "Se autoriza una retribución variable puntual por cierre de proyecto. Debe figurar únicamente en febrero y no convertirse en salario fijo.",
+            "fields": {
+              "trabajador": "T03 · Lucía Vera Padrón",
+              "importe": "210,00 €",
+              "periodo": "02/2026"
+            }
+          }
+        }
+      },
+      {
+        "key": "F02-C",
+        "title": "Variante C · variable de soporte",
+        "note": "Sustituye el incentivo de T04 por un variable de 145 € para T07.",
+        "overrides": {
+          "variable_worker": "T07 · Iván Rodríguez Díaz",
+          "variable_amount": "145,00 €"
+        },
+        "document_overrides": {
+          "M05-D01": {
+            "subject": "Variable de soporte de Iván Rodríguez Díaz",
+            "body": "Se autoriza una retribución variable puntual por intervención técnica extraordinaria. Debe figurar únicamente en febrero.",
+            "fields": {
+              "trabajador": "T07 · Iván Rodríguez Díaz",
+              "importe": "145,00 €",
+              "periodo": "02/2026"
+            }
+          }
+        }
+      }
+    ],
+    "M06": [
+      {
+        "key": "IT-A",
+        "title": "Variante A · IT 12-18 marzo",
+        "note": "La IT de T04 se mantiene del 12 al 18 de marzo.",
+        "overrides": {
+          "worker": "T04 · Elena Martín Armas",
+          "start": "12/03/2026",
+          "end": "18/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "12/03/2026",
+              "fin": "18/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "19/03/2026"
+            }
+          }
+        }
+      },
+      {
+        "key": "IT-B",
+        "title": "Variante B · IT 09-15 marzo",
+        "note": "En tu empresa, la IT de T04 se desarrolla del 9 al 15 de marzo.",
+        "overrides": {
+          "worker": "T04 · Elena Martín Armas",
+          "start": "09/03/2026",
+          "end": "15/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "09/03/2026",
+              "fin": "15/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "16/03/2026"
+            }
+          }
+        }
+      },
+      {
+        "key": "IT-C",
+        "title": "Variante C · IT 16-22 marzo",
+        "note": "En tu empresa, la IT de T04 se desarrolla del 16 al 22 de marzo.",
+        "overrides": {
+          "worker": "T04 · Elena Martín Armas",
+          "start": "16/03/2026",
+          "end": "22/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "16/03/2026",
+              "fin": "22/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "23/03/2026"
+            }
+          }
+        }
+      }
+    ],
+    "M14": [
+      {
+        "key": "NOV-A",
+        "title": "Variante A · anticipo reintegrable",
+        "note": "T05 solicita un anticipo de 300 € a descontar en la nómina de noviembre.",
+        "extra_documents": [
+          {
+            "id": "M14-A1",
+            "type": "Solicitud de trabajador",
+            "from": "Daniel Hernández Ramos",
+            "subject": "Solicitud de anticipo",
+            "body": "Se autoriza un anticipo reintegrable que debe reflejarse como corresponda en noviembre.",
+            "fields": {
+              "trabajador": "T05 · Daniel Hernández Ramos",
+              "importe": "300,00 €",
+              "periodo": "11/2026"
+            }
+          }
+        ]
+      },
+      {
+        "key": "NOV-B",
+        "title": "Variante B · bonus de proyecto",
+        "note": "T08 recibe un bonus puntual de 260 € por cierre de proyecto.",
+        "extra_documents": [
+          {
+            "id": "M14-B1",
+            "type": "Autorización",
+            "from": "Dirección",
+            "subject": "Bonus puntual de proyecto",
+            "body": "Se autoriza un bonus no recurrente para noviembre.",
+            "fields": {
+              "trabajador": "T08 · Sergio Déniz Morales",
+              "importe": "260,00 €",
+              "periodo": "11/2026"
+            }
+          }
+        ]
+      },
+      {
+        "key": "NOV-C",
+        "title": "Variante C · embargo salarial de práctica",
+        "note": "T03 recibe una orden de embargo simulada. El ejercicio utiliza una cuantía docente simplificada; no representa una orden real.",
+        "extra_documents": [
+          {
+            "id": "M14-C1",
+            "type": "Orden simulada",
+            "from": "Administración",
+            "subject": "Embargo salarial de práctica",
+            "body": "Registra el embargo de práctica indicado por el docente. No utilices datos ni documentos reales de ninguna persona.",
+            "fields": {
+              "trabajador": "T03 · Lucía Vera Padrón",
+              "importe_practica": "180,00 €",
+              "periodo": "11/2026"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "sources": [
+    {
+      "title": "XIX Convenio colectivo estatal",
+      "ref": "BOE-A-2025-7766",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-7766"
+    },
+    {
+      "title": "Actualización de tablas salariales 2026",
+      "ref": "BOE-A-2026-9024",
+      "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2026-9024"
+    },
+    {
+      "title": "Centro de ayuda oficial de TeamSystem NOMINASOL",
+      "url": "https://ayuda.teamsystem.es/hc/es/categories/28451597740689-TS-Nominasol"
+    }
+  ]
+}

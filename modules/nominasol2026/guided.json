@@ -2,14 +2,14 @@
   "project_id": "nominasol-2026-anual",
   "title": "Un año en Recursos Humanos con NOMINASOL 2026",
   "subtitle": "Proyecto profesional guiado · ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
-  "version": "2026.1",
+  "version": "2026.2",
   "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
   "approach": "Aprender haciendo y corrigiendo hasta conseguir el resultado",
   "introduction": "Este curso no presupone que conozcas NOMINASOL. Tampoco espera que memorices botones. Durante todo el año el SCORM permanecerá a tu lado como un tutor de trabajo: primero te contará qué ocurre en la empresa, después te enseñará dónde actuar en la aplicación, te ayudará a comprobar el resultado y finalmente te pedirá una evidencia. Si te equivocas, el objetivo no es penalizar el error, sino localizarlo, corregirlo y continuar con una empresa coherente.",
   "teacher_note": "El proyecto evalúa la consecución de hitos y la evolución del alumno. La IA puede realizar una primera comprobación de capturas reales; los hitos críticos o de baja confianza pasan a revisión docente.",
   "screenshot_policy": {
     "mode": "real-only",
-    "explanation": "El recorrido utiliza capturas reales de NOMINASOL procedentes del Centro de Ayuda oficial de TeamSystem cuando están disponibles. Para pantallas que aún no tengan una captura oficial incorporada, el SCORM muestra la explicación y la ruta exacta, pero nunca inventa una interfaz.",
+    "explanation": "El recorrido utiliza capturas reales de NOMINASOL procedentes del Centro de Ayuda oficial de TeamSystem cuando están disponibles. Se han incorporado pantallas reales de nueva empresa, datos generales, centro de trabajo, convenio, trabajador, contrato, cálculo y análisis de nómina, IT, pagas extraordinarias, atrasos, modelos fiscales, finiquitos, copias y apertura de ejercicio. Las pantallas que aún no dispongan de captura se explican con texto y ruta exacta, sin recreaciones ficticias.",
     "asset_prefix": "assets/screenshots/"
   },
   "evidence_policy": {
@@ -48,7 +48,8 @@
           "route": "Pantalla principal",
           "look_for": "Debes poder señalar dónde cambiar de empresa y dónde se encuentran las operaciones laborales principales.",
           "common_mistake": "Intentar aprender de memoria todos los botones. Ahora solo necesitas orientarte.",
-          "screenshot": "01-pantalla-principal.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080102085265",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -82,7 +83,8 @@
           "route": "Archivo / Nueva empresa",
           "look_for": "Al guardar, la empresa tutorial queda seleccionada como empresa activa.",
           "common_mistake": "Crear directamente la empresa definitiva. Todavía no: esta práctica se podrá eliminar después.",
-          "screenshot": "02-nueva-empresa.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082569463825",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Crea un trabajador de prueba",
@@ -143,7 +145,8 @@
           "route": "Archivo / Nueva empresa",
           "look_for": "El encabezado de NOMINASOL muestra ATLÁNTICO GESTIÓN INTEGRAL, S.L. como empresa activa.",
           "common_mistake": "Seguir trabajando por accidente dentro de EMPRESA TUTORIAL.",
-          "screenshot": "02-nueva-empresa.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082569463825",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Completa los datos generales",
@@ -151,7 +154,8 @@
           "route": "Empresa / Datos generales",
           "look_for": "La ficha identifica sin ambigüedad la empresa del proyecto y el ejercicio.",
           "common_mistake": "Inventar datos distintos a los del caso o dejar campos necesarios sin completar.",
-          "screenshot": "03-datos-generales-empresa.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080097618705",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Configura el centro de trabajo",
@@ -159,7 +163,8 @@
           "route": "Empresa / Centros de trabajo",
           "look_for": "El centro queda disponible para asignarlo a trabajadores.",
           "common_mistake": "Crear varios centros cuando el supuesto inicial solo requiere uno.",
-          "screenshot": "04-centro-trabajo.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082579387409",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Prepara convenio, calendario y banco",
@@ -167,7 +172,8 @@
           "route": "Empresa / Convenios · Calendarios · Bancos",
           "look_for": "Convenio, calendario y banco pueden seleccionarse desde las fichas de empresa o trabajador.",
           "common_mistake": "Dejar valores por defecto sin comprobar que correspondan al ejercicio y al supuesto.",
-          "screenshot": "05-convenio.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080539778449",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -274,7 +280,8 @@
           "route": "Nóminas / Emisión o visualización",
           "look_for": "Puedes explicar de dónde sale cada gran bloque del recibo.",
           "common_mistake": "Comprobar únicamente el líquido. Una nómina puede dar un líquido plausible y estar mal calculada.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Cierra el mes con seguridad",
@@ -327,7 +334,8 @@
           "route": "Retribuciones / Conceptos",
           "look_for": "El concepto está identificado y la nómina refleja el tratamiento previsto.",
           "common_mistake": "Crear un concepto nuevo duplicando otro sin revisar sus indicadores.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -370,7 +378,8 @@
           "route": "Procesos mensuales / Nóminas",
           "look_for": "La nómina recoge la incidencia y sus bases resultan coherentes.",
           "common_mistake": "Editar importes de la nómina para hacerlos coincidir sin corregir la IT de origen.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -457,7 +466,8 @@
           "route": "Convenio / Categorías / Conceptos",
           "look_for": "Las nuevas cuantías quedan disponibles para el cálculo futuro.",
           "common_mistake": "Modificar trabajador por trabajador cuando el cambio procede del convenio y debe mantenerse de forma coherente.",
-          "screenshot": "05-convenio.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32080539778449",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Calcula atrasos",
@@ -519,7 +529,8 @@
           "route": "Conceptos retributivos / En especie",
           "look_for": "La nómina identifica el concepto y su efecto fiscal/cotizable.",
           "common_mistake": "Tratar la especie como si fuera un simple plus dinerario.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -694,7 +705,8 @@
           "route": "Nóminas / Octubre",
           "look_for": "El resultado es coherente con la suspensión registrada.",
           "common_mistake": "Corregir manualmente el recibo sin revisar la incidencia.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         }
       ],
       "checklist": [
@@ -728,7 +740,8 @@
           "route": "Documento de incidencia / Ficha del trabajador",
           "look_for": "Sabes explicar por qué se registra en una zona concreta.",
           "common_mistake": "Copiar el procedimiento de otro alumno con una incidencia distinta.",
-          "screenshot": "10-nomina-pdf.png"
+          "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/44151564778513",
+          "screenshot_source": "TeamSystem España · Centro de ayuda oficial de NOMINASOL"
         },
         {
           "title": "Registra y recalcula",
@@ -862,5 +875,6 @@
       "evidence_help": "La captura acredita la continuidad; la copia de seguridad acredita que el trabajo anual es restaurable.",
       "ai_can_complete": false
     }
-  ]
+  ],
+  "case_pack": "agi-2026"
 }

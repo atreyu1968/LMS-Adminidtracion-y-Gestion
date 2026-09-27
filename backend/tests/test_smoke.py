@@ -1215,8 +1215,28 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
+        assert payload["project"]["version"] == "2026.2"
+        assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
+        assert len(payload["scenario"]["workers"]) == 8
+        m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
+        m06 = next(m for m in payload["project"]["milestones"] if m["key"] == "M06")
+        m14 = next(m for m in payload["project"]["milestones"] if m["key"] == "M14")
+        assert m05["documents"]
+        assert m05["variant"]["key"] in {"F02-A", "F02-B", "F02-C"}
+        assert m06["variant"]["key"] in {"IT-A", "IT-B", "IT-C"}
+        assert m14["variant"]["key"] in {"NOV-A", "NOV-B", "NOV-C"}
         assert payload["summary"]["total"] >= 17
         assert payload["summary"]["completed"] == 0
+
+        repeated = client.get(
+            f"/runtime-api/guided/registrations/{registration_id}/project",
+            headers=auth,
+        )
+        assert repeated.status_code == 200
+        m05_repeated = next(
+            m for m in repeated.json()["project"]["milestones"] if m["key"] == "M05"
+        )
+        assert m05_repeated["variant"]["key"] == m05["variant"]["key"]
 
         started = client.post(
             f"/runtime-api/guided/registrations/{registration_id}/milestones/M00/start",
@@ -1258,6 +1278,15 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         )
         assert progress.status_code == 200, progress.text
         assert progress.json()[0]["completed"] == 1
+        assert progress.json()[0]["variants"]["M05"] in {"F02-A", "F02-B", "F02-C"}
+
+        guide = client.get(
+            f"/api/guided/course-modules/{course_module_id}/guide"
+        )
+        assert guide.status_code == 200, guide.text
+        assert guide.json()["title"].startswith("Guía docente")
+        assert len(guide.json()["milestones"]) >= 17
+        assert any(row["manual_validation"] for row in guide.json()["milestones"])
 
         client.cookies.clear()
         client.cookies.set(

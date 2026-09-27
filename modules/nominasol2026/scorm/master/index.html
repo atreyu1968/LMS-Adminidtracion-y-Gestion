@@ -63,6 +63,7 @@ textarea{min-height:92px;resize:vertical}
 .pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf2f7;font-size:.8rem;font-weight:700}
 .hidden{display:none!important}
 .small{font-size:.9rem;color:var(--muted)}
+.inbox{display:grid;gap:12px;margin-top:16px}.doc{border:1px solid #d9e3ed;border-radius:14px;background:#fbfdff;overflow:hidden}.doc summary{cursor:pointer;padding:14px 16px;list-style:none}.doc summary::-webkit-details-marker{display:none}.doc summary strong{display:block;color:#20334c}.doc summary span{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}.doc-body{padding:0 16px 16px;border-top:1px solid #e7edf3}.doc-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}.doc-field{background:#f1f5f9;border-radius:9px;padding:9px 10px}.doc-field b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#62738a}.variant{background:#fff8df;border:1px solid #ead28a;border-radius:13px;padding:14px 16px;margin:14px 0}.dossier{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.dossier>div{background:#f6f9fc;border:1px solid #e1e8f0;border-radius:11px;padding:12px}.dossier b{display:block;color:#31465f;font-size:.8rem;text-transform:uppercase}
 @media(max-width:900px){
  .app{grid-template-columns:1fr}
  aside{border-right:0;border-bottom:1px solid var(--line);max-height:300px}
@@ -161,6 +162,38 @@ function screenshotBlock(step){
    +'No la sustituimos por una imagen inventada. Sigue la ruta de menú y la explicación de la izquierda; '
    +'esta pantalla se completará únicamente con una captura real de NOMINASOL 2026.</div></div>';
 }
+function renderFields(fields){
+  var keys=Object.keys(fields||{});
+  if(!keys.length)return "";
+  return '<div class="doc-fields">'+keys.map(function(k){
+    return '<div class="doc-field"><b>'+esc(k.replace(/_/g," "))+'</b>'+esc(fields[k])+'</div>';
+  }).join("")+'</div>';
+}
+function renderDocuments(m){
+  var docs=m.documents||[];
+  if(!docs.length)return "";
+  return '<section class="card"><div class="eyebrow">Bandeja de entrada</div><h3>Documentos que han llegado a RRHH</h3>'
+    +'<p class="story">Antes de tocar NOMINASOL, lee la documentación como lo harías en una empresa. Estos documentos explican qué ha ocurrido y contienen los datos que debes trasladar al programa.</p>'
+    +(m.variant?'<div class="variant"><strong>'+esc(m.variant.title||"Tu variante")+'</strong><br>'+esc(m.variant.note||"")+'</div>':"")
+    +'<div class="inbox">'+docs.map(function(d){
+      return '<details class="doc"><summary><strong>'+esc(d.subject||d.id)+'</strong><span>'+esc(d.type||"Documento")+' · '+esc(d.from||"")+'</span></summary>'
+        +'<div class="doc-body"><p>'+esc(d.body||"")+'</p>'+renderFields(d.fields||{})+'</div></details>';
+    }).join("")+'</div></section>';
+}
+function renderDossier(){
+  var s=data&&data.scenario;
+  if(!s||!s.company)return "";
+  var c=s.company, agr=c.collective_agreement||{}, ct=c.work_center||{};
+  return '<section class="card"><div class="eyebrow">Expediente de empresa</div><h3>'+esc(c.legal_name||s.title||"Empresa")+'</h3>'
+    +'<p class="small">'+esc(s.warning||"")+'</p><div class="dossier">'
+    +'<div><b>Código</b>'+esc(c.code||"")+'</div>'
+    +'<div><b>NIF de práctica</b>'+esc(c.tax_id_practice||"")+'</div>'
+    +'<div><b>Centro</b>'+esc(ct.name||"")+'</div>'
+    +'<div><b>Convenio</b>'+esc(agr.code||"")+'</div>'
+    +'<div><b>Actividad</b>'+esc(c.activity||"")+'</div>'
+    +'<div><b>Localidad</b>'+esc(c.city||"")+'</div>'
+    +'</div></section>';
+}
 function renderFeedback(st){
   var ai=st.ai||{};
   var html="";
@@ -210,6 +243,8 @@ function openMilestone(key){
     +'<span class="pill">Intentos de evidencia: '+Number(st.attempts||0)+'</span></div>'
     +(locked?'<div class="feedback review"><strong>Aún no abras esta fase.</strong><p>Primero debes dejar correctamente terminado el hito anterior. Así evitamos que un error de base se arrastre durante meses.</p></div>':"")
     +'</section>'
+    +(key==="M02"||key==="M03"?renderDossier():"")
+    +renderDocuments(m)
     +'<section class="card"><h3>Trabaja conmigo paso a paso</h3>'+steps+'</section>'
     +'<section class="card"><h3>Antes de entregar, comprueba tu trabajo</h3><div class="checks">'+checks+'</div></section>'
     +'<section class="card"><h3>Demuestra el hito</h3><p>'+esc(m.evidence_prompt||"")+'</p>'

@@ -383,7 +383,7 @@ async function openGroup(id){
       const aiActions=a.enabled&&a.is_mine
         ? '<button class="btn secondary" onclick="disableModuleAi('+m.course_module_id+')">Desactivar mi IA</button>'
         : (!a.enabled?'<button class="btn secondary" onclick="enableModuleAi('+m.course_module_id+')">Usar mi IA</button>':'');
-      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn secondary" onclick="openGuidedProgress(${m.course_module_id})">Seguimiento de hitos</button><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
+      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn secondary" onclick="openGuidedProgress(${m.course_module_id})">Seguimiento de hitos</button><button class="btn secondary" onclick="openGuidedTeacherGuide(${m.course_module_id})">Guía docente</button><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
     }).join("")||'<div class="empty">Sin módulos asignados.</div>';
     document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){flash(e.message,"error")}
@@ -447,6 +447,26 @@ async function enableModuleAi(courseModuleId){
   }catch(e){flash(e.message,"error")}
 }
 
+
+async function openGuidedTeacherGuide(courseModuleId){
+  const panel=document.querySelector("#guidedProgressPanel");
+  panel.classList.remove("hidden");
+  panel.innerHTML='<div class="notice">Cargando guía docente…</div>';
+  try{
+    const g=await api("/api/guided/course-modules/"+courseModuleId+"/guide");
+    const before=(g.before_class||[]).map(x=>'<li>'+esc(x)+'</li>').join("");
+    const rows=(g.milestones||[]).map(m=>'<details class="item"><summary><strong>'+esc(m.key)+' · '+esc(m.title)+'</strong>'+(m.manual_validation?' <span class="badge">Revisión docente</span>':'')+'</summary><p><strong>Objetivo didáctico:</strong> '+esc(m.teaching_goal||"")+'</p><p><strong>Estado esperado:</strong> '+esc(m.expected_checkpoint||"")+'</p><p><strong>Qué revisar:</strong> '+esc(m.review_focus||"")+'</p></details>').join("");
+    const rhythm=Object.entries(g.suggested_rhythm||{}).map(([k,v])=>'<div class="item"><strong>'+esc(k)+'</strong><span class="muted">'+esc(v)+'</span></div>').join("");
+    panel.innerHTML='<div class="group-title"><div><h3>'+esc(g.title||"Guía docente")+'</h3><p class="muted">'+esc(g.audience||"")+'</p></div><button class="btn secondary" id="closeGuidedGuide">Cerrar</button></div>'
+      +'<div class="notice"><strong>Idea de trabajo</strong><br>'+esc(g.principle||"")+'</div>'
+      +'<div class="grid"><div><h3>Antes de empezar con el grupo</h3><ul>'+before+'</ul></div><div><h3>Ritmo orientativo</h3><div class="list">'+rhythm+'</div></div></div>'
+      +'<h3 style="margin-top:18px">Guía por hitos</h3><div class="list">'+rows+'</div>';
+    const closeBtn=panel.querySelector("#closeGuidedGuide");
+    if(closeBtn)closeBtn.addEventListener("click",()=>panel.classList.add("hidden"));
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+
 async function openGuidedProgress(courseModuleId){
   const panel=document.querySelector("#guidedProgressPanel");
   panel.classList.remove("hidden");
@@ -458,7 +478,7 @@ async function openGuidedProgress(courseModuleId){
       return;
     }
     panel.innerHTML='<h3>Seguimiento por hitos</h3><p class="muted">La IA realiza una primera comprobación de las evidencias visuales. Los casos dudosos y los hitos críticos quedan para revisión docente.</p>'
-      +'<div class="list">'+rows.map(r=>'<div class="item"><div class="group-title"><div><strong>'+esc(r.student)+'</strong><div class="tiny muted">'+r.completed+' de '+r.total+' hitos · '+r.percentage+' %</div></div><span class="badge">'+(r.pending_review?esc(r.pending_review+" pendientes"):"Sin revisión pendiente")+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGuidedEvidence('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Ver evidencias y evolución</button></div></div>').join("")+'</div>';
+      +'<div class="list">'+rows.map(r=>'<div class="item"><div class="group-title"><div><strong>'+esc(r.student)+'</strong><div class="tiny muted">'+r.completed+' de '+r.total+' hitos · '+r.percentage+' %'+(Object.keys(r.variants||{}).length?' · variantes '+esc(Object.values(r.variants).join(', ')):'')+'</div></div><span class="badge">'+(r.pending_review?esc(r.pending_review+" pendientes"):"Sin revisión pendiente")+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGuidedEvidence('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Ver evidencias y evolución</button></div></div>').join("")+'</div>';
     panel.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
