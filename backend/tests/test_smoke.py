@@ -13,9 +13,9 @@ DB_PATH.unlink(missing_ok=True)
 shutil.rmtree(STORAGE, ignore_errors=True)
 
 os.environ["LMS_DATABASE_URL"] = f"sqlite:///{DB_PATH}"
-os.environ["LMS_SESSION_SECRET"] = "test-session-secret"
-os.environ["LMS_AI_ENCRYPTION_SECRET"] = "test-ai-encryption-secret"
-os.environ["LMS_ADMIN_TOKEN"] = "test-admin"
+os.environ["LMS_SESSION_SECRET"] = "test-session-secret-0123456789abcdef0123456789abcdef"
+os.environ["LMS_AI_ENCRYPTION_SECRET"] = "test-ai-encryption-secret-0123456789abcdef0123456789abcdef"
+os.environ["LMS_ADMIN_TOKEN"] = "test-admin-token-0123456789abcdef0123456789abcdef"
 os.environ["LMS_LTI_PRIVATE_KEY_PATH"] = "/tmp/lms-test-lti-private.pem"
 os.environ["LMS_PUBLIC_BASE_URL"] = "https://lms.example.test"
 os.environ["LMS_STORAGE_ROOT"] = str(STORAGE)
@@ -175,7 +175,7 @@ def test_tool_config_is_admin_only():
         assert client.get("/api/admin/lti/tool-config").status_code == 401
         result = client.get(
             "/api/admin/lti/tool-config",
-            headers={"X-Admin-Token": "test-admin"},
+            headers={"X-Admin-Token": "test-admin-token-0123456789abcdef0123456789abcdef"},
         )
         assert result.status_code == 200
         payload = result.json()
@@ -187,7 +187,7 @@ def test_platform_registration():
     with TestClient(app) as client:
         result = client.post(
             "/api/admin/lti/platforms",
-            headers={"X-Admin-Token": "test-admin"},
+            headers={"X-Admin-Token": "test-admin-token-0123456789abcdef0123456789abcdef"},
             json={
                 "name": "Moodle de pruebas",
                 "issuer": "https://moodle.example.test",
@@ -431,7 +431,7 @@ def test_teacher_groups_are_isolated_until_owner_adds_coteacher():
         assert activated_token
         activated_claims = jwt.decode(
             activated_token,
-            "test-session-secret",
+            "test-session-secret-0123456789abcdef0123456789abcdef",
             algorithms=["HS256"],
         )
         assert activated_claims["course_id"] == group_id
@@ -1053,7 +1053,7 @@ def test_gth_catalog_imports_four_ra_thirty_three_criteria_and_public_portfolio(
     with TestClient(app) as client:
         imported = client.post(
             "/api/admin/catalog/gth0652/import-metadata",
-            headers={"X-Admin-Token": "test-admin"},
+            headers={"X-Admin-Token": "test-admin-token-0123456789abcdef0123456789abcdef"},
         )
         assert imported.status_code == 200, imported.text
         payload = imported.json()
@@ -1154,7 +1154,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
     with TestClient(app) as client:
         provisioned = client.post(
             "/api/admin/catalog/nominasol2026/provision",
-            headers={"X-Admin-Token": "test-admin"},
+            headers={"X-Admin-Token": "test-admin-token-0123456789abcdef0123456789abcdef"},
         )
         assert provisioned.status_code == 200, provisioned.text
         module_id = provisioned.json()["module_id"]
@@ -3107,3 +3107,25 @@ def test_primary_frontends_include_basic_accessibility_landmarks():
         assert "Saltar al contenido" in text_content
         assert 'aria-live="polite"' in text_content
         assert 'id="mainContent"' in text_content
+
+
+def test_admin_readiness_distinguishes_internal_and_external_requirements():
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/admin/readiness",
+            headers={"X-Admin-Token": "test-admin-token-0123456789abcdef0123456789abcdef"},
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["code_ready"] is True
+        assert data["ok"] is True
+        # Test environment intentionally uses a non-HTTPS public URL and may have no LTI platform.
+        assert data["campus_ready"] is False
+        checks = {row["name"]: row for row in data["checks"]}
+        assert checks["database"]["ok"] is True
+        assert checks["storage"]["ok"] is True
+        assert checks["lti_private_key"]["ok"] is True
+        assert checks["session_secret"]["ok"] is True
+        assert checks["admin_token"]["ok"] is True
+        assert checks["catalog"]["ok"] is True
+        assert checks["public_https"]["external"] is True
