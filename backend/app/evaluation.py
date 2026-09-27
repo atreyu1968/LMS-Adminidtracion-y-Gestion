@@ -41,6 +41,12 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _aware_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
 def _course_module_access(
     db: Session,
     course_module_id: int,
@@ -1804,7 +1810,8 @@ def submit_exam(
     _course_module_access(db, exam.course_module_id, user_id)
 
     now = _now()
-    if exam.deadline_at and now > exam.deadline_at + timedelta(seconds=30) and not payload.timeout:
+    deadline = _aware_utc(exam.deadline_at)
+    if deadline and now > deadline + timedelta(seconds=30) and not payload.timeout:
         raise HTTPException(status_code=410, detail="El tiempo del examen ha finalizado")
 
     current = dict(exam.response_json or {})
