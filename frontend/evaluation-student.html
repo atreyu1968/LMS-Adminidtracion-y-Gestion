@@ -40,9 +40,10 @@ function json(method,body){return{method,headers:{"Content-Type":"application/js
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo.</div>';return}
  try{
-   [structure,results]=await Promise.all([
+   [structure,results,overview]=await Promise.all([
      api("/api/evaluation/course-modules/"+cmid+"/structure"),
-     api("/api/evaluation/course-modules/"+cmid+"/my-results")
+     api("/api/evaluation/course-modules/"+cmid+"/my-results"),
+     api("/api/evaluation/course-modules/"+cmid+"/my-overview")
    ]);
    document.querySelector("#subtitle").textContent="Grupo-módulo "+cmid;
    render();
@@ -51,21 +52,27 @@ async function load(){
 function render(){
  const passed=results.filter(r=>r.passed).length;
  document.querySelector("#summary").innerHTML=[
+   ["Progreso",(overview?.progress_percent??0)+"%"],
    ["RA",structure.learning_results.length],
    ["RA superados",passed],
    ["Revisiones pendientes",results.reduce((n,r)=>n+Object.values(r.criteria||{}).reduce((x,c)=>x+Number(c.pending_review||0),0),0)]
  ].map(x=>'<div class="metric"><span class="tiny muted">'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
+ renderStudentOverview();
  const byId=new Map(results.map(r=>[r.learning_result_id,r]));
  document.querySelector("#content").innerHTML=(structure.learning_results||[]).map(ra=>{
    const rr=byId.get(ra.id);
    const status=rr?rr.status:"sin actividad";
-   return '<section class="card"><details class="ra" open><summary>'+esc(ra.code)+' · '+esc(ra.title)+' <span class="badge">'+esc(status)+'</span></summary>'
-     +(rr?'<div class="notice"><strong>Portafolio:</strong> '+esc(rr.portfolio_score)+'/100'+(rr.exam_score!==null?' · <strong>Examen:</strong> '+esc(rr.exam_score)+'/100':'')+(rr.final_score!==null?' · <strong>Final:</strong> '+esc(rr.final_score)+'/100':'')+'</div>':'')
-     +ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+'</strong><div class="items">'+ce.items.filter(i=>i.instrument==="portfolio").map(item=>renderItem(item,ce,ra)).join("")+'</div></div>').join("")
-     +(structure.config.exam_enabled?'<div class="notice"><strong>Examen de '+esc(ra.code)+'</strong><br><span class="muted">Duración: '+esc(structure.config.exam_minutes)+' min · '+esc(structure.config.exam_questions_per_ce)+' preguntas por CE.</span><br><button class="btn" style="margin-top:8px" onclick="startExam('+ra.id+',\''+esc(ra.code)+'\')">Iniciar o reanudar examen</button></div>':'<div class="notice warn">El examen todavía no está habilitado por el profesor.</div>')
-     +(rr&&rr.status==="recovery-required"?'<div class="notice warn"><strong>Recuperación necesaria.</strong> CE pendientes: '+esc((rr.recovery||[]).join(", "))+'<br><button class="btn secondary" style="margin-top:8px" onclick="loadRecovery('+ra.id+')">Abrir recuperación</button><div id="recovery-'+ra.id+'"></div></div>':'')
-     +(rr&&rr.status==="not-passed"?'<div class="notice error"><strong>RA no superado.</strong> Los CE están recuperados, pero la calificación global o los requisitos de los instrumentos no alcanzan el mínimo.</div>':'')
-     +'</details></section>';
+   const ov=(overview?.learning_results||[]).find(x=>x.id===ra.id);
+   const state=ov?.state||"not_started",progress=Number(ov?.progress_percent||0),available=ra.available!==false;
+   return '<section class="card" id="ra-'+ra.id+'"><details class="ra" '+(available?"open":"")+'><summary>'+esc(ra.code)+' · '+esc(ra.title)+' <span class="badge">'+esc(!available?"Bloqueado":state==="completed"?"Completado":state==="in_progress"?"En curso":"No iniciado")+'</span></summary>'
+     +'<div style="height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:10px 0"><div style="height:100%;width:'+Math.max(0,Math.min(100,progress))+'%;background:#18508f"></div></div><div class="tiny muted">'+esc(progress)+'% completado · '+esc(status)+'</div>'
+     +(available?"":'<div class="notice warn"><strong>Contenido bloqueado.</strong> '+esc(ra.access_reason||"Debes completar los prerrequisitos.")+'</div>')
+     +(rr&&available?'<div class="notice"><strong>Portafolio:</strong> '+esc(rr.portfolio_score)+'/100'+(rr.exam_score!==null?' · <strong>Examen:</strong> '+esc(rr.exam_score)+'/100':'')+(rr.final_score!==null?' · <strong>Final:</strong> '+esc(rr.final_score)+'/100':'')+'</div>':'')
+     +(available?ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+(ce.exempt?' <span class="badge">Exento</span>':'')+'</strong><div class="items">'+ce.items.filter(i=>i.instrument==="portfolio").map(item=>renderItem(item,ce,ra)).join("")+'</div></div>').join(""):"")
+     +(available?(structure.config.exam_enabled?'<div class="notice"><strong>Examen de '+esc(ra.code)+'</strong><br><span class="muted">Duración: '+esc(structure.config.exam_minutes)+' min · '+esc(structure.config.exam_questions_per_ce)+' preguntas por CE.</span><br><button class="btn" style="margin-top:8px" onclick="startExam('+ra.id+',\''+esc(ra.code)+'\')">Iniciar o reanudar examen</button></div>':'<div class="notice warn">El examen todavía no está habilitado por el profesor.</div>'):"")
+     +(available&&rr&&rr.status==="recovery-required"?'<div class="notice warn"><strong>Recuperación necesaria.</strong> CE pendientes: '+esc((rr.recovery||[]).join(", "))+'<br><button class="btn secondary" style="margin-top:8px" onclick="loadRecovery('+ra.id+')">Abrir recuperación</button><div id="recovery-'+ra.id+'"></div></div>':'')
+     +(available&&rr&&rr.status==="not-passed"?'<div class="notice error"><strong>RA no superado.</strong> Los CE están recuperados, pero la calificación global o los requisitos de los instrumentos no alcanzan el mínimo.</div>':'')
+     +'<div style="display:flex;justify-content:space-between;gap:8px;margin-top:12px"><button class="btn secondary" type="button" onclick="goRelative('+ra.id+',-1)">Anterior</button><button class="btn secondary" type="button" onclick="goRelative('+ra.id+',1)">Siguiente</button></div></details></section>';
  }).join("");
 }
 function renderStudentOverview(){
@@ -91,6 +98,8 @@ function goRelative(id,delta){
  if(next)goRa(next);
 }
 function renderItem(item,ce,ra){
+ if(item.exempt)return '<article class="item"><div class="badge">Exento</div><p><strong>'+esc(item.prompt)+'</strong></p><div class="muted">Esta actividad no computa para tu evaluación.</div></article>';
+ if(item.available===false)return '<article class="item"><div class="badge">Bloqueado</div><p><strong>'+esc(item.prompt)+'</strong></p><div class="muted">'+esc(item.access_reason||"Debes completar los prerrequisitos.")+'</div></article>';
  let control='';
  if(item.type==="choice"){
    control=(item.options||[]).map((o,i)=>'<label class="option"><input type="radio" name="item-'+item.id+'" value="'+i+'"> '+esc(o)+'</label>').join("");
