@@ -23,7 +23,7 @@ import jwt
 from fastapi.testclient import TestClient
 
 from app.db import SessionLocal
-from app.lti import CLAIM_DL_CONTENT_ITEMS, CLAIM_MESSAGE_TYPE
+from app.lti import CLAIM_DL_CONTENT_ITEMS, CLAIM_MESSAGE_TYPE, _upsert_identity
 from app.main import app
 from app.models import (
     Course,
@@ -543,3 +543,50 @@ def test_group_self_enrolment_is_opt_in_and_module_catalog_is_scoped():
         visible_ids = {item["id"] for item in catalog.json()}
         assert teacher_module_id not in visible_ids
         assert student_module_id not in visible_ids
+
+
+def test_lti_first_launch_reuses_provisional_roster_user_by_email():
+    with TestClient(app):
+        with SessionLocal() as db:
+            provisional = User(
+                display_name="Nombre provisional",
+                email="alumno.provisional@example.test",
+                active=True,
+            )
+            platform = LTIPlatform(
+                name="Moodle provisional",
+                issuer="https://moodle.provisional.example.test",
+                client_id="provisional-client",
+                auth_url="https://moodle.provisional.example.test/auth",
+                token_url="https://moodle.provisional.example.test/token",
+                jwks_url="https://moodle.provisional.example.test/jwks",
+            )
+            db.add_all([provisional, platform])
+            db.commit()
+            db.refresh(provisional)
+            db.refresh(platform)
+            provisional_id = provisional.id
+
+            user = _upsert_identity(
+                db,
+                platform,
+                {
+                    "sub": "campus-user-123",
+                    "name": "Nombre oficial CAMPUS",
+                    "email": "ALUMNO.PROVISIONAL@example.test",
+                },
+            )
+            db.commit()
+
+            assert user.id == provisional_id
+            assert user.display_name == "Nombre oficial CAMPUS"
+            identity = db.scalar(
+                __import__("sqlalchemy").select(
+                    __import__("app.models", fromlist=["ExternalIdentity"]).ExternalIdentity
+                ).where(
+                    __import__("app.models", fromlist=["ExternalIdentity"]).ExternalIdentity.user_id
+                    == provisional_id
+                )
+            )
+            assert identity is not None
+            assert identity.subject == "campus-user-123"
