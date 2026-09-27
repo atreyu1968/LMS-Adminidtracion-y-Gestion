@@ -51,6 +51,7 @@
       <label>Umbral CE (0–100)<input name="ce_pass_score" type="number" min="0" max="100" step="0.1"></label>
       <label>CE mínimos superados (%)<input name="ce_pass_percent" type="number" min="0" max="100"></label>
       <label>Preguntas examen por CE<input name="exam_questions_per_ce" type="number" min="1" max="20"></label>
+      <label>Actividades recuperación por CE<input name="recovery_items_per_ce" type="number" min="1" max="20"></label>
       <label>Duración examen (min)<input name="exam_minutes" type="number" min="1" max="300"></label>
       <label>Incidentes permitidos<input name="exam_incident_limit" type="number" min="0" max="20"></label>
       <label>Política de incidentes<select name="exam_incident_policy"><option value="submit">Entregar al alcanzar el límite</option><option value="warn">Avisar</option><option value="log">Solo registrar</option></select></label>
@@ -68,6 +69,13 @@
 <section id="panel-readiness" class="panel card">
   <h2>Semáforo de preparación</h2>
   <div id="readiness"></div>
+  <form id="privateBundleForm" class="hidden" style="margin-top:16px">
+    <h3>Cargar bancos privados</h3>
+    <p class="muted">Carga un JSON individual o un ZIP con los bancos privados de Portafolio, examen y recuperación. Las respuestas se almacenan en el servidor y no se publican en Git.</p>
+    <label>Archivo privado<input name="file" type="file" accept=".zip,.json,application/zip,application/json" required></label>
+    <button class="btn">Validar e importar</button>
+  </form>
+  <div id="centralBankNotice" class="notice hidden">Este módulo usa bancos privados administrados centralmente. Puedes consultar el semáforo, pero no modificar las claves del módulo oficial.</div>
 </section>
 </main>
 
@@ -129,23 +137,50 @@ function renderStructure(){
 }
 function renderConfig(){
  const f=document.querySelector("#configForm"),c=configData.config||{};
- ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","exam_minutes","exam_incident_limit","exam_incident_policy"].forEach(k=>{if(f.elements[k])f.elements[k].value=c[k]??""});
+ ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","recovery_items_per_ce","exam_minutes","exam_incident_limit","exam_incident_policy"].forEach(k=>{if(f.elements[k])f.elements[k].value=c[k]??""});
  ["exam_enabled","require_both_instruments","exam_integrity_enabled","exam_fullscreen_required"].forEach(k=>{f.elements[k].checked=!!c[k]});
  document.querySelector("#configVersion").textContent="Versión "+configData.version;
 }
 document.querySelector("#configForm").addEventListener("submit",async e=>{
  e.preventDefault();const f=e.currentTarget;
  const payload={};
- ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","exam_minutes","exam_incident_limit"].forEach(k=>payload[k]=Number(f.elements[k].value));
+ ["portfolio_max_attempts","exam_max_attempts","recovery_max_attempts","portfolio_weight","exam_weight","pass_score","ce_pass_score","ce_pass_percent","exam_questions_per_ce","recovery_items_per_ce","exam_minutes","exam_incident_limit"].forEach(k=>payload[k]=Number(f.elements[k].value));
  payload.exam_incident_policy=f.elements.exam_incident_policy.value;
  ["exam_enabled","require_both_instruments","exam_integrity_enabled","exam_fullscreen_required"].forEach(k=>payload[k]=f.elements[k].checked);
  try{configData=await api("/api/evaluation/course-modules/"+cmid+"/config",json("PUT",payload));renderConfig();structure=await api("/api/evaluation/course-modules/"+cmid+"/structure");readiness=await api("/api/evaluation/course-modules/"+cmid+"/readiness");renderReadiness();flash("Nueva versión de configuración guardada.")}catch(e2){flash(e2.message,"error")}
 });
 function renderReadiness(){
  const missing=readiness.missing_keys||[];
- const ready=!missing.length;
- document.querySelector("#readiness").innerHTML='<div class="notice '+(ready?"ok":"warn")+'"><strong>'+(ready?"Banco privado completo":"Faltan claves privadas")+'</strong><br>'+esc(readiness.keys_loaded)+' de '+esc(readiness.items_total)+' actividades con clave.</div><div class="notice '+(readiness.ai_enabled?"ok":"")+'"><strong>IA:</strong> '+(readiness.ai_enabled?"activa para este grupo-módulo":"desactivada")+'. Actividades semánticas: '+esc(readiness.semantic_items)+'</div>'+(missing.length?'<details><summary>Ver claves faltantes ('+missing.length+')</summary><div class="response">'+esc(missing.join("\n"))+'</div></details>':'');
+ const cards=[
+   ["Portafolio",readiness.portfolio_ready,readiness.keys_loaded+"/"+readiness.items_total+" claves"],
+   ["Examen",readiness.exam_ready,"mínimo "+readiness.config.exam_questions_per_ce+" preguntas/CE"],
+   ["Recuperación",readiness.recovery_ready,"mínimo "+readiness.config.recovery_items_per_ce+" actividades/CE"]
+ ];
+ let html='<div class="grid">'+cards.map(x=>'<div class="notice '+(x[1]?"ok":"warn")+'"><strong>'+esc(x[0])+': '+(x[1]?"preparado":"incompleto")+'</strong><br>'+esc(x[2])+'</div>').join("")+'</div>';
+ html+='<div class="notice '+(readiness.ai_enabled?"ok":"")+'"><strong>IA:</strong> '+(readiness.ai_enabled?"activa para este grupo-módulo":"desactivada")+'. Actividades semánticas: '+esc(readiness.semantic_items)+'</div>';
+ if(missing.length)html+='<details><summary>Claves de Portafolio pendientes ('+missing.length+')</summary><div class="response">'+esc(missing.join("\n"))+'</div></details>';
+ const rows=[];
+ for(const [ra,ces] of Object.entries(readiness.coverage||{})){
+   for(const [ce,d] of Object.entries(ces)){
+     rows.push('<tr><td>'+esc(ra)+'</td><td>'+esc(ce)+'</td><td>'+(d.portfolio_ready?"✓":"⚠")+" "+esc(d.portfolio_keys)+"/"+esc(d.portfolio_items)+'</td><td>'+(d.exam_ready?"✓":"⚠")+" "+esc(d.exam_questions)+"/"+esc(d.exam_required)+'</td><td>'+(d.recovery_ready?"✓":"⚠")+" "+esc(d.recovery_items)+"/"+esc(d.recovery_required)+'</td></tr>');
+   }
+ }
+ if(rows.length)html+='<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>RA</th><th>CE</th><th>Portafolio</th><th>Examen</th><th>Recuperación</th></tr></thead><tbody>'+rows.join("")+'</tbody></table></div>';
+ document.querySelector("#readiness").innerHTML=html;
+ document.querySelector("#privateBundleForm").classList.toggle("hidden",!readiness.can_manage_private_banks);
+ document.querySelector("#centralBankNotice").classList.toggle("hidden",readiness.can_manage_private_banks);
 }
+document.querySelector("#privateBundleForm").addEventListener("submit",async e=>{
+ e.preventDefault();const file=e.currentTarget.elements.file.files[0];if(!file)return;
+ const fd=new FormData();fd.append("file",file);
+ try{
+   const r=await api("/api/evaluation/modules/"+readiness.module_id+"/private-bank-bundle",{method:"POST",body:fd});
+   e.currentTarget.reset();
+   readiness=await api("/api/evaluation/course-modules/"+cmid+"/readiness");
+   renderReadiness();renderMetrics();
+   flash("Bancos privados importados: "+r.imported.portfolio+" claves de Portafolio, "+r.imported.exam+" preguntas de examen y "+r.imported.recovery+" actividades de recuperación.");
+ }catch(err){flash(err.message,"error")}
+});
 load();
 </script>
 </body>
