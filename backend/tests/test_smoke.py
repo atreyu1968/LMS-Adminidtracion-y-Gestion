@@ -30,6 +30,9 @@ from app.models import (
     Course,
     CourseModule,
     CourseModuleAIConfig,
+    AssessmentCriterion,
+    AssessmentItem,
+    LearningResult,
     LTIDeepLinkRequest,
     LTIPlatform,
     Membership,
@@ -1032,3 +1035,104 @@ def test_deleting_personal_ai_settings_disables_only_that_teachers_bindings():
         after = client.get(f"/api/ai/course-modules/{course_module_id}")
         assert after.status_code == 200
         assert after.json()["enabled"] is False
+
+
+def test_gth_catalog_imports_four_ra_thirty_three_criteria_and_public_portfolio():
+    with TestClient(app) as client:
+        imported = client.post(
+            "/api/admin/catalog/gth0652/import-metadata",
+            headers={"X-Admin-Token": "test-admin"},
+        )
+        assert imported.status_code == 200, imported.text
+        payload = imported.json()
+        assert payload["slug"] == "gth-0652"
+        assert payload["learning_results"] == 4
+        assert payload["criteria"] == 33
+        assert payload["portfolio_items"] == 198
+        module_id = payload["module_id"]
+
+        with SessionLocal() as db:
+            ra_count = db.scalar(
+                __import__("sqlalchemy").select(
+                    __import__("sqlalchemy").func.count(LearningResult.id)
+                ).where(LearningResult.module_id == module_id)
+            )
+            ce_count = db.scalar(
+                __import__("sqlalchemy").select(
+                    __import__("sqlalchemy").func.count(AssessmentCriterion.id)
+                )
+                .join(LearningResult, LearningResult.id == AssessmentCriterion.learning_result_id)
+                .where(LearningResult.module_id == module_id)
+            )
+            item_count = db.scalar(
+                __import__("sqlalchemy").select(
+                    __import__("sqlalchemy").func.count(AssessmentItem.id)
+                )
+                .join(
+                    AssessmentCriterion,
+                    AssessmentCriterion.id == AssessmentItem.criterion_id,
+                )
+                .join(
+                    LearningResult,
+                    LearningResult.id == AssessmentCriterion.learning_result_id,
+                )
+                .where(
+                    LearningResult.module_id == module_id,
+                    AssessmentItem.instrument == "portfolio",
+                    AssessmentItem.active.is_(True),
+                )
+            )
+            assert ra_count == 4
+            assert ce_count == 33
+            assert item_count == 198
+            first = db.scalar(
+                __import__("sqlalchemy").select(AssessmentItem)
+                .join(
+                    AssessmentCriterion,
+                    AssessmentCriterion.id == AssessmentItem.criterion_id,
+                )
+                .join(
+                    LearningResult,
+                    LearningResult.id == AssessmentCriterion.learning_result_id,
+                )
+                .where(LearningResult.module_id == module_id)
+                .order_by(AssessmentItem.id)
+            )
+            assert first is not None
+            assert first.max_attempts == 2
+            assert first.public_hash
+            assert first.evaluable is True
+
+        teacher_id, course_id, _ = teacher_fixture("catalog-teacher")
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+
+        catalog = client.get("/api/catalog/modules")
+        assert catalog.status_code == 200
+        gth = next(row for row in catalog.json() if row["id"] == module_id)
+        assert gth["installed"] is False
+
+        installed = client.post(f"/api/catalog/modules/{module_id}/install")
+        assert installed.status_code == 200
+        assert installed.json()["permission"] == "viewer"
+
+        mine = client.get("/api/modules/mine")
+        assert mine.status_code == 200
+        mine_gth = next(row for row in mine.json() if row["id"] == module_id)
+        assert mine_gth["permission"] == "viewer"
+
+        assigned = client.post(
+            f"/api/groups/{course_id}/modules/{module_id}",
+            json={"settings": {}},
+        )
+        assert assigned.status_code == 200, assigned.text
+
+        cannot_uninstall_in_use = client.delete(
+            f"/api/catalog/modules/{module_id}/install"
+        )
+        assert cannot_uninstall_in_use.status_code == 409
+
+        removed = client.delete(f"/api/groups/{course_id}/modules/{module_id}")
+        assert removed.status_code == 200
+        uninstalled = client.delete(f"/api/catalog/modules/{module_id}/install")
+        assert uninstalled.status_code == 200
