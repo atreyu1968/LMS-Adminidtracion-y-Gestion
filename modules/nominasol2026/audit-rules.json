@@ -1,0 +1,797 @@
+{
+  "version": "2026.3",
+  "purpose": "Solucionario técnico oculto para validación IA y revisión docente. No se expone al alumnado.",
+  "general_rules": [
+    "Toda evidencia debe corresponder a ATLÁNTICO GESTIÓN INTEGRAL, S.L. o a EMPRESA TUTORIAL cuando el hito sea de entrenamiento.",
+    "No aceptar una evidencia si el periodo visible no coincide con el hito.",
+    "No aceptar un resultado aparentemente correcto si la captura revela que el alumno ha corregido manualmente una nómina en lugar de corregir el dato de origen.",
+    "No aceptar comunicaciones reales a AEAT, TGSS, SEPE o entidades bancarias; el proyecto es exclusivamente simulado.",
+    "Cuando una captura no permita comprobar un requisito crítico, el resultado debe ser review y no pass.",
+    "Los hitos marcados manual_validation requieren siempre decisión docente aunque la IA considere correcta la evidencia."
+  ],
+  "milestones": {
+    "M00": {
+      "manual_validation": false,
+      "critical": [
+        "software_visible",
+        "screen_recognizable"
+      ],
+      "checks": [
+        {
+          "field": "software",
+          "operator": "contains",
+          "expected": "NOMINASOL",
+          "severity": "critical",
+          "reason": "Debe acreditarse que el alumno ha abierto la aplicación correcta."
+        },
+        {
+          "field": "screen",
+          "operator": "one_of",
+          "expected": [
+            "inicio",
+            "principal"
+          ],
+          "severity": "critical",
+          "reason": "La captura debe permitir reconocer una sesión real de trabajo."
+        }
+      ]
+    },
+    "M01": {
+      "manual_validation": false,
+      "critical": [
+        "tutorial_company_or_test_payroll"
+      ],
+      "checks": [
+        {
+          "field": "company",
+          "operator": "contains",
+          "expected": "EMPRESA TUTORIAL",
+          "severity": "high"
+        },
+        {
+          "field": "artifact",
+          "operator": "one_of",
+          "expected": [
+            "listado trabajador",
+            "nómina prueba",
+            "copia seguridad"
+          ],
+          "severity": "high"
+        }
+      ]
+    },
+    "M02": {
+      "manual_validation": true,
+      "critical": [
+        "company",
+        "year",
+        "agreement"
+      ],
+      "checks": [
+        {
+          "field": "company",
+          "operator": "equals",
+          "expected": "ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+          "severity": "critical"
+        },
+        {
+          "field": "company_code",
+          "operator": "equals",
+          "expected": "AGI",
+          "severity": "medium"
+        },
+        {
+          "field": "year",
+          "operator": "equals",
+          "expected": "2026",
+          "severity": "critical"
+        },
+        {
+          "field": "practice_tax_id",
+          "operator": "equals",
+          "expected": "B12345674",
+          "severity": "high"
+        },
+        {
+          "field": "work_center",
+          "operator": "equals",
+          "expected": "Centro Tenerife Sur",
+          "severity": "high"
+        },
+        {
+          "field": "agreement_code",
+          "operator": "equals",
+          "expected": "99001355011983",
+          "severity": "critical"
+        }
+      ]
+    },
+    "M03": {
+      "manual_validation": true,
+      "critical": [
+        "worker_count",
+        "partial_time_worker",
+        "initial_roster"
+      ],
+      "checks": [
+        {
+          "field": "worker_count",
+          "operator": "equals",
+          "expected": 8,
+          "severity": "critical"
+        },
+        {
+          "field": "workers_present",
+          "operator": "contains_all",
+          "expected": [
+            "T01",
+            "T02",
+            "T03",
+            "T04",
+            "T05",
+            "T06",
+            "T07",
+            "T08"
+          ],
+          "severity": "critical"
+        },
+        {
+          "field": "T06_workday",
+          "operator": "equals",
+          "expected": "60 %",
+          "severity": "critical"
+        },
+        {
+          "field": "real_personal_data",
+          "operator": "must_not_be_detected",
+          "expected": true,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M04": {
+      "manual_validation": false,
+      "critical": [
+        "period",
+        "payroll_exists"
+      ],
+      "checks": [
+        {
+          "field": "period",
+          "operator": "equals",
+          "expected": "01/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "payroll_population",
+          "operator": "equals",
+          "expected": 8,
+          "severity": "high"
+        },
+        {
+          "field": "T06",
+          "operator": "workday_proportional",
+          "expected": "60 %",
+          "severity": "high"
+        },
+        {
+          "field": "T01",
+          "operator": "high_salary_case_visible",
+          "expected": true,
+          "severity": "medium"
+        },
+        {
+          "field": "backup",
+          "operator": "recommended_name",
+          "expected": "AGI_2026_M01_CIERRE",
+          "severity": "medium"
+        }
+      ]
+    },
+    "M05": {
+      "manual_validation": false,
+      "critical": [
+        "period",
+        "assigned_variable"
+      ],
+      "checks": [
+        {
+          "field": "period",
+          "operator": "equals",
+          "expected": "02/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "variable",
+          "operator": "matches_variant",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "variable_scope",
+          "operator": "only_current_month",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "T08_km",
+          "operator": "equals",
+          "expected": "186 km",
+          "severity": "high"
+        },
+        {
+          "field": "fixed_salary_modified_to_force_result",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ],
+      "variants": {
+        "F02-A": [
+          {
+            "field": "variable_worker",
+            "operator": "equals",
+            "expected": "T04"
+          },
+          {
+            "field": "variable_amount",
+            "operator": "equals",
+            "expected": "175,00 €"
+          }
+        ],
+        "F02-B": [
+          {
+            "field": "variable_worker",
+            "operator": "equals",
+            "expected": "T03"
+          },
+          {
+            "field": "variable_amount",
+            "operator": "equals",
+            "expected": "210,00 €"
+          }
+        ],
+        "F02-C": [
+          {
+            "field": "variable_worker",
+            "operator": "equals",
+            "expected": "T07"
+          },
+          {
+            "field": "variable_amount",
+            "operator": "equals",
+            "expected": "145,00 €"
+          }
+        ]
+      }
+    },
+    "M06": {
+      "manual_validation": false,
+      "critical": [
+        "worker",
+        "contingency",
+        "dates"
+      ],
+      "checks": [
+        {
+          "field": "worker",
+          "operator": "equals",
+          "expected": "T04",
+          "severity": "critical"
+        },
+        {
+          "field": "contingency",
+          "operator": "equals",
+          "expected": "Enfermedad común",
+          "severity": "critical"
+        },
+        {
+          "field": "dates",
+          "operator": "matches_variant",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "march_recalculated",
+          "operator": "equals",
+          "expected": true,
+          "severity": "high"
+        }
+      ],
+      "variants": {
+        "IT-A": [
+          {
+            "field": "start",
+            "operator": "equals",
+            "expected": "12/03/2026"
+          },
+          {
+            "field": "end",
+            "operator": "equals",
+            "expected": "18/03/2026"
+          }
+        ],
+        "IT-B": [
+          {
+            "field": "start",
+            "operator": "equals",
+            "expected": "09/03/2026"
+          },
+          {
+            "field": "end",
+            "operator": "equals",
+            "expected": "15/03/2026"
+          }
+        ],
+        "IT-C": [
+          {
+            "field": "start",
+            "operator": "equals",
+            "expected": "16/03/2026"
+          },
+          {
+            "field": "end",
+            "operator": "equals",
+            "expected": "22/03/2026"
+          }
+        ]
+      }
+    },
+    "M07": {
+      "manual_validation": false,
+      "critical": [
+        "T09",
+        "first_quarter"
+      ],
+      "checks": [
+        {
+          "field": "T09_name",
+          "operator": "equals",
+          "expected": "Paula Santana Pérez",
+          "severity": "critical"
+        },
+        {
+          "field": "T09_start",
+          "operator": "equals",
+          "expected": "08/04/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T09_end_planned",
+          "operator": "equals",
+          "expected": "15/09/2026",
+          "severity": "high"
+        },
+        {
+          "field": "T09_workday",
+          "operator": "equals",
+          "expected": "100 %",
+          "severity": "high"
+        },
+        {
+          "field": "first_quarter_scope",
+          "operator": "equals",
+          "expected": "01/01/2026-31/03/2026",
+          "severity": "high"
+        },
+        {
+          "field": "real_submission",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M08": {
+      "manual_validation": true,
+      "critical": [
+        "updated_tables",
+        "retroactivity",
+        "arrears"
+      ],
+      "checks": [
+        {
+          "field": "publication",
+          "operator": "equals",
+          "expected": "BOE-A-2026-9024",
+          "severity": "high"
+        },
+        {
+          "field": "economic_effect",
+          "operator": "equals",
+          "expected": "01/01/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "arrears_period",
+          "operator": "equals",
+          "expected": "01/2026-04/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "historical_payrolls_rewritten",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        },
+        {
+          "field": "area1_C1_updated_total",
+          "operator": "equals",
+          "expected": "17.654,00 €",
+          "severity": "high"
+        },
+        {
+          "field": "area1_C2_updated_total",
+          "operator": "equals",
+          "expected": "17.574,00 €",
+          "severity": "high"
+        },
+        {
+          "field": "area1_D2_updated_total",
+          "operator": "equals",
+          "expected": "17.334,00 €",
+          "severity": "high"
+        },
+        {
+          "field": "area1_E2_updated_total",
+          "operator": "equals",
+          "expected": "17.094,00 €",
+          "severity": "high"
+        },
+        {
+          "field": "irpf_reviewed",
+          "operator": "equals",
+          "expected": true,
+          "severity": "medium"
+        }
+      ]
+    },
+    "M09": {
+      "manual_validation": false,
+      "critical": [
+        "promotion_date",
+        "in_kind"
+      ],
+      "checks": [
+        {
+          "field": "T03_change_start",
+          "operator": "equals",
+          "expected": "01/06/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T03_additional_complement",
+          "operator": "equals",
+          "expected": "125,00 €/mes",
+          "severity": "high"
+        },
+        {
+          "field": "T02_in_kind_start",
+          "operator": "equals",
+          "expected": "01/06/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T02_in_kind_value",
+          "operator": "equals",
+          "expected": "48,00 €/mes",
+          "severity": "high"
+        },
+        {
+          "field": "months_before_june_changed",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M10": {
+      "manual_validation": false,
+      "critical": [
+        "extra_pay",
+        "july"
+      ],
+      "checks": [
+        {
+          "field": "extra_pay_month",
+          "operator": "equals",
+          "expected": "07/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "ordinary_july_payroll_closed",
+          "operator": "equals",
+          "expected": true,
+          "severity": "high"
+        },
+        {
+          "field": "comparison_workers",
+          "operator": "contains_all",
+          "expected": [
+            "T02",
+            "T06",
+            "T09"
+          ],
+          "severity": "medium"
+        },
+        {
+          "field": "all_extra_pays_forced_equal",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M11": {
+      "manual_validation": true,
+      "critical": [
+        "vacations",
+        "substitution"
+      ],
+      "checks": [
+        {
+          "field": "T06_vacation",
+          "operator": "equals",
+          "expected": "03/08/2026-14/08/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T07_vacation",
+          "operator": "equals",
+          "expected": "17/08/2026-28/08/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T10_name",
+          "operator": "equals",
+          "expected": "Diego Marrero Cruz",
+          "severity": "high"
+        },
+        {
+          "field": "T10_start",
+          "operator": "equals",
+          "expected": "03/08/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T10_end",
+          "operator": "equals",
+          "expected": "14/08/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T10_workday",
+          "operator": "equals",
+          "expected": "60 %",
+          "severity": "high"
+        },
+        {
+          "field": "vacation_recorded_as_IT",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M12": {
+      "manual_validation": false,
+      "critical": [
+        "T09_end",
+        "finiquito"
+      ],
+      "checks": [
+        {
+          "field": "T09_last_day",
+          "operator": "equals",
+          "expected": "15/09/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "T09_deleted",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        },
+        {
+          "field": "finiquito_exists",
+          "operator": "equals",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "history_preserved",
+          "operator": "equals",
+          "expected": true,
+          "severity": "high"
+        }
+      ]
+    },
+    "M13": {
+      "manual_validation": false,
+      "critical": [
+        "suspension_not_termination",
+        "dates"
+      ],
+      "checks": [
+        {
+          "field": "worker",
+          "operator": "equals",
+          "expected": "T02",
+          "severity": "critical"
+        },
+        {
+          "field": "start",
+          "operator": "equals",
+          "expected": "05/10/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "end",
+          "operator": "equals",
+          "expected": "01/11/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "employment_terminated",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M14": {
+      "manual_validation": false,
+      "critical": [
+        "matches_variant",
+        "november"
+      ],
+      "checks": [
+        {
+          "field": "period",
+          "operator": "equals",
+          "expected": "11/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "incident",
+          "operator": "matches_variant",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "fixed_salary_modified_to_force_result",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ],
+      "variants": {
+        "NOV-A": [
+          {
+            "field": "worker",
+            "operator": "equals",
+            "expected": "T05"
+          },
+          {
+            "field": "incident_type",
+            "operator": "equals",
+            "expected": "Anticipo"
+          },
+          {
+            "field": "amount",
+            "operator": "equals",
+            "expected": "300,00 €"
+          }
+        ],
+        "NOV-B": [
+          {
+            "field": "worker",
+            "operator": "equals",
+            "expected": "T08"
+          },
+          {
+            "field": "incident_type",
+            "operator": "equals",
+            "expected": "Bonus"
+          },
+          {
+            "field": "amount",
+            "operator": "equals",
+            "expected": "260,00 €"
+          }
+        ],
+        "NOV-C": [
+          {
+            "field": "worker",
+            "operator": "equals",
+            "expected": "T03"
+          },
+          {
+            "field": "incident_type",
+            "operator": "equals",
+            "expected": "Embargo simulado"
+          },
+          {
+            "field": "amount",
+            "operator": "equals",
+            "expected": "180,00 €"
+          }
+        ]
+      }
+    },
+    "M15": {
+      "manual_validation": false,
+      "critical": [
+        "december",
+        "extra_pay",
+        "accumulated"
+      ],
+      "checks": [
+        {
+          "field": "ordinary_period",
+          "operator": "equals",
+          "expected": "12/2026",
+          "severity": "critical"
+        },
+        {
+          "field": "december_extra_pay_exists",
+          "operator": "equals",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "annual_accumulated_reviewed",
+          "operator": "equals",
+          "expected": true,
+          "severity": "high"
+        },
+        {
+          "field": "manual_year_end_balancing",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        }
+      ]
+    },
+    "M16": {
+      "manual_validation": true,
+      "critical": [
+        "final_backup",
+        "2027_open",
+        "2026_preserved"
+      ],
+      "checks": [
+        {
+          "field": "annual_documents_generated",
+          "operator": "equals",
+          "expected": true,
+          "severity": "high"
+        },
+        {
+          "field": "real_submission",
+          "operator": "equals",
+          "expected": false,
+          "severity": "critical"
+        },
+        {
+          "field": "final_backup",
+          "operator": "recommended_name",
+          "expected": "AGI_2026_FINAL",
+          "severity": "critical"
+        },
+        {
+          "field": "year_2027_open",
+          "operator": "equals",
+          "expected": true,
+          "severity": "critical"
+        },
+        {
+          "field": "year_2026_still_accessible",
+          "operator": "equals",
+          "expected": true,
+          "severity": "critical"
+        }
+      ]
+    }
+  }
+}
