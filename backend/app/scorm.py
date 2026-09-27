@@ -120,7 +120,7 @@ def _safe_member(name: str) -> PurePosixPath:
     return path
 
 
-def _manifest_info(data: bytes) -> tuple[str, str, dict]:
+def _manifest_info(data: bytes) -> tuple[str, str, str, dict]:
     try:
         root = ET.fromstring(data)
     except ET.ParseError as exc:
@@ -152,12 +152,31 @@ def _manifest_info(data: bytes) -> tuple[str, str, dict]:
     if not str(path):
         raise HTTPException(status_code=400, detail="SCORM entrypoint is empty")
 
+    schema_version = ""
+    for element in root.iter():
+        if element.tag.rsplit("}", 1)[-1].lower() == "schemaversion":
+            schema_version = (element.text or "").strip()
+            break
+    xml_hint = data.decode("utf-8", errors="ignore").lower()
+    standard = (
+        "SCORM_2004"
+        if (
+            "adlcp_v1p3" in xml_hint
+            or "imsss" in xml_hint
+            or "2004" in schema_version.lower()
+            or "1.3" in schema_version.lower()
+        )
+        else "SCORM_1.2"
+    )
+
     manifest = {
         "identifier": root.attrib.get("identifier"),
         "title": title,
         "entrypoint": href,
+        "schema_version": schema_version,
+        "standard": standard,
     }
-    return title, href, manifest
+    return title, href, standard, manifest
 
 
 async def _store_scorm(
@@ -226,7 +245,7 @@ async def _store_scorm(
             manifest_info = names.get("imsmanifest.xml")
             if not manifest_info:
                 raise HTTPException(status_code=400, detail="imsmanifest.xml must be at the ZIP root")
-            manifest_title, entrypoint, manifest = _manifest_info(archive.read(manifest_info))
+            manifest_title, entrypoint, standard, manifest = _manifest_info(archive.read(manifest_info))
             entry_path = _safe_member(urlsplit(entrypoint).path).as_posix()
             if entry_path not in names:
                 raise HTTPException(status_code=400, detail="SCORM entrypoint does not exist in the package")
@@ -244,7 +263,7 @@ async def _store_scorm(
             description=description,
             original_filename=file.filename,
             version=sha[:12],
-            standard="SCORM_1.2",
+            standard=standard,
             entrypoint=entrypoint,
             storage_path=relative_dir.as_posix(),
             sha256=sha,
@@ -610,23 +629,48 @@ def runtime_state(
     db: Session = Depends(get_db),
 ) -> dict:
     registration, user = _runtime_auth(registration_id, authorization, db)
+    package = db.get(ScormPackage, registration.package_id)
+    if not package:
+        raise HTTPException(status_code=404, detail="SCORM package not found")
+
     cmi = dict(registration.cmi_json or {})
-    cmi.update(
-        {
-            "cmi.core.student_id": str(user.id),
-            "cmi.core.student_name": user.display_name,
-            "cmi.core.lesson_status": registration.lesson_status,
-            "cmi.core.lesson_location": registration.lesson_location,
-            "cmi.suspend_data": registration.suspend_data,
-        }
-    )
-    if registration.score_raw is not None:
-        cmi["cmi.core.score.raw"] = str(registration.score_raw)
-    if registration.score_min is not None:
-        cmi["cmi.core.score.min"] = str(registration.score_min)
-    if registration.score_max is not None:
-        cmi["cmi.core.score.max"] = str(registration.score_max)
-    return {"registration_id": registration.id, "cmi": cmi}
+    if package.standard == "SCORM_2004":
+        cmi.update(
+            {
+                "cmi.learner_id": str(user.id),
+                "cmi.learner_name": user.display_name,
+                "cmi.completion_status": registration.lesson_status,
+                "cmi.location": registration.lesson_location,
+                "cmi.suspend_data": registration.suspend_data,
+            }
+        )
+        if registration.score_raw is not None:
+            cmi["cmi.score.raw"] = str(registration.score_raw)
+        if registration.score_min is not None:
+            cmi["cmi.score.min"] = str(registration.score_min)
+        if registration.score_max is not None:
+            cmi["cmi.score.max"] = str(registration.score_max)
+    else:
+        cmi.update(
+            {
+                "cmi.core.student_id": str(user.id),
+                "cmi.core.student_name": user.display_name,
+                "cmi.core.lesson_status": registration.lesson_status,
+                "cmi.core.lesson_location": registration.lesson_location,
+                "cmi.suspend_data": registration.suspend_data,
+            }
+        )
+        if registration.score_raw is not None:
+            cmi["cmi.core.score.raw"] = str(registration.score_raw)
+        if registration.score_min is not None:
+            cmi["cmi.core.score.min"] = str(registration.score_min)
+        if registration.score_max is not None:
+            cmi["cmi.core.score.max"] = str(registration.score_max)
+    return {
+        "registration_id": registration.id,
+        "standard": package.standard,
+        "cmi": cmi,
+    }
 
 
 def _float_or_none(value: object) -> float | None:
@@ -646,18 +690,37 @@ def runtime_commit(
     db: Session = Depends(get_db),
 ) -> dict:
     registration, _ = _runtime_auth(registration_id, authorization, db)
+    package = db.get(ScormPackage, registration.package_id)
+    if not package:
+        raise HTTPException(status_code=404, detail="SCORM package not found")
+
     cmi = {str(k): v for k, v in payload.cmi.items()}
     registration.cmi_json = cmi
-    registration.lesson_status = str(cmi.get("cmi.core.lesson_status") or registration.lesson_status)
-    registration.lesson_location = str(cmi.get("cmi.core.lesson_location") or "")
-    registration.suspend_data = str(cmi.get("cmi.suspend_data") or "")
-    registration.score_raw = _float_or_none(cmi.get("cmi.core.score.raw"))
-    registration.score_min = _float_or_none(cmi.get("cmi.core.score.min"))
-    registration.score_max = _float_or_none(cmi.get("cmi.core.score.max"))
+    if package.standard == "SCORM_2004":
+        registration.lesson_status = str(
+            cmi.get("cmi.completion_status")
+            or cmi.get("cmi.success_status")
+            or registration.lesson_status
+        )
+        registration.lesson_location = str(cmi.get("cmi.location") or "")
+        registration.suspend_data = str(cmi.get("cmi.suspend_data") or "")
+        registration.score_raw = _float_or_none(cmi.get("cmi.score.raw"))
+        registration.score_min = _float_or_none(cmi.get("cmi.score.min"))
+        registration.score_max = _float_or_none(cmi.get("cmi.score.max"))
+    else:
+        registration.lesson_status = str(
+            cmi.get("cmi.core.lesson_status") or registration.lesson_status
+        )
+        registration.lesson_location = str(cmi.get("cmi.core.lesson_location") or "")
+        registration.suspend_data = str(cmi.get("cmi.suspend_data") or "")
+        registration.score_raw = _float_or_none(cmi.get("cmi.core.score.raw"))
+        registration.score_min = _float_or_none(cmi.get("cmi.core.score.min"))
+        registration.score_max = _float_or_none(cmi.get("cmi.core.score.max"))
     registration.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {
         "ok": True,
+        "standard": package.standard,
         "lesson_status": registration.lesson_status,
         "score_raw": registration.score_raw,
     }
