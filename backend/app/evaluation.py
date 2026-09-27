@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import hashlib
+import io
+import json
 import math
 import random
+import zipfile
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -1730,6 +1733,266 @@ def decide_review(
         "status": review.status,
         "progress": progress,
     }
+
+
+async def _read_private_bank_bundle(file: UploadFile) -> list[dict]:
+    raw = await file.read()
+    if len(raw) > 32 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="El paquete privado supera 32 MB")
+    documents: list[dict] = []
+    filename = (file.filename or "").lower()
+    try:
+        if filename.endswith(".json"):
+            parsed = json.loads(raw.decode("utf-8-sig"))
+            if not isinstance(parsed, dict):
+                raise HTTPException(status_code=400, detail="El JSON privado debe ser un objeto")
+            documents.append(parsed)
+        else:
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                infos = [
+                    info for info in archive.infolist()
+                    if not info.is_dir() and info.filename.lower().endswith(".json")
+                ]
+                if not infos or len(infos) > 100:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="El ZIP debe contener entre 1 y 100 JSON privados",
+                    )
+                total = sum(info.file_size for info in infos)
+                if total > 64 * 1024 * 1024:
+                    raise HTTPException(status_code=400, detail="El ZIP privado expande demasiado")
+                for info in infos:
+                    if info.filename.startswith("/") or ".." in info.filename.replace("\\", "/").split("/"):
+                        raise HTTPException(status_code=400, detail="Ruta insegura en el ZIP privado")
+                    parsed = json.loads(archive.read(info).decode("utf-8-sig"))
+                    if not isinstance(parsed, dict):
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"{info.filename}: el JSON debe ser un objeto",
+                        )
+                    documents.append(parsed)
+    except zipfile.BadZipFile as exc:
+        raise HTTPException(status_code=400, detail="ZIP privado no válido") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="JSON privado no válido") from exc
+    return documents
+
+
+def _lr_lookup(db: Session, module_id: int) -> dict[str, LearningResult]:
+    rows = list(
+        db.scalars(
+            select(LearningResult).where(
+                LearningResult.module_id == module_id,
+                LearningResult.active.is_(True),
+            )
+        )
+    )
+    lookup: dict[str, LearningResult] = {}
+    for lr in rows:
+        lookup[lr.code] = lr
+        legacy = str((lr.metadata_json or {}).get("legacy_course_id") or "").strip()
+        if legacy:
+            lookup[legacy] = lr
+    return lookup
+
+
+def _validate_bank_coverage(
+    db: Session,
+    lr: LearningResult,
+    *,
+    exam_min_per_ce: int,
+    recovery_min_per_ce: int,
+) -> dict:
+    criteria = list(
+        db.scalars(
+            select(AssessmentCriterion).where(
+                AssessmentCriterion.learning_result_id == lr.id,
+                AssessmentCriterion.active.is_(True),
+            )
+        )
+    )
+    summary = {}
+    for instrument, minimum in (
+        ("exam", exam_min_per_ce),
+        ("recovery", recovery_min_per_ce),
+    ):
+        counts = {}
+        for criterion in criteria:
+            counts[criterion.code] = int(
+                db.scalar(
+                    select(func.count(AssessmentItem.id)).where(
+                        AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument == instrument,
+                        AssessmentItem.active.is_(True),
+                        AssessmentItem.evaluable.is_(True),
+                    )
+                )
+                or 0
+            )
+        insufficient = {
+            code: count for code, count in counts.items() if count < minimum
+        }
+        summary[instrument] = {
+            "minimum_per_ce": minimum,
+            "counts": counts,
+            "insufficient": insufficient,
+        }
+    return summary
+
+
+def _import_private_documents(
+    db: Session,
+    module_id: int,
+    documents: list[dict],
+) -> dict:
+    module = db.get(Module, module_id)
+    if not module or not module.active:
+        raise HTTPException(status_code=404, detail="Módulo no encontrado")
+    lookup = _lr_lookup(db, module_id)
+    if not lookup:
+        raise HTTPException(status_code=409, detail="El módulo no tiene RA definidos")
+
+    seen: set[tuple[int, str]] = set()
+    imported = {"portfolio": 0, "exam": 0, "recovery": 0}
+    touched: dict[int, LearningResult] = {}
+
+    for document in documents:
+        kind = str(document.get("kind") or "").strip().lower()
+        reference = str(
+            document.get("course_id")
+            or document.get("learning_result")
+            or document.get("ra")
+            or ""
+        ).strip()
+        lr = lookup.get(reference)
+        if not lr:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se reconoce el RA/curso privado: {reference or '(vacío)'}",
+            )
+        key = (lr.id, kind)
+        if key in seen:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Banco duplicado para {lr.code}/{kind}",
+            )
+        seen.add(key)
+        touched[lr.id] = lr
+
+        if kind == "portfolio":
+            entries = []
+            for item in document.get("items") or []:
+                entries.append(
+                    PrivateKeyItemIn(
+                        id=item.get("id"),
+                        ce=item.get("ce"),
+                        kind=item.get("kind"),
+                        answer=item.get("answer"),
+                        public_hash=item.get("public_hash"),
+                        feedback=item.get("feedback") or "",
+                    )
+                )
+            result = _load_private_keys(
+                db,
+                module_id,
+                PrivateKeysIn(
+                    items=entries,
+                    strict=True,
+                    source="private-bundle",
+                ),
+            )
+            imported["portfolio"] += int(result["items"])
+        elif kind == "exam":
+            questions = [
+                ExamQuestionIn(
+                    id=q.get("id"),
+                    ce=q.get("ce"),
+                    q=q.get("q"),
+                    options=q.get("options") or [],
+                    answer=q.get("answer"),
+                    type=q.get("type") or "choice",
+                    feedback=q.get("feedback") or "",
+                )
+                for q in document.get("questions") or []
+            ]
+            result = _load_exam_bank(
+                db,
+                module_id,
+                lr.id,
+                ExamBankIn(questions=questions, source="private-bundle"),
+            )
+            imported["exam"] += int(result["questions"])
+        elif kind == "recovery":
+            items = [
+                RecoveryQuestionIn(
+                    id=q.get("id"),
+                    ce=q.get("ce"),
+                    kind=q.get("kind"),
+                    prompt=q.get("prompt"),
+                    options=q.get("options") or [],
+                    answer=q.get("answer"),
+                    feedback=q.get("feedback") or "",
+                    pairs=q.get("pairs") or [],
+                )
+                for q in document.get("items") or []
+            ]
+            result = _load_recovery_bank(
+                db,
+                module_id,
+                lr.id,
+                RecoveryBankIn(items=items, source="private-bundle"),
+            )
+            imported["recovery"] += int(result["items"])
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Tipo de banco privado no reconocido: {kind or '(vacío)'}",
+            )
+
+    defaults = dict((module.metadata_json or {}).get("evaluation_defaults") or {})
+    exam_min = int(defaults.get("exam_questions_per_ce", 3))
+    recovery_min = int(defaults.get("recovery_items_per_ce", 2))
+    coverage = {
+        lr.code: _validate_bank_coverage(
+            db,
+            lr,
+            exam_min_per_ce=exam_min,
+            recovery_min_per_ce=recovery_min,
+        )
+        for lr in touched.values()
+    }
+    db.commit()
+    return {
+        "module_id": module_id,
+        "documents": len(documents),
+        "imported": imported,
+        "coverage": coverage,
+    }
+
+
+@router.post("/modules/{module_id}/private-bank-bundle")
+async def teacher_private_bank_bundle(
+    module_id: int,
+    file: UploadFile = File(...),
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    _module_editor(db, module_id, int(session["sub"]))
+    documents = await _read_private_bank_bundle(file)
+    return _import_private_documents(db, module_id, documents)
+
+
+@router.post(
+    "/admin/modules/{module_id}/private-bank-bundle",
+    dependencies=[Depends(require_admin)],
+)
+async def admin_private_bank_bundle(
+    module_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> dict:
+    documents = await _read_private_bank_bundle(file)
+    return _import_private_documents(db, module_id, documents)
 
 
 @router.put("/modules/{module_id}/private-keys")
