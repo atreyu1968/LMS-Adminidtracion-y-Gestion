@@ -1,0 +1,15 @@
+{
+  "slug": "nominasol-2026-guided",
+  "code": "NOMINASOL-2026",
+  "title": "NOMINASOL 2026 · Gestión anual guiada de Recursos Humanos",
+  "version": "2026.1",
+  "description": "Proyecto anual tutorizado para aprender TeamSystem NOMINASOL 2026 desde cero mientras se gestiona, mes a mes, la administración laboral de una empresa ficticia. El progreso se acredita mediante evidencias y la IA puede comprobar la consecución de los hitos.",
+  "educational_use_only": true,
+  "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
+  "screenshot_policy": "Solo capturas reales de la aplicación; no se admiten recreaciones de interfaz.",
+  "sources": [
+    "https://www.sdelsol.com/universidades-y-cc-ff/",
+    "https://ayudanominasol.sdelsol.com/",
+    "https://www.sdelsol.com/programa-nominas-nominasol/"
+  ]
+}
