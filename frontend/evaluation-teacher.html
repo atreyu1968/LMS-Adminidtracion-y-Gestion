@@ -83,13 +83,20 @@
 </main>
 
 <script>
-const cmid=Number(new URLSearchParams(location.search).get("course_module"));
+const pageParams=new URLSearchParams(location.search);
+const cmid=Number(pageParams.get("course_module"));
+const requestedTab=pageParams.get("tab");
 let structure=null,readiness=null,gradebook=null,configData=null,reviews=[];
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
 function json(method,body){return{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}}
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelector("#panel-"+b.dataset.tab).classList.add("active")}));
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>activateTab(b.dataset.tab)));
+function activateTab(name){
+ const button=document.querySelector('.tab[data-tab="'+name+'"]'),panel=document.querySelector("#panel-"+name);if(!button||!panel)return;
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");panel.classList.add("active");
+}
+
 
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo del grupo.</div>';return}
@@ -104,6 +111,7 @@ async function load(){
   const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
   document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
   renderAll();
+  if(requestedTab)activateTab(requestedTab);
  }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 function renderAll(){renderMetrics();renderGradebook();renderReviews();renderStructure();renderConfig();renderReadiness()}
