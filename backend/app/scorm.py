@@ -14,6 +14,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .db import get_db
+from .learning import access_decision, is_exempt
 from .models import (
     CourseModule,
     Membership,
@@ -557,6 +558,13 @@ def launch_scorm(
     if int(session.get("course_id") or 0) != course_module.course_id:
         raise HTTPException(status_code=403, detail="Group context mismatch")
     _membership(db, course_module.course_id, user_id)
+    if is_exempt(db, course_module_id, user_id, "scorm", package_id):
+        raise HTTPException(status_code=409, detail="Este SCORM está exento para el alumno")
+    scorm_access = access_decision(
+        db, course_module_id, user_id, "scorm", package_id
+    )
+    if not scorm_access["available"]:
+        raise HTTPException(status_code=403, detail=scorm_access)
 
     attached = db.scalar(
         select(ModuleScormPackage).where(
