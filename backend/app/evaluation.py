@@ -30,6 +30,8 @@ from .models import (
     Module,
     ModulePermission,
     RecoveryPlan,
+    ScormPackage,
+    ScormRegistration,
     User,
 )
 from .security import read_session, require_admin, require_teacher
