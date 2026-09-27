@@ -41,6 +41,7 @@ from app.models import (
     Membership,
     Module,
     ModulePermission,
+    RecoveryPlan,
     TeacherAISettings,
     User,
 )
@@ -1650,3 +1651,193 @@ def test_evaluation_uses_personal_ai_without_sending_student_identity(monkeypatc
         assert "Nombre que no debe salir" not in serialized
         assert "privacy-student@example.test" not in serialized
         assert str(student_id) not in serialized
+
+
+def test_exam_combines_40_60_and_creates_recovery_without_exposing_answers():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("exam-flow")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            student = User(display_name="Alumno examen", email="exam-student@example.test")
+            db.add_all([course_module, student])
+            db.flush()
+            db.add(
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=[],
+                    active=True,
+                )
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA examen",
+                position=1,
+                active=True,
+            )
+            db.add(lr)
+            db.flush()
+            criterion = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE examen",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(criterion)
+            db.flush()
+            portfolio_item = AssessmentItem(
+                criterion_id=criterion.id,
+                instrument="portfolio",
+                item_key="PORT-1",
+                item_type="choice",
+                prompt="Actividad de Portafolio",
+                options_json=["A", "B"],
+                public_hash="d" * 64,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            db.add(portfolio_item)
+            db.flush()
+            db.add(
+                AssessmentKey(
+                    item_id=portfolio_item.id,
+                    answer_json={"value": "B"},
+                    public_hash=portfolio_item.public_hash,
+                    source="test",
+                    active=True,
+                )
+            )
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(student)
+            db.refresh(lr)
+            db.refresh(portfolio_item)
+            course_module_id = course_module.id
+            student_id = student.id
+            lr_id = lr.id
+            portfolio_item_id = portfolio_item.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        cfg = client.put(
+            f"/api/evaluation/course-modules/{course_module_id}/config",
+            json={
+                "portfolio_weight": 40,
+                "exam_weight": 60,
+                "pass_score": 50,
+                "ce_pass_score": 50,
+                "ce_pass_percent": 80,
+                "exam_enabled": True,
+                "exam_questions_per_ce": 1,
+                "exam_minutes": 45,
+                "exam_max_attempts": 1,
+                "exam_integrity_enabled": True,
+                "exam_fullscreen_required": True,
+                "exam_incident_limit": 3,
+                "exam_incident_policy": "submit",
+            },
+        )
+        assert cfg.status_code == 200, cfg.text
+
+        bank = client.put(
+            f"/api/evaluation/modules/{module_id}/learning-results/{lr_id}/exam-bank",
+            json={
+                "source": "test-private-bank",
+                "questions": [
+                    {
+                        "id": "EX-1",
+                        "ce": "1.a",
+                        "q": "¿Cuál es la respuesta correcta?",
+                        "options": ["Incorrecta", "Correcta"],
+                        "answer": 1,
+                        "type": "choice",
+                    }
+                ],
+            },
+        )
+        assert bank.status_code == 200, bank.text
+        assert bank.json()["questions"] == 1
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_id, course_id, role="student"))
+        pstart = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/items/{portfolio_item_id}/attempts",
+            json={"metadata": {}},
+        )
+        assert pstart.status_code == 200
+        psubmit = client.post(
+            f"/api/evaluation/attempts/{pstart.json()['attempt_id']}/submit",
+            json={"response": "B", "metadata": {}},
+        )
+        assert psubmit.status_code == 200
+        assert psubmit.json()["score"] == 100.0
+        assert psubmit.json()["progress"]["status"] == "exam-pending"
+
+        exam = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/learning-results/{lr_id}/exam/start"
+        )
+        assert exam.status_code == 200, exam.text
+        exam_payload = exam.json()
+        assert exam_payload["resumed"] is False
+        assert len(exam_payload["questions"]) == 1
+        serialized_public = __import__("json").dumps(exam_payload, ensure_ascii=False)
+        assert '"correct"' not in serialized_public
+        assert exam_payload["config"]["exam_fullscreen_required"] is True
+
+        event = client.post(
+            f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/events",
+            json={"event": "fullscreen-exit", "detail": {"reason": "test"}},
+        )
+        assert event.status_code == 200
+        assert event.json()["incidents"] == 1
+        assert event.json()["force_submit"] is False
+
+        question = exam_payload["questions"][0]
+        wrong_answer = 0
+        saved = client.put(
+            f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/draft",
+            json={"answers": {str(question["id"]): wrong_answer}},
+        )
+        assert saved.status_code == 200
+
+        submitted = client.post(
+            f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/submit",
+            json={
+                "answers": {str(question["id"]): wrong_answer},
+                "timeout": False,
+            },
+        )
+        assert submitted.status_code == 200, submitted.text
+        assert submitted.json()["score"] == 0.0
+        progress = submitted.json()["progress"]
+        assert progress["portfolio_score"] == 100.0
+        assert progress["exam_score"] == 0.0
+        assert progress["final_score"] == 40.0
+        assert progress["criteria_passed"] == 0
+        assert progress["passed"] is False
+        assert progress["status"] == "recovery-required"
+        assert progress["recovery"] == ["1.a"]
+
+        with SessionLocal() as db:
+            plan = db.scalar(
+                __import__("sqlalchemy").select(RecoveryPlan).where(
+                    RecoveryPlan.course_module_id == course_module_id,
+                    RecoveryPlan.user_id == student_id,
+                    RecoveryPlan.learning_result_id == lr_id,
+                )
+            )
+            assert plan is not None
+            assert plan.criteria_json == ["1.a"]
+            assert plan.status == "pending"
