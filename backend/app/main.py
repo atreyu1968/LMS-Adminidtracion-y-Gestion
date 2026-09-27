@@ -7,6 +7,7 @@ from .api import router as api_router
 from .ai import router as ai_router
 from .catalog import router as catalog_router
 from .dashboard import router as dashboard_router
+from .diagnostics import router as diagnostics_router
 from .evaluation import router as evaluation_router
 from .experience import router as experience_router
 from .db import init_db
@@ -50,6 +51,7 @@ app.include_router(api_router)
 app.include_router(ai_router)
 app.include_router(catalog_router)
 app.include_router(dashboard_router)
+app.include_router(diagnostics_router)
 app.include_router(evaluation_router)
 app.include_router(experience_router)
 app.include_router(lti_router)
