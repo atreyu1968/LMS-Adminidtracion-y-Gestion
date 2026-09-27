@@ -1218,7 +1218,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.4"
+        assert payload["project"]["version"] == "2026.5"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1260,6 +1260,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         )
         assert uploaded.status_code == 200, uploaded.text
         assert uploaded.json()["ai_used"] is False
+        assert len(uploaded.json()["evidence"]["sha256"]) == 64
         evidence_id = uploaded.json()["evidence"]["id"]
 
         blocked = client.post(
