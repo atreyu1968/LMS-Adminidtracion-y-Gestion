@@ -1,0 +1,500 @@
+{
+  "items": [
+    {
+      "id": "3.ap1",
+      "ce": "3.a",
+      "kind": "choice",
+      "prompt": "Una pyme contrata por primera vez personal. ¿Qué debe comprobar antes de comunicar movimientos?",
+      "options": [
+        "Enviar y revisar después",
+        "Copiar un expediente anterior",
+        "Analizar datos y fuente aplicable antes de actuar",
+        "Elegir la opción más rápida"
+      ]
+    },
+    {
+      "id": "3.ap2",
+      "ce": "3.a",
+      "kind": "tf",
+      "prompt": "Tras comunicar un movimiento a la Seguridad Social, RR. HH. debe comprobar la respuesta del sistema y conservar el justificante antes de cerrar el trámite.",
+      "options": []
+    },
+    {
+      "id": "3.ap3",
+      "ce": "3.a",
+      "kind": "multi",
+      "prompt": "Una pyme va a tramitar su primer movimiento de personal. Selecciona los datos empresariales que debe verificar.",
+      "options": [
+        "Identificación de empresa",
+        "Una captura antigua",
+        "Régimen y actividad",
+        "CCC adecuado"
+      ]
+    },
+    {
+      "id": "3.ap4",
+      "ce": "3.a",
+      "kind": "order",
+      "prompt": "Ordena la tramitación de un movimiento laboral ante la Seguridad Social desde el hecho causante hasta el justificante.",
+      "options": [
+        "Transmitir y conservar respuesta",
+        "Identificar el hecho laboral",
+        "Comprobar empresa/CCC y persona",
+        "Seleccionar trámite y fecha"
+      ]
+    },
+    {
+      "id": "3.ap5",
+      "ce": "3.a",
+      "kind": "choice",
+      "prompt": "La fecha comunicada no coincide con el inicio real. ¿Qué debe hacerse?",
+      "options": [
+        "Borrar el expediente",
+        "Ignorarlo si permite seguir",
+        "Detener, comprobar y corregir antes de continuar",
+        "Copiar datos de otra persona"
+      ]
+    },
+    {
+      "id": "3.ap6",
+      "ce": "3.a",
+      "kind": "case",
+      "prompt": "Una empresa comunica por primera vez un movimiento de personal a la Seguridad Social. Explica qué evidencias conservarías para demostrar qué se transmitió, cuándo y cuál fue la respuesta del sistema.",
+      "options": []
+    },
+    {
+      "id": "3.bp1",
+      "ce": "3.b",
+      "kind": "calculation",
+      "prompt": "Base de cotización del supuesto: 2.000 €. Tipo didáctico de contingencias comunes a cargo de la persona trabajadora: 4,70 %. Calcula la cuota (€).",
+      "options": []
+    },
+    {
+      "id": "3.bp2",
+      "ce": "3.b",
+      "kind": "tf",
+      "prompt": "Una base de cotización no debe darse por válida hasta identificar los conceptos computables, aplicar las reglas del periodo y conservar el cálculo que la justifica.",
+      "options": []
+    },
+    {
+      "id": "3.bp3",
+      "ce": "3.b",
+      "kind": "multi",
+      "prompt": "Antes de calcular una base de cotización, selecciona las comprobaciones correctas.",
+      "options": [
+        "Integrar prorratas cuando proceda",
+        "Clasificar percepciones",
+        "Usar el neto como base",
+        "Aplicar reglas y límites del periodo"
+      ]
+    },
+    {
+      "id": "3.bp4",
+      "ce": "3.b",
+      "kind": "order",
+      "prompt": "Ordena la construcción de una base de cotización desde la clasificación de percepciones hasta la verificación final.",
+      "options": [
+        "Incorporar prorratas y reglas especiales",
+        "Comprobar límites y resultado",
+        "Identificar conceptos",
+        "Determinar qué computa"
+      ]
+    },
+    {
+      "id": "3.bp5",
+      "ce": "3.b",
+      "kind": "choice",
+      "prompt": "Se copia el total devengado como base sin clasificar conceptos. ¿Qué procede?",
+      "options": [
+        "Ignorarlo si permite seguir",
+        "Borrar el expediente",
+        "Copiar datos de otra persona",
+        "Detener, comprobar y corregir antes de continuar"
+      ]
+    },
+    {
+      "id": "3.bp6",
+      "ce": "3.b",
+      "kind": "choice",
+      "prompt": "¿Qué desglose permite verificar una base de cotización?",
+      "options": [
+        "Datos de origen, decisión, fechas, documentos y justificantes",
+        "Una nota sin fecha",
+        "Solo el resultado",
+        "Nada si el sistema aceptó"
+      ]
+    },
+    {
+      "id": "3.cp1",
+      "ce": "3.c",
+      "kind": "calculation",
+      "prompt": "IT por enfermedad común en un supuesto didáctico: base reguladora diaria 60 € y 5 días cubiertos al 60 %. Calcula la prestación correspondiente a esos cinco días (€).",
+      "options": []
+    },
+    {
+      "id": "3.cp2",
+      "ce": "3.c",
+      "kind": "tf",
+      "prompt": "El cálculo de una prestación debe dejar constancia de la contingencia, el periodo, la base reguladora y la regla aplicada para poder ser revisado.",
+      "options": []
+    },
+    {
+      "id": "3.cp3",
+      "ce": "3.c",
+      "kind": "multi",
+      "prompt": "Antes de calcular una prestación económica, selecciona los elementos que deben identificarse.",
+      "options": [
+        "Contingencia",
+        "Periodo",
+        "Requisitos aplicables",
+        "Preferencia personal"
+      ]
+    },
+    {
+      "id": "3.cp4",
+      "ce": "3.c",
+      "kind": "order",
+      "prompt": "Ordena el cálculo profesional de una prestación desde la contingencia hasta el resultado documentado.",
+      "options": [
+        "Comprobar requisitos y periodo",
+        "Documentar resultado",
+        "Determinar base y regla de cálculo",
+        "Identificar contingencia"
+      ]
+    },
+    {
+      "id": "3.cp5",
+      "ce": "3.c",
+      "kind": "choice",
+      "prompt": "Se usa la regla de cálculo de una contingencia diferente. ¿Qué debe hacerse?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Borrar el expediente",
+        "Copiar datos de otra persona",
+        "Ignorarlo si permite seguir"
+      ]
+    },
+    {
+      "id": "3.cp6",
+      "ce": "3.c",
+      "kind": "choice",
+      "prompt": "¿Qué datos hacen reproducible el cálculo de una prestación?",
+      "options": [
+        "Solo el resultado",
+        "Nada si el sistema aceptó",
+        "Datos de origen, decisión, fechas, documentos y justificantes",
+        "Una nota sin fecha"
+      ]
+    },
+    {
+      "id": "3.dp1",
+      "ce": "3.d",
+      "kind": "choice",
+      "prompt": "Una persona ya afiliada empieza en otra empresa. ¿Qué debe analizar RR. HH.?",
+      "options": [
+        "Elegir la opción más rápida",
+        "Analizar datos y fuente aplicable antes de actuar",
+        "Copiar un expediente anterior",
+        "Enviar y revisar después"
+      ]
+    },
+    {
+      "id": "3.dp2",
+      "ce": "3.d",
+      "kind": "tf",
+      "prompt": "Antes de tramitar un alta, baja o variación deben comprobarse la identidad, la situación de afiliación, el CCC y la fecha real del hecho.",
+      "options": []
+    },
+    {
+      "id": "3.dp3",
+      "ce": "3.d",
+      "kind": "multi",
+      "prompt": "Una persona ya afiliada comienza a trabajar en otra empresa. Selecciona las comprobaciones necesarias antes de tramitar el alta.",
+      "options": [
+        "Empresa y CCC",
+        "Fecha real de inicio",
+        "Un número nuevo inventado",
+        "Número de Seguridad Social existente"
+      ]
+    },
+    {
+      "id": "3.dp4",
+      "ce": "3.d",
+      "kind": "order",
+      "prompt": "Ordena el alta de una persona ya afiliada desde su identificación hasta la respuesta del sistema.",
+      "options": [
+        "Preparar alta correcta",
+        "Comprobar afiliación existente",
+        "Identificar persona",
+        "Transmitir y verificar respuesta"
+      ]
+    },
+    {
+      "id": "3.dp5",
+      "ce": "3.d",
+      "kind": "choice",
+      "prompt": "El alta tiene fecha distinta del comienzo real. ¿Qué debe hacerse antes de cerrar?",
+      "options": [
+        "Copiar datos de otra persona",
+        "Detener, comprobar y corregir antes de continuar",
+        "Ignorarlo si permite seguir",
+        "Borrar el expediente"
+      ]
+    },
+    {
+      "id": "3.dp6",
+      "ce": "3.d",
+      "kind": "case",
+      "prompt": "Una persona ya afiliada comienza a trabajar en una nueva empresa. Explica qué documentación y justificantes deben quedar en el expediente para acreditar correctamente el alta.",
+      "options": []
+    },
+    {
+      "id": "3.ep1",
+      "ce": "3.e",
+      "kind": "choice",
+      "prompt": "Tras enviar un movimiento telemático, ¿cuándo puede darse por completado?",
+      "options": [
+        "Analizar datos y fuente aplicable antes de actuar",
+        "Copiar un expediente anterior",
+        "Enviar y revisar después",
+        "Elegir la opción más rápida"
+      ]
+    },
+    {
+      "id": "3.ep2",
+      "ce": "3.e",
+      "kind": "tf",
+      "prompt": "Un envío telemático no debe darse por finalizado hasta leer si fue aceptado o rechazado y archivar el justificante correspondiente.",
+      "options": []
+    },
+    {
+      "id": "3.ep3",
+      "ce": "3.e",
+      "kind": "multi",
+      "prompt": "Tras transmitir un movimiento por el canal autorizado, selecciona qué evidencias deben conservarse.",
+      "options": [
+        "Fecha/hora y justificante",
+        "Solo una captura previa",
+        "Respuesta del sistema",
+        "Datos transmitidos"
+      ]
+    },
+    {
+      "id": "3.ep4",
+      "ce": "3.e",
+      "kind": "order",
+      "prompt": "Ordena una comunicación telemática completa desde la preparación de datos hasta el archivo o la corrección.",
+      "options": [
+        "Transmitir por canal autorizado",
+        "Preparar datos",
+        "Archivar justificante o corregir",
+        "Leer aceptación o rechazo"
+      ]
+    },
+    {
+      "id": "3.ep5",
+      "ce": "3.e",
+      "kind": "choice",
+      "prompt": "El sistema devuelve rechazo y se marca la tarea como finalizada. ¿Qué falla?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Ignorarlo si permite seguir",
+        "Borrar el expediente",
+        "Copiar datos de otra persona"
+      ]
+    },
+    {
+      "id": "3.ep6",
+      "ce": "3.e",
+      "kind": "case",
+      "prompt": "Tras una comunicación telemática, el sistema devuelve una advertencia. Explica qué evidencias conservarías y qué comprobaciones harías antes de dar el trámite por finalizado.",
+      "options": []
+    },
+    {
+      "id": "3.fp1",
+      "ce": "3.f",
+      "kind": "choice",
+      "prompt": "La Inspección requiere documentación de un periodo. ¿Cuál es la primera actuación correcta?",
+      "options": [
+        "Copiar un expediente anterior",
+        "Elegir la opción más rápida",
+        "Enviar y revisar después",
+        "Analizar datos y fuente aplicable antes de actuar"
+      ]
+    },
+    {
+      "id": "3.fp2",
+      "ce": "3.f",
+      "kind": "tf",
+      "prompt": "Ante un requerimiento inspector, la empresa debe aportar documentación auténtica y trazable; no es correcto recrear documentos para ocultar incidencias.",
+      "options": []
+    },
+    {
+      "id": "3.fp3",
+      "ce": "3.f",
+      "kind": "multi",
+      "prompt": "La Inspección solicita información de un periodo concreto. Selecciona qué debe revisar RR. HH. antes de responder.",
+      "options": [
+        "Archivos recreados para ocultar errores",
+        "Contenido del requerimiento",
+        "Periodo y plazo",
+        "Documentos auténticos"
+      ]
+    },
+    {
+      "id": "3.fp4",
+      "ce": "3.f",
+      "kind": "order",
+      "prompt": "Ordena la gestión interna de un requerimiento inspector hasta su entrega y archivo.",
+      "options": [
+        "Registrar requerimiento",
+        "Verificar y preparar respuesta",
+        "Entregar en plazo y archivar",
+        "Localizar expediente"
+      ]
+    },
+    {
+      "id": "3.fp5",
+      "ce": "3.f",
+      "kind": "choice",
+      "prompt": "Falta un documento y se propone fabricarlo con fecha anterior. ¿Qué debe hacerse?",
+      "options": [
+        "Ignorarlo si permite seguir",
+        "Copiar datos de otra persona",
+        "Borrar el expediente",
+        "Detener, comprobar y corregir antes de continuar"
+      ]
+    },
+    {
+      "id": "3.fp6",
+      "ce": "3.f",
+      "kind": "case",
+      "prompt": "La Inspección solicita documentación de un periodo concreto. Explica cómo organizarías el expediente y la respuesta para que la información entregada sea auténtica, completa y trazable.",
+      "options": []
+    },
+    {
+      "id": "3.gp1",
+      "ce": "3.g",
+      "kind": "case",
+      "prompt": "Un convenio prevé aportaciones empresariales a un sistema de previsión social complementaria. Explica qué extremos comprobarías antes de informar a la plantilla y registrar las aportaciones.",
+      "options": []
+    },
+    {
+      "id": "3.gp2",
+      "ce": "3.g",
+      "kind": "tf",
+      "prompt": "La previsión social complementaria no sustituye por sí sola las obligaciones ordinarias de Seguridad Social y debe gestionarse conforme a sus reglas específicas.",
+      "options": []
+    },
+    {
+      "id": "3.gp3",
+      "ce": "3.g",
+      "kind": "multi",
+      "prompt": "Un convenio establece aportaciones a un sistema complementario. Selecciona los datos que deben comprobarse para gestionarlas.",
+      "options": [
+        "Cuantía y periodicidad",
+        "Instrumento y reglas",
+        "Personas incluidas",
+        "Eliminar cotización ordinaria"
+      ]
+    },
+    {
+      "id": "3.gp4",
+      "ce": "3.g",
+      "kind": "order",
+      "prompt": "Ordena la gestión de una aportación de previsión social complementaria desde el compromiso hasta la evidencia.",
+      "options": [
+        "Determinar colectivo",
+        "Conservar evidencia",
+        "Calcular o registrar aportación",
+        "Identificar compromiso"
+      ]
+    },
+    {
+      "id": "3.gp5",
+      "ce": "3.g",
+      "kind": "choice",
+      "prompt": "Se deja de cotizar porque existe un plan complementario. ¿Qué error hay?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Borrar el expediente",
+        "Copiar datos de otra persona",
+        "Ignorarlo si permite seguir"
+      ]
+    },
+    {
+      "id": "3.gp6",
+      "ce": "3.g",
+      "kind": "choice",
+      "prompt": "¿Qué evidencia acredita una aportación complementaria?",
+      "options": [
+        "Solo el resultado",
+        "Nada si el sistema aceptó",
+        "Datos de origen, decisión, fechas, documentos y justificantes",
+        "Una nota sin fecha"
+      ]
+    },
+    {
+      "id": "3.hp1",
+      "ce": "3.h",
+      "kind": "choice",
+      "prompt": "Al corregir un dato en una aplicación de Seguridad Social, ¿qué debe conservarse?",
+      "options": [
+        "Elegir la opción más rápida",
+        "Analizar datos y fuente aplicable antes de actuar",
+        "Copiar un expediente anterior",
+        "Enviar y revisar después"
+      ]
+    },
+    {
+      "id": "3.hp2",
+      "ce": "3.h",
+      "kind": "tf",
+      "prompt": "Una corrección en una aplicación de Seguridad Social debe conservar trazabilidad del dato anterior, el nuevo valor, quién la realizó y por qué.",
+      "options": []
+    },
+    {
+      "id": "3.hp3",
+      "ce": "3.h",
+      "kind": "multi",
+      "prompt": "Se detecta un dato erróneo en el expediente digital. Selecciona la información que debe quedar registrada al corregirlo.",
+      "options": [
+        "Usuario responsable",
+        "Fecha y motivo",
+        "Solo el valor final",
+        "Dato anterior y corregido"
+      ]
+    },
+    {
+      "id": "3.hp4",
+      "ce": "3.h",
+      "kind": "order",
+      "prompt": "Ordena la corrección trazable de un dato en una aplicación de gestión de Seguridad Social.",
+      "options": [
+        "Detectar inconsistencia",
+        "Rectificar por canal autorizado",
+        "Validar dato correcto",
+        "Conservar historial y respuesta"
+      ]
+    },
+    {
+      "id": "3.hp5",
+      "ce": "3.h",
+      "kind": "choice",
+      "prompt": "Una corrección borra completamente la operación anterior. ¿Qué problema genera?",
+      "options": [
+        "Ignorarlo si permite seguir",
+        "Detener, comprobar y corregir antes de continuar",
+        "Copiar datos de otra persona",
+        "Borrar el expediente"
+      ]
+    },
+    {
+      "id": "3.hp6",
+      "ce": "3.h",
+      "kind": "case",
+      "prompt": "Debes corregir un dato de afiliación en una aplicación de gestión. Explica qué información debe conservar el historial para que la rectificación sea auditable meses después.",
+      "options": []
+    }
+  ]
+}
