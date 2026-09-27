@@ -507,3 +507,20 @@ class TeacherAISettings(Base):
     auto_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
     default_rubric: Mapped[str] = mapped_column(Text, default="")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CourseModuleAIConfig(Base):
+    __tablename__ = "course_module_ai_configs"
+    __table_args__ = (UniqueConstraint("course_module_id", name="uq_course_module_ai_config"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_module_id: Mapped[int] = mapped_column(
+        ForeignKey("course_modules.id", ondelete="CASCADE"), index=True
+    )
+    teacher_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    allowed_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
