@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import mimetypes
+import os
 import re
 import shutil
 import tempfile
@@ -23,6 +24,7 @@ from starlette.background import BackgroundTask
 from .db import get_db
 from .models import (
     MediaAsset,
+    ModulePermission,
     ModuleScormPackage,
     ScormDraft,
     ScormPackage,
@@ -302,7 +304,10 @@ def package_history(
         db.scalars(
             select(ScormPackage)
             .where(
-                ScormPackage.lineage_root_id == root_id,
+                __import__("sqlalchemy").or_(
+                    ScormPackage.lineage_root_id == root_id,
+                    ScormPackage.id == root_id,
+                ),
                 ScormPackage.owner_user_id == package.owner_user_id,
             )
             .order_by(ScormPackage.revision_number.desc(), ScormPackage.id.desc())
@@ -574,7 +579,22 @@ def publish_draft(
             )
         )
     )
+    updated_modules = 0
+    preserved_external_modules = 0
     for old_link in active_links:
+        teacher_permission = db.scalar(
+            select(ModulePermission).where(
+                ModulePermission.module_id == old_link.module_id,
+                ModulePermission.user_id == user_id,
+                ModulePermission.permission.in_(["owner", "editor"]),
+            )
+        )
+        if not teacher_permission:
+            # A module belonging to another teacher keeps the exact revision
+            # that teacher previously selected.
+            preserved_external_modules += 1
+            continue
+
         already = db.scalar(
             select(ModuleScormPackage).where(
                 ModuleScormPackage.module_id == old_link.module_id,
@@ -600,6 +620,7 @@ def publish_draft(
                 )
             )
         old_link.active = False
+        updated_modules += 1
 
     base.is_current = False
     base.lifecycle_status = "superseded"
@@ -619,6 +640,8 @@ def publish_draft(
         "package": _package_dict(package),
         "superseded_package_id": base.id,
         "preserved_registrations": registrations,
+        "updated_modules": updated_modules,
+        "preserved_external_modules": preserved_external_modules,
         "message": (
             "Nueva revisión publicada. Los intentos existentes permanecen vinculados "
             "a la revisión anterior."
@@ -638,6 +661,7 @@ def export_package(
     if not root.is_dir():
         raise HTTPException(status_code=404, detail="Contenido SCORM no disponible")
     fd, temp_name = tempfile.mkstemp(prefix="lms-scorm-export-", suffix=".zip")
+    os.close(fd)
     Path(temp_name).unlink(missing_ok=True)
     _zip_directory(root, Path(temp_name))
     return FileResponse(
@@ -661,6 +685,7 @@ def export_draft(
     base = db.get(ScormPackage, draft.base_package_id)
     revision = int(base.revision_number or 1) + 1 if base else 1
     fd, temp_name = tempfile.mkstemp(prefix="lms-scorm-draft-", suffix=".zip")
+    os.close(fd)
     Path(temp_name).unlink(missing_ok=True)
     _zip_directory(root, Path(temp_name))
     return FileResponse(
@@ -671,7 +696,7 @@ def export_draft(
     )
 
 
-@router.get("/api/scorm-library/export-all")
+@router.get("/api/scorm-library/export/all")
 def export_all_packages(
     session: dict = Depends(require_teacher),
     db: Session = Depends(get_db),
@@ -692,6 +717,7 @@ def export_all_packages(
         raise HTTPException(status_code=404, detail="No hay SCORM para exportar")
 
     fd, outer_name = tempfile.mkstemp(prefix="lms-scorm-library-", suffix=".zip")
+    os.close(fd)
     Path(outer_name).unlink(missing_ok=True)
     inner_temps: list[Path] = []
     try:
@@ -703,6 +729,7 @@ def export_all_packages(
                 if not root.is_dir():
                     continue
                 fd2, inner_name = tempfile.mkstemp(prefix="lms-inner-", suffix=".zip")
+                os.close(fd2)
                 Path(inner_name).unlink(missing_ok=True)
                 inner = Path(inner_name)
                 inner_temps.append(inner)
