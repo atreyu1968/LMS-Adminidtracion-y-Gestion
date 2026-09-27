@@ -14,6 +14,7 @@ from .models import (
     TeacherAISettings,
 )
 from .security import require_admin
+from .schema import SCHEMA_VERSION, current_schema_version
 from .settings import get_settings
 from .version import __version__
 
@@ -43,6 +44,16 @@ def installation_readiness(db: Session = Depends(get_db)) -> dict:
         db_ok = False
         db_detail = f"Error de base de datos: {type(exc).__name__}"
     checks.append(_check("database", db_ok, db_detail))
+
+    try:
+        from .db import engine
+        actual_schema = current_schema_version(engine)
+        schema_ok = actual_schema == SCHEMA_VERSION
+        schema_detail = f"Esquema {actual_schema}/{SCHEMA_VERSION}"
+    except Exception as exc:
+        schema_ok = False
+        schema_detail = f"No se pudo comprobar el esquema: {type(exc).__name__}"
+    checks.append(_check("schema_version", schema_ok, schema_detail))
 
     storage = Path(settings.storage_root)
     try:
