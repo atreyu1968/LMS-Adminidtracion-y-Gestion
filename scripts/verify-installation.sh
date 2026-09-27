@@ -14,8 +14,11 @@ set +a
 
 BASE_LOCAL="${LMS_VERIFY_URL:-http://127.0.0.1:8080}"
 
-echo "1/5 Salud API"
-curl -fsS "${BASE_LOCAL}/api/health" | grep -q '"ok":true'
+echo "1/5 Salud API y versión"
+HEALTH="$(curl -fsS "${BASE_LOCAL}/api/health")"
+printf '%s\n' "$HEALTH" | grep -q '"ok":true'
+EXPECTED_VERSION="$(tr -d '[:space:]' < VERSION)"
+printf '%s\n' "$HEALTH" | grep -q "\"version\":\"${EXPECTED_VERSION}\""
 
 echo "2/5 JWKS LTI"
 curl -fsS "${BASE_LOCAL}/lti/jwks" | grep -q '"keys"'
