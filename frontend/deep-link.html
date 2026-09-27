@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Seleccionar contenido · LMS Administración y Gestión</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}
+    *{box-sizing:border-box}body{margin:0}.top{background:#10233f;color:#fff;padding:22px 7vw}.top h1{margin:0;font-size:1.55rem}
+    .wrap{max-width:980px;margin:32px auto;padding:0 20px}.card{background:#fff;border:1px solid #dfe6ef;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(34,55,85,.07)}
+    .grid{display:grid;gap:14px}.item{display:flex;gap:18px;align-items:flex-start;border:1px solid #e2e8f0;border-radius:14px;padding:18px}
+    .item main{flex:1}.muted{color:#64748b}.btn{border:0;border-radius:10px;background:#184f90;color:#fff;padding:11px 16px;font-weight:700;cursor:pointer}
+    .btn[disabled]{opacity:.55;cursor:wait}.error{padding:16px;border-radius:12px;background:#fff1f2;color:#9f1239}
+  </style>
+</head>
+<body>
+<header class="top"><h1>Seleccionar contenido para CAMPUS</h1></header>
+<main class="wrap"><section class="card">
+  <p class="muted">Selecciona el módulo que quieres insertar como herramienta externa en el curso de CAMPUS.</p>
+  <div id="content" class="grid"><p>Cargando módulos…</p></div>
+</section></main>
+<script>
+const requestToken=new URLSearchParams(location.search).get("request");
+const root=document.querySelector("#content");
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+async function load(){
+  if(!requestToken){root.innerHTML="<div class='error'>Solicitud Deep Linking no válida.</div>";return;}
+  const r=await fetch("/api/lti/deep-link/"+encodeURIComponent(requestToken),{credentials:"include"});
+  if(!r.ok){root.innerHTML="<div class='error'>La solicitud ha caducado o no está autorizada.</div>";return;}
+  const d=await r.json();
+  if(!d.modules.length){root.innerHTML="<div class='error'>No tienes módulos editables disponibles para insertar.</div>";return;}
+  root.innerHTML=d.modules.map(m=>`<article class="item"><main><strong>${esc(m.title)}</strong><div class="muted">${esc(m.code||"")} · versión ${esc(m.version)}</div><p>${esc(m.description||"")}</p></main><button class="btn" data-id="${m.id}">Insertar</button></article>`).join("");
+  root.querySelectorAll("button[data-id]").forEach(b=>b.addEventListener("click",()=>selectModule(b)));
+}
+async function selectModule(button){
+  button.disabled=true;
+  const r=await fetch("/api/lti/deep-link/select",{
+    method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({request_token:requestToken,module_id:Number(button.dataset.id)})
+  });
+  const text=await r.text();
+  if(!r.ok){button.disabled=false;root.insertAdjacentHTML("afterbegin","<div class='error'>No se pudo insertar el módulo.</div>");return;}
+  document.open();document.write(text);document.close();
+}
+load();
+</script>
+</body>
+</html>
