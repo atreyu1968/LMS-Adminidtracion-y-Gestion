@@ -1227,12 +1227,17 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.6"
+        assert payload["project"]["version"] == "2026.7"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
         m06 = next(m for m in payload["project"]["milestones"] if m["key"] == "M06")
         m14 = next(m for m in payload["project"]["milestones"] if m["key"] == "M14")
+        m00 = next(m for m in payload["project"]["milestones"] if m["key"] == "M00")
+        m13 = next(m for m in payload["project"]["milestones"] if m["key"] == "M13")
+        assert "49542390665361" in m00["steps"][0]["screenshot"]
+        assert "Incapacidades" in m13["steps"][0]["route"]
+        assert set(m14["steps"][0]["screenshot_by_variant"]) == {"NOV-A", "NOV-B", "NOV-C"}
         assert m05["documents"]
         assert m05["support"]
         assert payload["project"]["common_support"]
@@ -1268,7 +1273,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
                 headers=auth,
             )
             assert pinned.status_code == 200
-            assert pinned.json()["project"]["version"] == "2026.6"
+            assert pinned.json()["project"]["version"] == "2026.7"
         finally:
             snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
