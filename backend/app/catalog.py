@@ -134,7 +134,11 @@ def import_catalog_metadata(db: Session, folder: str) -> dict:
             )
         )
         if not lr:
-            lr = LearningResult(module_id=module.id, code=lr_data["code"])
+            lr = LearningResult(
+                module_id=module.id,
+                code=lr_data["code"],
+                title=lr_data.get("title") or lr_data["code"],
+            )
             db.add(lr)
             db.flush()
         lr.title = lr_data.get("title") or lr.code
@@ -166,6 +170,7 @@ def import_catalog_metadata(db: Session, folder: str) -> dict:
                 criterion = AssessmentCriterion(
                     learning_result_id=lr.id,
                     code=criterion_data["code"],
+                    title=criterion_data.get("title") or criterion_data["code"],
                 )
                 db.add(criterion)
                 db.flush()
