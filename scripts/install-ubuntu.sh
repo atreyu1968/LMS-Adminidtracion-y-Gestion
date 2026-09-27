@@ -134,6 +134,30 @@ fi
 
 bash ./scripts/verify-installation.sh
 
+INSTALL_REPORT="/var/log/lms-administracion-y-gestion-install.txt"
+{
+  echo "LMS Administración y Gestión"
+  echo "Instalación: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "Versión: $(tr -d '[:space:]' < VERSION)"
+  echo "Directorio: ${ROOT_DIR}"
+  echo "URL pública: ${LMS_PUBLIC_BASE_URL}"
+  if [[ -n "${CLOUDFLARE_TUNNEL_TOKEN:-}" ]]; then
+    echo "Cloudflare Tunnel: habilitado"
+  else
+    echo "Cloudflare Tunnel: no-configurado"
+  fi
+  if [[ $PROVISION -eq 1 ]]; then
+    echo "Catálogo aprovisionado: sí"
+  else
+    echo "Catálogo aprovisionado: no"
+  fi
+  echo "Verificación: OK"
+  echo "Health local: http://127.0.0.1:8080/api/health"
+  echo "JWKS: ${LMS_PUBLIC_BASE_URL}/lti/jwks"
+  echo "Configuración: ${ROOT_DIR}/.env"
+} > "$INSTALL_REPORT"
+chmod 600 "$INSTALL_REPORT"
+
 echo
 echo "Instalación completada."
 echo "URL pública configurada: ${LMS_PUBLIC_BASE_URL}"
@@ -141,3 +165,4 @@ if [[ -n "${CLOUDFLARE_TUNNEL_TOKEN:-}" ]]; then
   echo "Cloudflare Tunnel está habilitado. En Cloudflare, el hostname debe apuntar al servicio http://web:8080."
 fi
 echo "Conserva .env con permisos restringidos; contiene secretos."
+echo "Informe de instalación: ${INSTALL_REPORT}"
