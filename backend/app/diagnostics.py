@@ -15,6 +15,7 @@ from .models import (
 )
 from .security import require_admin
 from .settings import get_settings
+from .version import __version__
 
 
 router = APIRouter(prefix="/api/admin")
@@ -180,6 +181,7 @@ def installation_readiness(db: Session = Depends(get_db)) -> dict:
     campus_ready = code_ready and all(row["ok"] for row in external)
 
     return {
+        "version": __version__,
         "ok": code_ready,
         "code_ready": code_ready,
         "campus_ready": campus_ready,
