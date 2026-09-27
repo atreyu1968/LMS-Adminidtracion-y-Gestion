@@ -157,7 +157,7 @@ function activateTab(name){
 async function load(){
  if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo del grupo.</div>';return}
  try{
-  [structure,readiness,gradebook,configData,reviews,progressMatrix,adaptive.rules,adaptive]=await Promise.all([
+  const loaded=await Promise.all([
    api("/api/evaluation/course-modules/"+cmid+"/structure"),
    api("/api/evaluation/course-modules/"+cmid+"/readiness"),
    api("/api/evaluation/course-modules/"+cmid+"/gradebook"),
@@ -167,7 +167,8 @@ async function load(){
    api("/api/learning/course-modules/"+cmid+"/rules"),
    api("/api/learning/course-modules/"+cmid+"/exceptions")
   ]);
-  adaptive.rules=adaptive.rules||[];
+  [structure,readiness,gradebook,configData,reviews,progressMatrix]=loaded.slice(0,6);
+  adaptive={rules:loaded[6]||[],...(loaded[7]||{})};
   const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
   document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
   renderAll();
