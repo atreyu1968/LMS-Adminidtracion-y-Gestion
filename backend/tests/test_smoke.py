@@ -1166,7 +1166,8 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert (snapshot / "support.json").is_file()
         assert (snapshot / "teacher-guide.json").is_file()
         assert (snapshot / "audit-rules.json").is_file()
-        assert len(provisioned.json()["config_hashes"]) == 5
+        assert (snapshot / "master-state.json").is_file()
+        assert len(provisioned.json()["config_hashes"]) == 6
 
         with SessionLocal() as db:
             teacher = User(display_name="Docente NOMINASOL", email="nominasol-teacher@example.test")
@@ -1235,7 +1236,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.8"
+        assert payload["project"]["version"] == "2026.9"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1276,7 +1277,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
                 headers=auth,
             )
             assert pinned.status_code == 200
-            assert pinned.json()["project"]["version"] == "2026.8"
+            assert pinned.json()["project"]["version"] == "2026.9"
         finally:
             snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
@@ -1340,6 +1341,28 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
             for check in guide_by_key["M02"]["audit"]["checks"]
         )
         assert "F02-B" in guide_by_key["M05"]["audit"]["variant_checks"]
+
+        master_state = client.get(
+            f"/api/guided/registrations/{registration_id}/master-state"
+        )
+        assert master_state.status_code == 200, master_state.text
+        master_payload = master_state.json()
+        assert master_payload["teacher_only"] is True
+        assert master_payload["version"] == "2026.9"
+        assert master_payload["learner"]["name"] == "Alumno NOMINASOL"
+        assert master_payload["milestones"]["M02"]["active_workers"] == 0
+        assert master_payload["milestones"]["M03"]["active_workers"] == 8
+        assert master_payload["milestones"]["M05"]["assigned_variant"]["key"] == progress.json()[0]["variants"]["M05"]
+        assert master_payload["milestones"]["M06"]["assigned_variant"]["key"] in {"IT-A", "IT-B", "IT-C"}
+        assert master_payload["milestones"]["M14"]["assigned_variant"]["key"] in {"NOV-A", "NOV-B", "NOV-C"}
+        assert "master_state" not in payload["project"]
+        assert all(
+            "_master_state" not in milestone
+            for milestone in payload["project"]["milestones"]
+        )
+        assert "active_workers_carried_to_2027" not in __import__("json").dumps(
+            payload["project"]
+        )
 
         dossier = client.get(
             f"/api/guided/registrations/{registration_id}/dossier.zip"

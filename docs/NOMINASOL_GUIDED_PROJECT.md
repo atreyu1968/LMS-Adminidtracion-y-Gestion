@@ -162,3 +162,25 @@ El profesor dispone en Seguimiento de hitos de un botón **Expediente ZIP** para
 - un archivo LEEME con las limitaciones de uso educativo.
 
 El ZIP no contiene reglas de auditoría, claves de corrección ni el solucionario técnico oculto. Así puede entregarse al alumno sin exponer la lógica privada de evaluación.
+
+
+## Empresa maestra privada
+
+La versión 2026.9 incorpora `master-state.json`, una referencia exclusivamente docente que describe el estado que debe tener ATLÁNTICO GESTIÓN INTEGRAL, S.L. al finalizar cada hito.
+
+La empresa maestra no es una copia de seguridad inventada ni un documento visible para el alumno. Es un mapa de control que indica, entre otros aspectos:
+
+- plantilla que debe estar activa en cada momento;
+- altas y bajas que ya deberían existir;
+- incidencias que deben estar registradas;
+- periodos cerrados;
+- vigencias de cambios retributivos;
+- situaciones que no deben haber modificado meses anteriores;
+- documentos o copias que deberían haberse generado;
+- puntos concretos que el profesor debe comprobar.
+
+Cuando el alumno tiene una variante individual, el estado maestro se personaliza con el código, título y contexto de esa variante. El profesor puede abrirlo desde **Seguimiento de hitos → Estado maestro**.
+
+La IA recibe únicamente el estado maestro del hito que está auditando, como contexto privado adicional a las reglas de auditoría. Se le prohíbe reproducir la solución exacta al alumno: debe utilizarla para detectar discrepancias y orientar hacia el dato o proceso que necesita revisión.
+
+`master-state.json` se incluye en la instantánea privada e inmutable de cada revisión. No se empaqueta dentro del SCORM público, no aparece en el expediente del alumno y no se incluye en el ZIP documental.

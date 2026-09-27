@@ -610,10 +610,37 @@ async function openGuidedProgress(courseModuleId){
       return;
     }
     panel.innerHTML='<h3>Seguimiento por hitos</h3><p class="muted">La IA realiza una primera comprobación de las evidencias visuales. Los casos dudosos y los hitos críticos quedan para revisión docente.</p>'
-      +'<div class="list">'+rows.map(r=>'<div class="item"><div class="group-title"><div><strong>'+esc(r.student)+'</strong><div class="tiny muted">'+r.completed+' de '+r.total+' hitos · '+r.percentage+' %'+(Object.keys(r.variants||{}).length?' · variantes '+esc(Object.values(r.variants).join(', ')):'')+'</div></div><span class="badge">'+(r.pending_review?esc(r.pending_review+" pendientes"):"Sin revisión pendiente")+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGuidedEvidence('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Ver evidencias y evolución</button><a class="btn secondary" href="/api/guided/registrations/'+r.registration_id+'/dossier.zip">Expediente ZIP</a></div></div>').join("")+'</div>';
+      +'<div class="list">'+rows.map(r=>'<div class="item"><div class="group-title"><div><strong>'+esc(r.student)+'</strong><div class="tiny muted">'+r.completed+' de '+r.total+' hitos · '+r.percentage+' %'+(Object.keys(r.variants||{}).length?' · variantes '+esc(Object.values(r.variants).join(', ')):'')+'</div></div><span class="badge">'+(r.pending_review?esc(r.pending_review+" pendientes"):"Sin revisión pendiente")+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGuidedEvidence('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Ver evidencias y evolución</button><a class="btn secondary" href="/api/guided/registrations/'+r.registration_id+'/dossier.zip">Expediente ZIP</a><button class="btn secondary" onclick="openGuidedMasterState('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Estado maestro</button></div></div>').join("")+'</div>';
     panel.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
+async function openGuidedMasterState(registrationId,student){
+  const panel=document.querySelector("#guidedProgressPanel");
+  panel.innerHTML='<div class="notice">Cargando empresa maestra de '+esc(student)+'…</div>';
+  try{
+    const master=await api("/api/guided/registrations/"+registrationId+"/master-state");
+    const rows=Object.entries(master.milestones||{}).map(([key,state])=>{
+      const expected=(state.expected_state||[]).map(x=>'<li>'+esc(x)+'</li>').join("");
+      const variant=state.assigned_variant
+        ? '<div class="notice"><strong>Variante asignada: '+esc(state.assigned_variant.key||"")+' · '+esc(state.assigned_variant.title||"")+'</strong><br>'+esc(state.assigned_variant.note||"")+'</div>'
+        : "";
+      const extras=Object.entries(state).filter(([k])=>!["title","expected_state","teacher_check","assigned_variant"].includes(k)).map(([k,v])=>{
+        const value=typeof v==="object"?JSON.stringify(v):String(v);
+        return '<div class="tiny"><strong>'+esc(k.replace(/_/g," "))+'</strong>: '+esc(value)+'</div>';
+      }).join("");
+      return '<details class="item"><summary><strong>'+esc(key)+' · '+esc(state.title||"")+'</strong></summary>'+variant
+        +'<p><strong>Estado esperado</strong></p><ul>'+expected+'</ul>'
+        +'<p><strong>Qué debe comprobar el profesor</strong><br>'+esc(state.teacher_check||"")+'</p>'+extras+'</details>';
+    }).join("");
+    panel.innerHTML='<div class="group-title"><div><h3>Empresa maestra · '+esc(student)+'</h3><p class="muted">Referencia privada del estado correcto de la empresa. No es visible para el alumnado.</p></div><button class="btn secondary" id="closeMasterState">Cerrar</button></div>'
+      +'<div class="notice"><strong>Versión '+esc(master.version||"")+'</strong><br>'+esc(master.purpose||"")+'</div>'
+      +'<div class="list">'+rows+'</div>';
+    const close=panel.querySelector("#closeMasterState");
+    if(close)close.addEventListener("click",()=>panel.classList.add("hidden"));
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+
 async function openGuidedEvidence(registrationId,student){
   const panel=document.querySelector("#guidedProgressPanel");
   panel.innerHTML='<div class="notice">Cargando evidencias de '+esc(student)+'…</div>';
