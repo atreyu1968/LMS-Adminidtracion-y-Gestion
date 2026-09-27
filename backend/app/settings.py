@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     admin_token: str = "dev-admin-change-me"
     lti_private_key_path: str = "./storage/keys/lti-private.pem"
     storage_root: str = "./storage"
+    modules_root: str = "../modules"
     scorm_content_base_url: str = ""
     max_scorm_upload_mb: int = 512
     max_media_upload_mb: int = 2048
