@@ -1,0 +1,163 @@
+{
+  "title": "Guía docente · Proyecto anual NOMINASOL 2026",
+  "audience": "Profesorado que puede no haber utilizado previamente TeamSystem NOMINASOL",
+  "principle": "El docente no necesita anticipar todas las respuestas. El SCORM enseña el procedimiento, la IA filtra evidencias y el profesor interviene en los hitos críticos, discrepancias y decisiones que requieren juicio profesional.",
+  "before_class": [
+    "Instalar o verificar TeamSystem NOMINASOL 2026 Educativa en los equipos.",
+    "Aprovisionar el módulo NOMINASOL 2026 en el LMS y asignarlo al grupo.",
+    "Configurar, si se desea, la API personal de IA del profesor y activar el tipo evidence.",
+    "Recordar al grupo que toda la información del supuesto es ficticia y no debe enviarse a organismos externos.",
+    "Explicar que los errores no penalizan por sí mismos: deben corregirse hasta conseguir un estado válido.",
+    "Reservar la empresa tutorial para aprender la mecánica antes de tocar la empresa anual."
+  ],
+  "suggested_rhythm": {
+    "Preparación": "2-3 sesiones",
+    "Configuración inicial": "3-5 sesiones",
+    "Cada mes ordinario": "1-2 sesiones según incidencia",
+    "Mayo atrasos": "2-3 sesiones",
+    "Cierre anual": "2 sesiones y revisión final"
+  },
+  "ai_use": {
+    "purpose": "Comprobar evidencias visuales, detectar discrepancias y ofrecer una pista de corrección.",
+    "not_for": "Sustituir la revisión profesional del profesor en hitos críticos o determinar por sí sola una calificación final.",
+    "confidence": "Las validaciones de baja confianza pasan a revisión docente. El profesor puede aceptar o devolver cualquier evidencia."
+  },
+  "milestones": [
+    {
+      "key": "M00",
+      "title": "Primer contacto",
+      "teaching_goal": "Asegurarse de que el alumnado identifica la versión y las zonas básicas de la interfaz antes de introducir datos.",
+      "expected_checkpoint": "El alumno puede abrir NOMINASOL, reconocer la empresa activa y localizar Trabajadores y Nóminas.",
+      "review_focus": "No corregir por memoria de menús; pedir que el alumno señale en pantalla qué función cumple cada zona.",
+      "manual_validation": false
+    },
+    {
+      "key": "M01",
+      "title": "Empresa tutorial",
+      "teaching_goal": "Permitir errores sin riesgo. El profesor acompaña la primera creación de empresa, trabajador, nómina y copia.",
+      "expected_checkpoint": "Existe EMPRESA TUTORIAL con un trabajador, una nómina y una copia de seguridad.",
+      "review_focus": "Si alguien se atasca, volver a la operación anterior. El objetivo es dominar la mecánica, no el contenido jurídico.",
+      "manual_validation": false
+    },
+    {
+      "key": "M02",
+      "title": "Empresa definitiva",
+      "teaching_goal": "Comprobar que todos parten de la misma empresa base y ejercicio 2026.",
+      "expected_checkpoint": "ATLÁNTICO GESTIÓN INTEGRAL, S.L. está creada con centro, convenio, calendario y configuración general coherentes.",
+      "review_focus": "Un error aquí se arrastra todo el año. Revisar especialmente empresa activa, ejercicio, centro y convenio.",
+      "manual_validation": true
+    },
+    {
+      "key": "M03",
+      "title": "Plantilla y contratos",
+      "teaching_goal": "Ayudar a relacionar puesto, área/grupo/nivel, jornada y contrato. Evitar altas mecánicas sin comprensión.",
+      "expected_checkpoint": "T01-T08 figuran en la empresa y cada ficha mantiene las condiciones del expediente.",
+      "review_focus": "Revisar T06 por jornada parcial y comprobar que nadie haya utilizado datos personales reales.",
+      "manual_validation": true
+    },
+    {
+      "key": "M04",
+      "title": "Enero",
+      "teaching_goal": "Enseñar el ciclo completo de cálculo, lectura del recibo y copia de seguridad.",
+      "expected_checkpoint": "Las ocho nóminas iniciales están calculadas y enero queda archivado como estado patrón.",
+      "review_focus": "No aceptar una captura del líquido solamente. Deben verse elementos que permitan comprobar el cálculo.",
+      "manual_validation": false
+    },
+    {
+      "key": "M05",
+      "title": "Febrero",
+      "teaching_goal": "Diferenciar conceptos estructurales de variables de mes y gastos de desplazamiento.",
+      "expected_checkpoint": "La variable individual asignada y el desplazamiento aparecen solo en febrero.",
+      "review_focus": "Comprobar la variante asignada al alumno antes de comparar importes entre compañeros.",
+      "manual_validation": false
+    },
+    {
+      "key": "M06",
+      "title": "Marzo",
+      "teaching_goal": "Mostrar que una IT se registra en su origen y después repercute en nómina.",
+      "expected_checkpoint": "La IT individual asignada tiene contingencia y fechas correctas; marzo ha sido recalculado.",
+      "review_focus": "La fecha puede variar por alumno. No dar por buena una evidencia copiada de otra persona.",
+      "manual_validation": false
+    },
+    {
+      "key": "M07",
+      "title": "Abril",
+      "teaching_goal": "Combinar contratación nueva y revisión trimestral sin mezclar procesos.",
+      "expected_checkpoint": "T09 se incorpora el 08/04/2026 y el primer trimestre puede explicarse desde los acumulados.",
+      "review_focus": "Insistir en que los modelos son de práctica y nunca se presentan con datos ficticios.",
+      "manual_validation": false
+    },
+    {
+      "key": "M08",
+      "title": "Mayo",
+      "teaching_goal": "Trabajar una modificación normativa real: tablas actualizadas con efectos retroactivos.",
+      "expected_checkpoint": "Las tablas se actualizan y existe una liquidación de atrasos enero-abril sin reescribir las nóminas históricas.",
+      "review_focus": "Hito clave. Si hay importes negativos o incoherentes, revisar las cuantías actuales y las nóminas previas antes de continuar.",
+      "manual_validation": true
+    },
+    {
+      "key": "M09",
+      "title": "Junio",
+      "teaching_goal": "Conservar la historia salarial al introducir promoción y retribución en especie.",
+      "expected_checkpoint": "Los cambios nacen en junio y los meses anteriores siguen intactos.",
+      "review_focus": "Revisar vigencia del complemento y naturaleza del concepto en especie.",
+      "manual_validation": false
+    },
+    {
+      "key": "M10",
+      "title": "Julio",
+      "teaching_goal": "Comprender la lógica de devengo de la paga extra, no solo ejecutar el cálculo.",
+      "expected_checkpoint": "La paga extra se calcula con diferencias justificables entre trabajadores.",
+      "review_focus": "Comparar T02, T06 y T09; no esperar importes idénticos.",
+      "manual_validation": false
+    },
+    {
+      "key": "M11",
+      "title": "Agosto",
+      "teaching_goal": "Distinguir vacaciones, ausencia e IT y tramitar una sustitución temporal.",
+      "expected_checkpoint": "Vacaciones registradas correctamente y T10 limitado al periodo de sustitución.",
+      "review_focus": "Puede requerir dos evidencias. Mantener revisión docente si una sola captura no acredita ambos aspectos.",
+      "manual_validation": true
+    },
+    {
+      "key": "M12",
+      "title": "Septiembre",
+      "teaching_goal": "Enseñar que un cese conserva historia: baja, finiquito y archivo.",
+      "expected_checkpoint": "T09 causa baja en la fecha prevista y existe finiquito, sin eliminar la ficha.",
+      "review_focus": "Revisar fecha de baja y que el trabajador siga accesible en histórico.",
+      "manual_validation": false
+    },
+    {
+      "key": "M13",
+      "title": "Octubre",
+      "teaching_goal": "Diferenciar suspensión temporal de extinción.",
+      "expected_checkpoint": "T02 mantiene la relación laboral y la incidencia queda acotada por fechas.",
+      "review_focus": "Revisar que no se haya registrado una baja definitiva.",
+      "manual_validation": false
+    },
+    {
+      "key": "M14",
+      "title": "Noviembre",
+      "teaching_goal": "Trabajar una incidencia individual diferente entre alumnos.",
+      "expected_checkpoint": "La nómina contiene anticipo, bonus o embargo simulado según la variante asignada.",
+      "review_focus": "Antes de comparar resultados, mirar la variante del alumno en el panel docente.",
+      "manual_validation": false
+    },
+    {
+      "key": "M15",
+      "title": "Diciembre",
+      "teaching_goal": "Cerrar el último mes sin utilizarlo como cajón de sastre para errores previos.",
+      "expected_checkpoint": "Nómina ordinaria, paga extra y acumulados anuales son coherentes.",
+      "review_focus": "Si aparece un descuadre, pedir que se localice el mes de origen en lugar de ajustar diciembre manualmente.",
+      "manual_validation": false
+    },
+    {
+      "key": "M16",
+      "title": "Cierre anual",
+      "teaching_goal": "Auditar el proyecto completo, conservar la copia final y demostrar continuidad a 2027.",
+      "expected_checkpoint": "Existe copia FINAL 2026 restaurable y la misma empresa puede abrirse en 2027 conservando 2026.",
+      "review_focus": "Validación manual obligatoria. La copia de seguridad es la evidencia principal del trabajo anual.",
+      "manual_validation": true
+    }
+  ]
+}
