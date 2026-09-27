@@ -258,3 +258,120 @@ def test_scorm_upload_launch_and_runtime_persistence():
         )
         assert restored.json()["cmi"]["cmi.core.lesson_status"] == "completed"
         assert restored.json()["cmi"]["cmi.core.lesson_location"] == "pagina-3"
+
+
+def test_teacher_private_scorm_isolation_and_sharing():
+    with TestClient(app) as client:
+        teacher_a, course_a, module_a = teacher_fixture("teacher-a-library")
+        teacher_b, course_b, module_b = teacher_fixture("teacher-b-library")
+
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        upload = client.post(
+            "/api/scorm-library",
+            data={"visibility": "private", "title": "SCORM privado A"},
+            files={"file": ("private-a.zip", minimal_scorm_zip(), "application/zip")},
+        )
+        assert upload.status_code == 200, upload.text
+        package_id = upload.json()["id"]
+        assert upload.json()["owner_user_id"] == teacher_a
+        assert upload.json()["visibility"] == "private"
+
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        forbidden = client.post(
+            f"/api/modules/{module_b}/scorm-packages/{package_id}",
+            json={"position": 0, "required": True, "weight": 1, "settings": {}},
+        )
+        assert forbidden.status_code == 403
+
+        mine_b = client.get("/api/scorm-library?scope=mine")
+        assert mine_b.status_code == 200
+        assert all(item["id"] != package_id for item in mine_b.json())
+
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        shared = client.patch(
+            f"/api/scorm-library/{package_id}",
+            json={"visibility": "shared"},
+        )
+        assert shared.status_code == 200
+        assert shared.json()["visibility"] == "shared"
+
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        shared_list = client.get("/api/scorm-library?scope=shared")
+        assert shared_list.status_code == 200
+        assert any(item["id"] == package_id for item in shared_list.json())
+
+        attached = client.post(
+            f"/api/modules/{module_b}/scorm-packages/{package_id}",
+            json={"position": 1, "required": True, "weight": 1, "settings": {}},
+        )
+        assert attached.status_code == 200, attached.text
+        assert attached.json()["module_id"] == module_b
+
+
+def test_teacher_groups_are_isolated_until_owner_adds_coteacher():
+    with TestClient(app) as client:
+        teacher_a, course_a, _ = teacher_fixture("group-owner-a")
+        teacher_b, course_b, _ = teacher_fixture("group-coteacher-b")
+        teacher_c, _, _ = teacher_fixture("group-third-c")
+
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        created = client.post(
+            "/api/groups",
+            json={
+                "title": "1 GA A",
+                "label": "1GA-A",
+                "academic_year": "2026/2027",
+                "description": "Grupo local de prueba",
+                "settings": {"evaluation": "RA"},
+            },
+        )
+        assert created.status_code == 200, created.text
+        group_id = created.json()["id"]
+        assert created.json()["source_type"] == "local"
+        assert created.json()["owned"] is True
+        assert created.json()["join_code"]
+
+        roster = io.BytesIO(
+            "nombre,email,rol\nAlumno Uno,alumno1@example.test,student\nAlumno Dos,alumno2@example.test,student\n".encode()
+        )
+        imported = client.post(
+            f"/api/groups/{group_id}/members/import-csv",
+            files={"file": ("roster.csv", roster.getvalue(), "text/csv")},
+        )
+        assert imported.status_code == 200, imported.text
+        assert imported.json()["imported"] == 2
+
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        blocked = client.get(f"/api/groups/{group_id}")
+        assert blocked.status_code == 403
+
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        add_coteacher = client.post(
+            f"/api/groups/{group_id}/members",
+            json={"user_id": teacher_b, "role": "teacher"},
+        )
+        assert add_coteacher.status_code == 200, add_coteacher.text
+
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        allowed = client.get(f"/api/groups/{group_id}")
+        assert allowed.status_code == 200
+        assert allowed.json()["owned"] is False
+
+        updated = client.patch(
+            f"/api/groups/{group_id}",
+            json={"description": "Actualizado por profesor colaborador"},
+        )
+        assert updated.status_code == 200
+        assert updated.json()["description"] == "Actualizado por profesor colaborador"
+
+        cannot_add_teacher = client.post(
+            f"/api/groups/{group_id}/members",
+            json={"user_id": teacher_c, "role": "teacher"},
+        )
+        assert cannot_add_teacher.status_code == 403
+
+        activated = client.post(f"/api/groups/{group_id}/activate")
+        assert activated.status_code == 200
+        me_response = client.get("/api/me")
+        assert me_response.status_code == 200
+        assert me_response.json()["course"]["id"] == group_id
