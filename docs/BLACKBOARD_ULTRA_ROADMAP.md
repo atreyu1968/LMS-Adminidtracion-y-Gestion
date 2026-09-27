@@ -27,10 +27,10 @@ Leyenda:
 
 | ID | Área | Tarea | Estado | Criterio de verificación |
 |---|---|---|---|---|
-| BB-01 | Inicio docente | Centro global de actividad con trabajo pendiente de todos los grupos | 🟡 | API agregada + panel con revisiones, recuperación, notas CAMPUS pendientes y actividad SCORM |
+| BB-01 | Inicio docente | Centro global de actividad con trabajo pendiente de todos los grupos | 🟢 | API agregada + panel con revisiones, recuperación, notas CAMPUS pendientes y actividad SCORM |
 | BB-02 | Gradebook | Cuaderno por alumno × RA con estado, revisión y nota | 🟢 | `/evaluation-teacher.html` muestra todos los alumnos y RA |
 | BB-03 | Gradebook | Panel lateral/detalle completo de una calificación | 🔴 | Respuesta, intentos, CE, propuesta IA, feedback, historial y nota final en una sola vista |
-| BB-04 | Evaluación | Cola global “Listo para corregir” entre todos los grupos | 🟡 | El inicio docente permite entrar directamente a cada cola |
+| BB-04 | Evaluación | Cola global “Listo para corregir” entre todos los grupos | 🟢 | El inicio docente permite entrar directamente a cada cola |
 | BB-05 | CAMPUS | Deep Linking de módulo completo o RA | 🟢 | LTI Deep Linking firmado y probado |
 | BB-06 | CAMPUS | AGS por RA solo con notas definitivas | 🟢 | CI comprueba que resultados provisionales no se envían |
 | BB-07 | CAMPUS | Sincronización NRPS de participantes | 🟢 | Endpoint paginado y protegido |
@@ -112,3 +112,18 @@ Una tarea solo cambia a 🟢 cuando:
 - Cada profesor conserva su propia API de IA.
 - La IA propone o automatiza solo donde esté autorizado; no sustituye la trazabilidad ni la revisión docente.
 - Los bancos privados de respuestas no se publican en Git.
+
+
+## Avance ejecutado
+
+### BB-01 / BB-04 — Centro de actividad docente
+
+Implementado en la primera iteración:
+
+- endpoint agregado `GET /api/dashboard/teacher`;
+- métricas globales de grupos, alumnado, revisiones, recuperaciones, notas pendientes de CAMPUS y SCORM en curso;
+- lista priorizada de trabajo que necesita atención;
+- enlaces directos a la cola de revisión o al cuaderno del grupo-módulo;
+- soporte de `?tab=reviews` y `?tab=gradebook` en la pantalla de evaluación;
+- prueba automática de agregación y navegación;
+- CI verde en el commit `8bd50d683f81b5a932ebfd5b6f6dd34c8ff61dc2`.
