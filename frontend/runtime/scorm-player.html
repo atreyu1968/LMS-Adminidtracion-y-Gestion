@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Reproductor SCORM</title>
+  <style>
+    html,body,#sco{width:100%;height:100%;margin:0;border:0;overflow:hidden;background:#fff}
+  </style>
+  <script src="/runtime/scorm-bridge.js"></script>
+</head>
+<body>
+  <iframe id="sco" title="Contenido SCORM" allow="fullscreen"></iframe>
+  <script>
+    (function(){
+      var params=new URLSearchParams(location.search);
+      var launch=params.get("launch");
+      if(!launch){
+        document.body.innerHTML="<p style='font-family:sans-serif;padding:2rem'>No se ha recibido un recurso SCORM.</p>";
+        return;
+      }
+      try{
+        var u=new URL(launch,location.origin);
+        if(u.origin!==location.origin){
+          throw new Error("El SCO debe compartir origen con el reproductor.");
+        }
+        document.getElementById("sco").src=u.href;
+      }catch(e){
+        document.body.innerHTML="<p style='font-family:sans-serif;padding:2rem'>Lanzamiento SCORM no válido.</p>";
+      }
+    })();
+  </script>
+</body>
+</html>
