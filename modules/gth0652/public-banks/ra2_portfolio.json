@@ -1,0 +1,376 @@
+{
+  "items": [
+    {
+      "id": "2.ap1",
+      "ce": "2.a",
+      "kind": "choice",
+      "prompt": "Un hotel cambia de forma estable el turno fijo de recepción por turnos rotatorios. Antes de tramitarlo, ¿qué debe determinar RR. HH.?",
+      "options": [
+        "Elegir la opción que tarde menos",
+        "Analizar los datos y la fuente aplicable antes de actuar",
+        "Copiar el expediente anterior sin comprobarlo",
+        "Ejecutar el trámite y revisar después"
+      ]
+    },
+    {
+      "id": "2.ap2",
+      "ce": "2.a",
+      "kind": "tf",
+      "prompt": "Antes de comunicar una modificación de condiciones, RR. HH. debe identificar qué condición cambia, de dónde procede y qué procedimiento resulta aplicable.",
+      "options": []
+    },
+    {
+      "id": "2.ap3",
+      "ce": "2.a",
+      "kind": "multi",
+      "prompt": "Un hotel pretende sustituir el turno fijo por turnos rotatorios. Selecciona qué datos debe revisar RR. HH. antes de tramitar la modificación.",
+      "options": [
+        "Condición actual y cambio propuesto",
+        "Personas y fechas afectadas",
+        "Una carta antigua de otra empresa",
+        "Contrato y convenio aplicables"
+      ]
+    },
+    {
+      "id": "2.ap4",
+      "ce": "2.a",
+      "kind": "order",
+      "prompt": "Ordena el análisis profesional de una modificación de condiciones antes de comunicarla.",
+      "options": [
+        "Clasificar jurídicamente el cambio",
+        "Consultar norma y convenio",
+        "Reconstruir la condición vigente",
+        "Preparar y acreditar la comunicación"
+      ]
+    },
+    {
+      "id": "2.ap5",
+      "ce": "2.a",
+      "kind": "choice",
+      "prompt": "La empresa quiere aplicar mañana un cambio permanente sin haber identificado su encaje ni procedimiento. ¿Qué debe hacerse?",
+      "options": [
+        "Copiar los datos de otra persona",
+        "Detener, comprobar y corregir antes de continuar",
+        "Ignorarlo si el sistema permite seguir",
+        "Borrar el expediente"
+      ]
+    },
+    {
+      "id": "2.ap6",
+      "ce": "2.a",
+      "kind": "case",
+      "prompt": "Una empresa va a modificar de forma estable el horario de una trabajadora. Explica qué documentos y evidencias debería reunir RR. HH. para que el expediente sea auditable antes y después de comunicar la medida.",
+      "options": []
+    },
+    {
+      "id": "2.bp1",
+      "ce": "2.b",
+      "kind": "calculation",
+      "prompt": "Extinción el día 20 de un mes didáctico de 30 días. Salario mensual: 1.500 €. Calcula el salario pendiente correspondiente a los 20 días trabajados (€).",
+      "options": []
+    },
+    {
+      "id": "2.bp2",
+      "ce": "2.b",
+      "kind": "tf",
+      "prompt": "Finiquito e indemnización son conceptos distintos y la indemnización depende de la causa de extinción.",
+      "options": []
+    },
+    {
+      "id": "2.bp3",
+      "ce": "2.b",
+      "kind": "multi",
+      "prompt": "Al preparar el finiquito de una baja el día 20, selecciona los datos que deben comprobarse para calcular correctamente las vacaciones pendientes.",
+      "options": [
+        "Fecha efectiva de baja",
+        "Vacaciones generadas",
+        "Vacaciones disfrutadas",
+        "El líquido de una nómina ajena"
+      ]
+    },
+    {
+      "id": "2.bp4",
+      "ce": "2.b",
+      "kind": "order",
+      "prompt": "Ordena el cierre económico de una extinción laboral desde la fecha de baja hasta la verificación final.",
+      "options": [
+        "Calcular salario pendiente",
+        "Añadir, si procede, indemnización y verificar",
+        "Calcular pagas y vacaciones pendientes",
+        "Fijar fecha de extinción"
+      ]
+    },
+    {
+      "id": "2.bp5",
+      "ce": "2.b",
+      "kind": "choice",
+      "prompt": "El finiquito se calcula sin revisar vacaciones ya disfrutadas. ¿Cuál es el problema?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Borrar el expediente",
+        "Copiar los datos de otra persona",
+        "Ignorarlo si el sistema permite seguir"
+      ]
+    },
+    {
+      "id": "2.bp6",
+      "ce": "2.b",
+      "kind": "choice",
+      "prompt": "¿Qué desglose hace reproducible un finiquito?",
+      "options": [
+        "Solo el resultado final",
+        "Ninguna si el trámite terminó",
+        "Datos de origen, decisiones, fechas, documentos y justificantes",
+        "Una nota sin fecha"
+      ]
+    },
+    {
+      "id": "2.cp1",
+      "ce": "2.c",
+      "kind": "choice",
+      "prompt": "Una empresa asigna durante meses funciones superiores a una trabajadora. ¿Qué debe revisar primero RR. HH.?",
+      "options": [
+        "Ejecutar el trámite y revisar después",
+        "Elegir la opción que tarde menos",
+        "Copiar el expediente anterior sin comprobarlo",
+        "Analizar los datos y la fuente aplicable antes de actuar"
+      ]
+    },
+    {
+      "id": "2.cp2",
+      "ce": "2.c",
+      "kind": "tf",
+      "prompt": "El nombre interno del puesto basta para decidir si una movilidad funcional es correcta.",
+      "options": []
+    },
+    {
+      "id": "2.cp3",
+      "ce": "2.c",
+      "kind": "multi",
+      "prompt": "Una persona lleva meses realizando funciones superiores. Selecciona las comprobaciones necesarias para analizar la movilidad funcional.",
+      "options": [
+        "Clasificación del convenio",
+        "Funciones realmente encomendadas",
+        "Color del uniforme",
+        "Titulación/habilitación necesaria"
+      ]
+    },
+    {
+      "id": "2.cp4",
+      "ce": "2.c",
+      "kind": "order",
+      "prompt": "Ordena la revisión de una movilidad funcional antes de documentar la decisión.",
+      "options": [
+        "Revisar límites y efectos retributivos",
+        "Documentar la decisión",
+        "Describir funciones nuevas",
+        "Compararlas con clasificación profesional"
+      ]
+    },
+    {
+      "id": "2.cp5",
+      "ce": "2.c",
+      "kind": "choice",
+      "prompt": "Se ordena una tarea que exige habilitación que la persona no posee. ¿Qué procede?",
+      "options": [
+        "Borrar el expediente",
+        "Copiar los datos de otra persona",
+        "Ignorarlo si el sistema permite seguir",
+        "Detener, comprobar y corregir antes de continuar"
+      ]
+    },
+    {
+      "id": "2.cp6",
+      "ce": "2.c",
+      "kind": "case",
+      "prompt": "Una trabajadora lleva varios meses realizando funciones superiores. Explica qué evidencias revisarías para justificar si existe movilidad funcional y qué efectos administrativos/retributivos deben comprobarse.",
+      "options": []
+    },
+    {
+      "id": "2.dp1",
+      "ce": "2.d",
+      "kind": "choice",
+      "prompt": "Una empresa traslada de forma estable a una persona a un centro en otra isla. ¿Qué debe distinguirse antes de tramitar?",
+      "options": [
+        "Analizar los datos y la fuente aplicable antes de actuar",
+        "Ejecutar el trámite y revisar después",
+        "Copiar el expediente anterior sin comprobarlo",
+        "Elegir la opción que tarde menos"
+      ]
+    },
+    {
+      "id": "2.dp2",
+      "ce": "2.d",
+      "kind": "tf",
+      "prompt": "Un cambio de mesa dentro del mismo centro equivale siempre a movilidad geográfica.",
+      "options": []
+    },
+    {
+      "id": "2.dp3",
+      "ce": "2.d",
+      "kind": "multi",
+      "prompt": "La empresa estudia mover a una persona a otro centro. Selecciona los datos que permiten distinguir y tramitar correctamente la movilidad geográfica.",
+      "options": [
+        "Causa y fecha",
+        "Marca del ordenador",
+        "Centro de origen y destino",
+        "Duración prevista"
+      ]
+    },
+    {
+      "id": "2.dp4",
+      "ce": "2.d",
+      "kind": "order",
+      "prompt": "Ordena la tramitación administrativa de un cambio de centro con posible traslado o desplazamiento.",
+      "options": [
+        "Determinar si es traslado o desplazamiento",
+        "Identificar cambio de centro",
+        "Comunicar y conservar evidencia",
+        "Revisar procedimiento y compensaciones"
+      ]
+    },
+    {
+      "id": "2.dp5",
+      "ce": "2.d",
+      "kind": "choice",
+      "prompt": "La comunicación no indica destino ni fecha de efectos. ¿Por qué debe detenerse?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Borrar el expediente",
+        "Ignorarlo si el sistema permite seguir",
+        "Copiar los datos de otra persona"
+      ]
+    },
+    {
+      "id": "2.dp6",
+      "ce": "2.d",
+      "kind": "case",
+      "prompt": "La empresa plantea trasladar de Tenerife a Gran Canaria a una persona trabajadora. Describe los datos mínimos que documentarías para poder justificar la calificación y tramitación de la movilidad geográfica.",
+      "options": []
+    },
+    {
+      "id": "2.ep1",
+      "ce": "2.e",
+      "kind": "choice",
+      "prompt": "Una persona inicia una incapacidad temporal. ¿Cómo debe tratar RR. HH. el contrato?",
+      "options": [
+        "Elegir la opción que tarde menos",
+        "Analizar los datos y la fuente aplicable antes de actuar",
+        "Copiar el expediente anterior sin comprobarlo",
+        "Ejecutar el trámite y revisar después"
+      ]
+    },
+    {
+      "id": "2.ep2",
+      "ce": "2.e",
+      "kind": "tf",
+      "prompt": "Una suspensión implica necesariamente extinguir el contrato y firmar otro al volver.",
+      "options": []
+    },
+    {
+      "id": "2.ep3",
+      "ce": "2.e",
+      "kind": "multi",
+      "prompt": "Ante una suspensión temporal del contrato, selecciona la información que RR. HH. debe controlar durante todo el expediente.",
+      "options": [
+        "Fecha de inicio y periodo",
+        "Una baja definitiva automática",
+        "Efectos en nómina/cotización",
+        "Causa exacta de suspensión"
+      ]
+    },
+    {
+      "id": "2.ep4",
+      "ce": "2.e",
+      "kind": "order",
+      "prompt": "Ordena el ciclo administrativo de una suspensión desde su inicio hasta la reincorporación.",
+      "options": [
+        "Controlar cambios durante el periodo",
+        "Aplicar efectos administrativos y económicos",
+        "Registrar la causa y fechas",
+        "Gestionar la reincorporación"
+      ]
+    },
+    {
+      "id": "2.ep5",
+      "ce": "2.e",
+      "kind": "choice",
+      "prompt": "Se tramita como baja definitiva una suspensión temporal. ¿Qué error se está cometiendo?",
+      "options": [
+        "Copiar los datos de otra persona",
+        "Detener, comprobar y corregir antes de continuar",
+        "Ignorarlo si el sistema permite seguir",
+        "Borrar el expediente"
+      ]
+    },
+    {
+      "id": "2.ep6",
+      "ce": "2.e",
+      "kind": "case",
+      "prompt": "Una persona inicia una suspensión temporal del contrato. Explica cómo organizarías el expediente para poder seguir causa, fechas, efectos en nómina/cotización y reincorporación.",
+      "options": []
+    },
+    {
+      "id": "2.fp1",
+      "ce": "2.f",
+      "kind": "choice",
+      "prompt": "Dos personas piden un año de excedencia por causas distintas. ¿Qué debe hacer RR. HH.?",
+      "options": [
+        "Analizar los datos y la fuente aplicable antes de actuar",
+        "Elegir la opción que tarde menos",
+        "Ejecutar el trámite y revisar después",
+        "Copiar el expediente anterior sin comprobarlo"
+      ]
+    },
+    {
+      "id": "2.fp2",
+      "ce": "2.f",
+      "kind": "tf",
+      "prompt": "Todas las excedencias generan exactamente el mismo derecho de reserva de puesto.",
+      "options": []
+    },
+    {
+      "id": "2.fp3",
+      "ce": "2.f",
+      "kind": "multi",
+      "prompt": "Una persona solicita excedencia. Selecciona las comprobaciones necesarias antes de responder.",
+      "options": [
+        "Modalidad solicitada",
+        "Convenio aplicable",
+        "Requisitos y duración",
+        "Una respuesta estándar sin revisar"
+      ]
+    },
+    {
+      "id": "2.fp4",
+      "ce": "2.f",
+      "kind": "order",
+      "prompt": "Ordena la gestión de una excedencia desde la solicitud hasta el control del reingreso.",
+      "options": [
+        "Identificar modalidad y requisitos",
+        "Resolver indicando efectos y fechas",
+        "Controlar vencimiento/reincorporación",
+        "Registrar solicitud"
+      ]
+    },
+    {
+      "id": "2.fp5",
+      "ce": "2.f",
+      "kind": "choice",
+      "prompt": "La resolución promete reserva de puesto sin comprobar la modalidad. ¿Qué falla?",
+      "options": [
+        "Detener, comprobar y corregir antes de continuar",
+        "Copiar los datos de otra persona",
+        "Borrar el expediente",
+        "Ignorarlo si el sistema permite seguir"
+      ]
+    },
+    {
+      "id": "2.fp6",
+      "ce": "2.f",
+      "kind": "case",
+      "prompt": "Una persona solicita una excedencia de un año. Explica qué elementos deben constar en el expediente para resolverla y controlar correctamente su eventual reingreso.",
+      "options": []
+    }
+  ]
+}
