@@ -59,7 +59,7 @@ CAMPUS / Moodle
 
 ## Proyecto guiado NOMINASOL 2026
 
-Se ha incorporado un proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**. La versión 2026.11 enlaza al inicio del SCORM el recurso oficial «Versión educativa» de DELSOL Academy y mantiene como alternativa la página pública para centros de formación, manteniendo la empresa maestra privada, el expediente documental y la auditoría por hitos. No se plantea como un manual esquemático: el alumno recibe contexto empresarial, explicación del porqué de cada operación, recorrido visual con capturas reales de la aplicación, comprobaciones antes de entregar y evidencias de progreso.
+Se ha incorporado un proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**. La versión 2026.12 enlaza al inicio del SCORM la descarga pública de la versión educativa desde Software DELSOL Paraninfo, sin necesidad de registro, y mantiene la página de centros de formación como alternativa, manteniendo la empresa maestra privada, el expediente documental y la auditoría por hitos. No se plantea como un manual esquemático: el alumno recibe contexto empresarial, explicación del porqué de cada operación, recorrido visual con capturas reales de la aplicación, comprobaciones antes de entregar y evidencias de progreso.
 
 El flujo es:
 

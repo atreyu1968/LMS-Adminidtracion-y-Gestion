@@ -188,12 +188,14 @@ La IA recibe únicamente el estado maestro del hito que está auditando, como co
 
 ## Descarga oficial al inicio del SCORM
 
-La versión 2026.11 incorpora, antes del primer hito, un bloque visible de instalación cuyo acceso principal es el recurso oficial **Versión educativa** de **DELSOL Academy**:
+La versión 2026.12 incorpora, antes del primer hito, un bloque visible de instalación cuyo acceso principal es **Software DELSOL Paraninfo**:
 
-https://academy.sdelsol.com/course/view.php?id=8
+https://www.sdelsol.com/paraninfo/
 
-El recurso puede solicitar inicio de sesión en Academy. Como alternativa se mantiene también la página pública de TeamSystem / Software DELSOL para Universidades y centros de formación:
+Esta vía permite acceder a la versión educativa sin necesidad de registro, por lo que es la opción recomendada para el alumnado.
+
+Como alternativa institucional se mantiene la página de Universidades y centros de formación:
 
 https://www.sdelsol.com/universidades-y-cc-ff/
 
-Esta segunda vía ofrece **TeamSystem Nominasol 2026 para Windows** y permite solicitar gratuitamente la Versión Educativa. El SCORM explica las dos rutas para que el alumnado no termine instalando una versión profesional, una prueba distinta o un ejercicio anterior.
+El SCORM indica expresamente que debe utilizarse **TeamSystem Nominasol 2026 · Versión Educativa para Windows** y evita remitir al alumnado a la Academy cuando lo único que necesita es instalar la aplicación.
