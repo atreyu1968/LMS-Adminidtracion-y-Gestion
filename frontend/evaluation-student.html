@@ -14,7 +14,10 @@
 <main class="wrap">
 <div id="flash"></div>
 <div id="summary" class="metrics"></div>
+<section id="nextAction" class="card" style="margin-top:14px"></section>
+<nav id="raNav" class="card" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"></nav>
 <div id="content"></div>
+<section class="card"><details><summary><strong>Mi actividad reciente</strong></summary><div id="timeline" class="items" style="margin-top:12px"></div></details></section>
 </main>
 
 <div id="examOverlay" class="exam-overlay">
@@ -28,7 +31,7 @@
 
 <script>
 const cmid=Number(new URLSearchParams(location.search).get("course_module"));
-let structure=null,results=[],currentExam=null,examTimer=null,autosaveTimer=null,examSubmitting=false;
+let structure=null,results=[],overview=null,currentExam=null,examTimer=null,autosaveTimer=null,examSubmitting=false;
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
@@ -64,6 +67,28 @@ function render(){
      +(rr&&rr.status==="not-passed"?'<div class="notice error"><strong>RA no superado.</strong> Los CE están recuperados, pero la calificación global o los requisitos de los instrumentos no alcanzan el mínimo.</div>':'')
      +'</details></section>';
  }).join("");
+}
+function renderStudentOverview(){
+ const action=overview?.next_action;
+ const box=document.querySelector("#nextAction");
+ if(action){
+   const button=action.learning_result_id?'<button class="btn" type="button" onclick="goRa('+action.learning_result_id+')">'+esc(action.label)+'</button>':'';
+   box.innerHTML='<h2>Tu siguiente paso</h2><p>'+esc(action.label)+'</p>'+button;
+ }else{
+   box.innerHTML='<h2>Todo al día</h2><p class="muted">No tienes acciones pendientes en este módulo.</p>';
+ }
+ document.querySelector("#raNav").innerHTML=(overview?.learning_results||[]).map(r=>'<button class="btn secondary" type="button" onclick="goRa('+r.id+')">'+esc(r.code)+' · '+esc(r.state==="completed"?"✓":r.state==="in_progress"?"…":"○")+'</button>').join("");
+ document.querySelector("#timeline").innerHTML=(overview?.timeline||[]).slice(0,60).map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong><div class="tiny muted">'+esc(x.kind)+' · '+esc(x.detail||"")+' · '+esc(x.at?new Date(x.at).toLocaleString():"")+(x.score===null||x.score===undefined?"":" · "+esc(x.score)+"/100")+'</div></div>').join("")||'<div class="muted">Aún no hay actividad registrada.</div>';
+ const last=localStorage.getItem("lms:last-ra:"+cmid);
+ if(last&&document.querySelector("#ra-"+last)){setTimeout(()=>document.querySelector("#ra-"+last).scrollIntoView({behavior:"smooth",block:"start"}),80)}
+}
+function goRa(id){
+ localStorage.setItem("lms:last-ra:"+cmid,String(id));
+ document.querySelector("#ra-"+id)?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function goRelative(id,delta){
+ const ids=(structure.learning_results||[]).map(x=>x.id),index=ids.indexOf(id),next=ids[index+delta];
+ if(next)goRa(next);
 }
 function renderItem(item,ce,ra){
  let control='';
@@ -112,7 +137,7 @@ async function submitItem(itemId,type){
    const started=await api("/api/evaluation/course-modules/"+cmid+"/items/"+itemId+"/attempts",json("POST",{metadata:{surface:"student-ui"}}));
    const submitted=await api("/api/evaluation/attempts/"+started.attempt_id+"/submit",json("POST",{response:value,metadata:{surface:"student-ui"}}));
    root.innerHTML='<div class="notice '+(submitted.pending_review?"warn":"ok")+'">'+(submitted.pending_review?"Respuesta guardada. Pendiente de revisión docente.":"Puntuación: "+esc(submitted.score)+"/100")+(submitted.feedback?"<br>"+esc(submitted.feedback):"")+'</div>';
-   results=await api("/api/evaluation/course-modules/"+cmid+"/my-results");render();
+   [results,overview]=await Promise.all([api("/api/evaluation/course-modules/"+cmid+"/my-results"),api("/api/evaluation/course-modules/"+cmid+"/my-overview")]);render();
  }catch(e){root.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 
@@ -204,7 +229,7 @@ async function submitExam(timeout=false){
    alert("Examen entregado. Puntuación: "+r.score+"/100");
    currentExam=null;document.querySelector("#examOverlay").classList.remove("active");
    if(document.fullscreenElement)await document.exitFullscreen().catch(()=>{});
-   results=await api("/api/evaluation/course-modules/"+cmid+"/my-results");render();
+   [results,overview]=await Promise.all([api("/api/evaluation/course-modules/"+cmid+"/my-results"),api("/api/evaluation/course-modules/"+cmid+"/my-overview")]);render();
  }catch(e){flash(e.message,"error")}finally{examSubmitting=false}
 }
 document.querySelector("#submitExamBtn").addEventListener("click",()=>{if(confirm("¿Entregar definitivamente el examen?"))submitExam(false)});
