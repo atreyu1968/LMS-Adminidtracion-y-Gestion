@@ -26,6 +26,8 @@ import html.parser
 import json
 import pathlib
 import re
+import shutil
+import tempfile
 import sys
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -77,8 +79,19 @@ report = {
 }
 errors = []
 
+shared_secure_exam = base.parent / "assets" / "secure-exam.js"
+if not shared_secure_exam.is_file():
+    errors.append("falta el recurso compartido grh0652/assets/secure-exam.js")
+
 for unit, zip_name in names.items():
-    root = base / unit
+    source_root = base / unit
+    stage_parent = pathlib.Path(tempfile.mkdtemp(prefix=f"gth-{unit}-"))
+    root = stage_parent / unit
+    shutil.copytree(source_root, root)
+    if shared_secure_exam.is_file():
+        (root / "assets").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(shared_secure_exam, root / "assets" / "secure-exam.js")
+
     manifest = root / "imsmanifest.xml"
     launch = root / "index.html"
     if not manifest.is_file():
@@ -146,7 +159,9 @@ for unit, zip_name in names.items():
         "manifest": "OK",
         "launch": "index.html",
         "internal_assets": "OK",
+        "shared_secure_exam_embedded": True,
     })
+    shutil.rmtree(stage_parent, ignore_errors=True)
 
 if errors:
     print("\n".join(errors), file=sys.stderr)
