@@ -101,6 +101,43 @@ def minimal_scorm_zip() -> bytes:
     return out.getvalue()
 
 
+
+def minimal_scorm_2004_zip() -> bytes:
+    manifest = """<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="TEST2004"
+ xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
+ xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"
+ xmlns:imsss="http://www.imsglobal.org/xsd/imsss">
+ <metadata>
+   <schema>ADL SCORM</schema>
+   <schemaversion>2004 4th Edition</schemaversion>
+ </metadata>
+ <organizations default="ORG">
+   <organization identifier="ORG">
+     <title>SCORM 2004 de prueba</title>
+     <item identifier="I1" identifierref="R1"><title>Lección 2004</title></item>
+   </organization>
+ </organizations>
+ <resources>
+   <resource identifier="R1" type="webcontent" adlcp:scormType="sco" href="index.html">
+     <file href="index.html"/>
+   </resource>
+ </resources>
+</manifest>"""
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("imsmanifest.xml", manifest)
+        zf.writestr(
+            "index.html",
+            "<!doctype html><html><body><script>"
+            "var api=window.parent.API_1484_11;api.Initialize('');"
+            "api.SetValue('cmi.completion_status','completed');"
+            "api.SetValue('cmi.success_status','passed');"
+            "api.SetValue('cmi.score.raw','92');api.Commit('');"
+            "</script>SCORM 2004</body></html>",
+        )
+    return out.getvalue()
+
 def test_health_and_jwks():
     with TestClient(app) as client:
         health = client.get("/api/health")
@@ -386,3 +423,69 @@ def test_teacher_groups_are_isolated_until_owner_adds_coteacher():
         me_response = client.get("/api/me")
         assert me_response.status_code == 200
         assert me_response.json()["course"]["id"] == group_id
+
+
+def test_scorm_2004_detection_launch_and_runtime_persistence():
+    with TestClient(app) as client:
+        user_id, course_id, module_id = teacher_fixture("scorm-2004-module")
+        with SessionLocal() as db:
+            course_module = CourseModule(course_id=course_id, module_id=module_id)
+            db.add(course_module)
+            db.commit()
+            db.refresh(course_module)
+            course_module_id = course_module.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(user_id, course_id))
+        upload = client.post(
+            f"/api/modules/{module_id}/scorm-packages",
+            files={"file": ("sample-2004.zip", minimal_scorm_2004_zip(), "application/zip")},
+        )
+        assert upload.status_code == 200, upload.text
+        package = upload.json()
+        assert package["standard"] == "SCORM_2004"
+        assert package["title"] == "SCORM 2004 de prueba"
+
+        launch = client.post(
+            f"/api/course-modules/{course_module_id}/scorm/{package['id']}/launch"
+        )
+        assert launch.status_code == 200, launch.text
+        query = parse_qs(urlparse(launch.json()["url"]).query)
+        registration_id = int(query["lms_registration"][0])
+        token = query["lms_token"][0]
+
+        state = client.get(
+            f"/runtime-api/scorm/registrations/{registration_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert state.status_code == 200
+        assert state.json()["standard"] == "SCORM_2004"
+        assert state.json()["cmi"]["cmi.completion_status"] == "not attempted"
+        assert state.json()["cmi"]["cmi.learner_name"] == "Docente de prueba"
+
+        commit = client.put(
+            f"/runtime-api/scorm/registrations/{registration_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "cmi": {
+                    "cmi.completion_status": "completed",
+                    "cmi.success_status": "passed",
+                    "cmi.score.raw": "92",
+                    "cmi.score.min": "0",
+                    "cmi.score.max": "100",
+                    "cmi.location": "tema-2",
+                    "cmi.suspend_data": "estado-2004",
+                }
+            },
+        )
+        assert commit.status_code == 200
+        assert commit.json()["standard"] == "SCORM_2004"
+        assert commit.json()["lesson_status"] == "completed"
+        assert commit.json()["score_raw"] == 92.0
+
+        restored = client.get(
+            f"/runtime-api/scorm/registrations/{registration_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert restored.json()["cmi"]["cmi.location"] == "tema-2"
+        assert restored.json()["cmi"]["cmi.suspend_data"] == "estado-2004"
