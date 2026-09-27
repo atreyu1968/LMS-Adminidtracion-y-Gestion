@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import hashlib
 import math
+import random
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -19,6 +21,7 @@ from .models import (
     CourseModule,
     EvaluationConfig,
     EvaluationResult,
+    ExamSession,
     LearningResult,
     Membership,
     Module,
