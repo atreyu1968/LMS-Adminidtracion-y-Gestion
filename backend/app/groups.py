@@ -6,16 +6,19 @@ import secrets
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .db import get_db
 from .models import Course, CourseModule, Membership, Module, ModulePermission, User
-from .security import require_teacher
+from .security import create_session_token, read_session, require_teacher
+from .settings import get_settings
 
 
 router = APIRouter(prefix="/api/groups")
+settings = get_settings()
 
 
 def _now() -> datetime:
@@ -496,3 +499,74 @@ def _group_dict(group: Course, role: str, owned: bool) -> dict:
         "role": role,
         "owned": owned,
     }
+
+
+@router.post("/{group_id}/activate")
+def activate_group(
+    group_id: int,
+    session: dict = Depends(read_session),
+    db: Session = Depends(get_db),
+):
+    user_id = int(session["sub"])
+    group = db.get(Course, group_id)
+    if not group or not group.active:
+        raise HTTPException(status_code=404, detail="Group not found")
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.course_id == group_id,
+            Membership.user_id == user_id,
+            Membership.active.is_(True),
+        )
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not enrolled in this group")
+    token = create_session_token(user_id, group_id, membership.role)
+    response = JSONResponse(
+        {
+            "ok": True,
+            "group_id": group_id,
+            "title": group.title,
+            "role": membership.role,
+        }
+    )
+    response.set_cookie(
+        "lms_session",
+        token,
+        httponly=True,
+        secure=settings.base_url.startswith("https://"),
+        samesite="none" if settings.base_url.startswith("https://") else "lax",
+        max_age=12 * 60 * 60,
+    )
+    return response
+
+
+@router.get("/{group_id}/modules")
+def group_modules(
+    group_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    teacher_id = int(session["sub"])
+    _group_teacher(db, group_id, teacher_id)
+    rows = db.execute(
+        select(CourseModule, Module)
+        .join(Module, Module.id == CourseModule.module_id)
+        .where(
+            CourseModule.course_id == group_id,
+            CourseModule.active.is_(True),
+            Module.active.is_(True),
+        )
+        .order_by(Module.title)
+    ).all()
+    return [
+        {
+            "course_module_id": course_module.id,
+            "module_id": module.id,
+            "slug": module.slug,
+            "code": module.code,
+            "title": module.title,
+            "version": module.version,
+            "settings": course_module.settings_json or {},
+        }
+        for course_module, module in rows
+    ]
