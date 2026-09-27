@@ -3547,3 +3547,51 @@ def test_schema_migration_upgrades_legacy_tables_without_losing_rows(tmp_path):
 
     # Re-running the migration must be harmless.
     assert migrate_schema(legacy_engine) == SCHEMA_VERSION
+
+
+def test_gth_final_scorms_enter_study_mode_contract():
+    import zipfile
+
+    project_root = Path(__file__).resolve().parents[2]
+    downloads = project_root / "downloads" / "gth0652"
+    packages = [
+        downloads / "GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip",
+        downloads / "GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip",
+        downloads / "GTH_RA3_Seguridad_Social_SCORM_1.2.zip",
+        downloads / "GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip",
+    ]
+
+    for package in packages:
+        assert package.is_file(), package.name
+        with zipfile.ZipFile(package) as archive:
+            names = set(archive.namelist())
+            assert "imsmanifest.xml" in names
+            assert "index.html" in names
+            assert "assets/scorm.js" in names
+            assert "assets/secure-exam.js" in names
+
+            html = archive.read("index.html").decode("utf-8")
+            runtime = archive.read("assets/scorm.js").decode("utf-8")
+
+            assert 'id="enterBtn"' in html
+            assert "Entrar en modo de estudio" in html
+            assert "../../assets/secure-exam.js" not in html
+            assert 'src="assets/secure-exam.js"' in html
+
+            # Study mode must open even when fullscreen is rejected.
+            assert "overlay.classList.add('hidden')" in runtime
+            assert "document.body.dataset.studyMode='active'" in runtime
+            assert "const full=requestFull();showScreen(state.last||'inicio');await full" in runtime
+            assert "Modo de estudio · SCORM 1.2" in runtime
+            assert "Modo de estudio · local" in runtime
+
+            # Exam integrity guards remain conditional on examActive; study mode
+            # itself must not arm the exam lock.
+            assert "if(!examActive)return" in runtime
+            assert "document.body.classList.add('exam-mode')" in runtime
+
+    player = (project_root / "frontend" / "runtime" / "scorm-player.html").read_text(
+        encoding="utf-8"
+    )
+    assert 'allow="fullscreen"' in player
+    assert "allowfullscreen" in player
