@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./lms.db"
     public_base_url: str = "http://localhost:8080"
     session_secret: str = "dev-only-change-me"
+    ai_encryption_secret: str = ""
     admin_token: str = "dev-admin-change-me"
     lti_private_key_path: str = "./storage/keys/lti-private.pem"
     storage_root: str = "./storage"
