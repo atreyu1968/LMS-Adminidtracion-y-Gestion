@@ -40,12 +40,34 @@
     const d=await me.json();
     who.innerHTML="<strong>"+escapeHtml(d.user.display_name)+"</strong><br><span class='muted'>"+escapeHtml(d.role||"")+" · "+escapeHtml(d.course?.title||"Sin curso")+"</span>"+((d.role==="teacher"||d.role==="admin")?"<br><a class='btn' href='/teacher.html'>Abrir panel docente</a>":"");
     const m=await fetch("/api/modules",{credentials:"include"}).then(r=>r.json());
-    modules.innerHTML=m.length?m.map(x=>"<article class='module'><strong>"+escapeHtml(x.title)+"</strong><div class='muted'>"+escapeHtml(x.code||"")+" · "+escapeHtml(x.version)+"</div><p>"+escapeHtml(x.description||"")+"</p></article>").join(""):"<p class='muted'>Aún no hay módulos publicados.</p>";
+    if(!m.length){
+      modules.innerHTML="<p class='muted'>Aún no hay módulos publicados.</p>";
+    }else{
+      const cards=await Promise.all(m.map(async x=>{
+        let scorms=[];
+        if(x.course_module_id){
+          try{scorms=await fetch("/api/modules/"+x.id+"/scorm-packages",{credentials:"include"}).then(r=>r.ok?r.json():[])}catch(e){}
+        }
+        const launch=scorms.length&&x.course_module_id
+          ? "<div>"+scorms.map(p=>"<button class='btn' onclick='launchScorm("+Number(x.course_module_id)+","+Number(p.id)+",this)'>Abrir "+escapeHtml(p.title)+"</button>").join(" ")+"</div>"
+          : "";
+        return "<article class='module'><strong>"+escapeHtml(x.title)+"</strong><div class='muted'>"+escapeHtml(x.code||"")+" · "+escapeHtml(x.version)+"</div><p>"+escapeHtml(x.description||"")+"</p>"+launch+"</article>";
+      }));
+      modules.innerHTML=cards.join("");
+    }
   }catch(e){
     who.innerHTML="<div class='module error'>No hay una sesión de CAMPUS activa. Este acceso directo solo se usa para comprobar que el LMS está desplegado.</div>";
     modules.innerHTML="<p class='muted'>El catálogo se mostrará después del acceso desde CAMPUS.</p>";
   }
 })();
+async function launchScorm(courseModuleId,packageId,button){
+  const old=button.textContent;button.disabled=true;button.textContent="Abriendo…";
+  try{
+    const r=await fetch("/api/course-modules/"+courseModuleId+"/scorm/"+packageId+"/launch",{method:"POST",credentials:"include"});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||"No se pudo abrir el SCORM");
+    location.href=d.url;
+  }catch(e){alert(e.message);button.disabled=false;button.textContent=old}
+}
 function escapeHtml(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 </script>
 </body>

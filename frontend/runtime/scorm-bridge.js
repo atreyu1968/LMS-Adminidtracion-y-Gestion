@@ -154,6 +154,58 @@
     GetDiagnostic: function(code){ return this.GetErrorString(code || lastError2004); }
   };
 
+
+
+  function guidedRequest(method, path, formData) {
+    return new Promise(function(resolve, reject){
+      if (!registration || !token) {
+        reject(new Error("El proyecto guiado necesita una sesión SCORM activa."));
+        return;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, path, true);
+      xhr.setRequestHeader("Authorization", "Bearer " + token);
+      xhr.onload = function(){
+        var payload = {};
+        try { payload = xhr.responseText ? JSON.parse(xhr.responseText) : {}; }
+        catch (e) { payload = {detail: xhr.responseText || "Respuesta no válida"}; }
+        if (xhr.status >= 200 && xhr.status < 300) resolve(payload);
+        else reject(new Error(payload.detail || ("HTTP " + xhr.status)));
+      };
+      xhr.onerror = function(){ reject(new Error("No se pudo comunicar con el LMS.")); };
+      xhr.send(formData || null);
+    });
+  }
+
+  window.LMSGuided = {
+    available: function(){ return !!(registration && token); },
+    registrationId: function(){ return registration; },
+    project: function(){
+      return guidedRequest(
+        "GET",
+        "/runtime-api/guided/registrations/" + encodeURIComponent(registration) + "/project"
+      );
+    },
+    start: function(milestoneKey){
+      return guidedRequest(
+        "POST",
+        "/runtime-api/guided/registrations/" + encodeURIComponent(registration)
+          + "/milestones/" + encodeURIComponent(milestoneKey) + "/start"
+      );
+    },
+    submitEvidence: function(milestoneKey, file, notes){
+      var fd = new FormData();
+      fd.append("file", file);
+      fd.append("notes", notes || "");
+      return guidedRequest(
+        "POST",
+        "/runtime-api/guided/registrations/" + encodeURIComponent(registration)
+          + "/milestones/" + encodeURIComponent(milestoneKey) + "/evidence",
+        fd
+      );
+    }
+  };
+
   window.__LMS_SCORM_STANDARD__ = standard;
 
   try {

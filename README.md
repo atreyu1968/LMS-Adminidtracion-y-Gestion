@@ -57,6 +57,32 @@ CAMPUS / Moodle
 7. **Sin secretos en Git**: claves LTI, API de IA, bancos privados y datos personales quedan fuera del repositorio.
 8. **GTH se migra sin romperlo**: `CFGSAF` continúa siendo la versión estable de origen mientras se valida la migración.
 
+## Proyecto guiado NOMINASOL 2026
+
+Se ha incorporado un primer proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**. No se plantea como un manual esquemático: el alumno recibe contexto empresarial, explicación del porqué de cada operación, recorrido visual con capturas reales de la aplicación, comprobaciones antes de entregar y evidencias de progreso.
+
+El flujo es:
+
+    situación profesional
+    → explicación didáctica
+    → operación en NOMINASOL
+    → autocontrol
+    → evidencia
+    → comprobación IA / docente
+    → corrección si procede
+    → hito superado
+    → siguiente fase
+
+La IA utiliza la API configurada por el profesor y puede validar capturas de pantalla. Los hitos críticos o de baja confianza quedan pendientes de revisión humana. Las evidencias nunca sustituyen versiones anteriores: se conserva la evolución completa.
+
+Documentación: docs/NOMINASOL_GUIDED_PROJECT.md.
+
+Para aprovisionar el módulo oficial después de desplegar:
+
+    curl -X POST \\
+      -H "X-Admin-Token: $LMS_ADMIN_TOKEN" \\
+      "$LMS_PUBLIC_BASE_URL/api/admin/catalog/nominasol2026/provision"
+
 ## Estado
 
 ### Fase 0 — base del nuevo LMS
@@ -75,6 +101,7 @@ CAMPUS / Moodle
 - [x] Exportación individual, de borradores y de toda la biblioteca SCORM.
 - [x] Biblioteca multimedia para vídeo, audio, imágenes y PDF con streaming HTTP Range.
 - [ ] Panel docente completo (la API multi-profesor y permisos ya está implementada).
+- [x] Proyecto guiado NOMINASOL 2026 con hitos, evidencias, IA y capturas reales oficiales.
 - [x] AGS implementado para retorno de notas; pendiente validación contra Moodle/CAMPUS.
 - [x] NRPS implementado con paginación; pendiente validación contra Moodle/CAMPUS.
 - [x] Deep Linking implementado y cubierto por pruebas locales.

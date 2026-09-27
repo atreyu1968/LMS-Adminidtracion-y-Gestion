@@ -114,6 +114,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
           </form>
         </div>
       </div>
+      <div id="guidedProgressPanel" class="hidden" style="margin-top:18px"></div>
     </div>
   </section>
 
@@ -216,6 +217,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
               <label><input style="width:auto" type="checkbox" name="kind_text" value="text"> Texto</label>
               <label><input style="width:auto" type="checkbox" name="kind_case" value="case"> Caso práctico</label>
               <label><input style="width:auto" type="checkbox" name="kind_calculation" value="calculation"> Cálculo</label>
+              <label><input style="width:auto" type="checkbox" name="kind_evidence" value="evidence"> Evidencias visuales de proyectos guiados</label>
             </div>
           </div>
           <label>Rúbrica general opcional<textarea name="default_rubric" placeholder="Criterios generales que deberá respetar la IA al proponer una corrección."></textarea></label>
@@ -338,7 +340,7 @@ function renderAiSettings(){
   f.elements.api_key.value="";
   f.elements.confidence_threshold.value=Number(aiSettings.confidence_threshold??0.75);
   f.elements.default_rubric.value=aiSettings.default_rubric||"";
-  ["free","text","case","calculation"].forEach(k=>f.elements["kind_"+k].checked=(aiSettings.auto_kinds||[]).includes(k));
+  ["free","text","case","calculation","evidence"].forEach(k=>f.elements["kind_"+k].checked=(aiSettings.auto_kinds||[]).includes(k));
   const status=document.querySelector("#aiStatus");
   status.className="notice "+(aiSettings.enabled&&aiSettings.api_key_configured?"ok":"");
   status.textContent=aiSettings.api_key_configured
@@ -381,7 +383,7 @@ async function openGroup(id){
       const aiActions=a.enabled&&a.is_mine
         ? '<button class="btn secondary" onclick="disableModuleAi('+m.course_module_id+')">Desactivar mi IA</button>'
         : (!a.enabled?'<button class="btn secondary" onclick="enableModuleAi('+m.course_module_id+')">Usar mi IA</button>':'');
-      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
+      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn secondary" onclick="openGuidedProgress(${m.course_module_id})">Seguimiento de hitos</button><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
     }).join("")||'<div class="empty">Sin módulos asignados.</div>';
     document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){flash(e.message,"error")}
@@ -416,7 +418,7 @@ document.querySelector("#uploadMediaForm").addEventListener("submit",async e=>{
 });
 document.querySelector("#aiSettingsForm").addEventListener("submit",async e=>{
   e.preventDefault();const f=e.currentTarget;
-  const kinds=["free","text","case","calculation"].filter(k=>f.elements["kind_"+k].checked);
+  const kinds=["free","text","case","calculation","evidence"].filter(k=>f.elements["kind_"+k].checked);
   try{
     aiSettings=await api("/api/ai/settings",json("PUT",{
       enabled:f.elements.enabled.checked,
@@ -440,10 +442,50 @@ document.querySelector("#deleteAiBtn").addEventListener("click",async()=>{
 });
 async function enableModuleAi(courseModuleId){
   try{
-    await api("/api/ai/course-modules/"+courseModuleId,json("PUT",{enabled:true,auto_review:true,allowed_kinds:aiSettings?.auto_kinds||["free","text","case"]}));
+    await api("/api/ai/course-modules/"+courseModuleId,json("PUT",{enabled:true,auto_review:true,allowed_kinds:aiSettings?.auto_kinds||["free","text","case","evidence"]}));
     if(activeGroup)await openGroup(activeGroup.id);flash("Este módulo usará tu API personal de IA.");
   }catch(e){flash(e.message,"error")}
 }
+
+async function openGuidedProgress(courseModuleId){
+  const panel=document.querySelector("#guidedProgressPanel");
+  panel.classList.remove("hidden");
+  panel.innerHTML='<div class="notice">Cargando evolución del proyecto…</div>';
+  try{
+    const rows=await api("/api/guided/course-modules/"+courseModuleId+"/progress");
+    if(!rows.length){
+      panel.innerHTML='<div class="notice">Este módulo todavía no tiene un proyecto guiado iniciado por el alumnado.</div>';
+      return;
+    }
+    panel.innerHTML='<h3>Seguimiento por hitos</h3><p class="muted">La IA realiza una primera comprobación de las evidencias visuales. Los casos dudosos y los hitos críticos quedan para revisión docente.</p>'
+      +'<div class="list">'+rows.map(r=>'<div class="item"><div class="group-title"><div><strong>'+esc(r.student)+'</strong><div class="tiny muted">'+r.completed+' de '+r.total+' hitos · '+r.percentage+' %</div></div><span class="badge">'+(r.pending_review?esc(r.pending_review+" pendientes"):"Sin revisión pendiente")+'</span></div><div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="openGuidedEvidence('+r.registration_id+',\''+esc(r.student).replace(/'/g,"&#39;")+'\')">Ver evidencias y evolución</button></div></div>').join("")+'</div>';
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+async function openGuidedEvidence(registrationId,student){
+  const panel=document.querySelector("#guidedProgressPanel");
+  panel.innerHTML='<div class="notice">Cargando evidencias de '+esc(student)+'…</div>';
+  try{
+    const rows=await api("/api/guided/registrations/"+registrationId+"/evidence");
+    panel.innerHTML='<div class="group-title"><div><h3>'+esc(student)+'</h3><p class="muted">Historial completo: las evidencias no se sustituyen; cada corrección queda registrada como un nuevo intento.</p></div><button class="btn secondary" onclick="openGuidedProgressForActive()">Volver</button></div>'
+      +'<div class="list">'+(rows.length?rows.map(e=>'<div class="item"><strong>'+esc(e.milestone_key)+' · intento '+e.attempt_no+'</strong><div class="tiny muted">'+esc(e.filename)+' · '+esc(e.status)+'</div>'+(e.ai?.summary?'<p><strong>IA:</strong> '+esc(e.ai.summary)+'</p>':'')+(e.teacher_comment?'<p><strong>Profesor:</strong> '+esc(e.teacher_comment)+'</p>':'')+'<div class="actions"><a class="btn secondary" target="_blank" rel="noopener" href="/api/guided/evidence/'+e.id+'/file">Abrir evidencia</a><button class="btn" onclick="reviewGuidedEvidence('+e.id+',\'accept\','+registrationId+',\''+esc(student).replace(/'/g,"&#39;")+'\')">Aceptar</button><button class="btn danger" onclick="reviewGuidedEvidence('+e.id+',\'retry\','+registrationId+',\''+esc(student).replace(/'/g,"&#39;")+'\')">Devolver para corregir</button></div></div>').join(""):'<div class="empty">Todavía no hay evidencias.</div>')+'</div>';
+  }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+let lastGuidedCourseModuleId=null;
+async function openGuidedProgressForActive(){if(lastGuidedCourseModuleId)await openGuidedProgress(lastGuidedCourseModuleId)}
+const _openGuidedProgress=openGuidedProgress;
+openGuidedProgress=async function(courseModuleId){lastGuidedCourseModuleId=courseModuleId;return _openGuidedProgress(courseModuleId)}
+async function reviewGuidedEvidence(evidenceId,decision,registrationId,student){
+  const promptText=decision==="accept"?"Comentario opcional para el alumno:":"Explica qué debe corregir el alumno:";
+  const comment=prompt(promptText,"")||"";
+  if(decision==="retry"&&!comment.trim()){flash("Indica qué debe corregir el alumno.","error");return}
+  try{
+    await api("/api/guided/evidence/"+evidenceId+"/review",json("POST",{decision,comment}));
+    await openGuidedEvidence(registrationId,student);
+    flash(decision==="accept"?"Hito validado.":"Evidencia devuelta para corrección.");
+  }catch(e){flash(e.message,"error")}
+}
+
 async function disableModuleAi(courseModuleId){
   try{await api("/api/ai/course-modules/"+courseModuleId,{method:"DELETE"});if(activeGroup)await openGroup(activeGroup.id);flash("IA desactivada para este módulo.")}catch(e){flash(e.message,"error")}
 }
