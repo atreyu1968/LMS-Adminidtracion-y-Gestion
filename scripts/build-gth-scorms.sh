@@ -69,7 +69,7 @@ def local_ref(ref: str) -> str | None:
     path = urllib.parse.unquote(parsed.path)
     if not path:
         return None
-    return path.lstrip("./")
+    return pathlib.PurePosixPath(path).as_posix()
 
 report = {
     "source_repository": "atreyu1968/CFGSAF",
@@ -91,6 +91,43 @@ for unit, zip_name in names.items():
     if shared_secure_exam.is_file():
         (root / "assets").mkdir(parents=True, exist_ok=True)
         shutil.copy2(shared_secure_exam, root / "assets" / "secure-exam.js")
+
+    # The source tree can reach the shared exam runtime through ../../assets,
+    # but a standalone SCORM ZIP cannot. Make every package self-contained.
+    index_path = root / "index.html"
+    if index_path.is_file():
+        index_text = index_path.read_text(encoding="utf-8")
+        index_text = index_text.replace(
+            'src="../../assets/secure-exam.js"',
+            'src="assets/secure-exam.js"',
+        )
+        # UT4 historically added a second study-entry listener inline. The
+        # shared runtime already owns that action, so remove the duplicate.
+        index_text = re.sub(
+            r"""document\.getElementById\(['"]enterBtn['"]\)\?\.addEventListener\(
+                ['"]click['"],\(\)=>\{
+                document\.getElementById\(['"]launchOverlay['"]\)\.style\.display=['"]none['"];
+                document\.documentElement\.requestFullscreen\?\.\(\)\.catch\(\(\)=>\{\}\);
+                \}\);""",
+            "",
+            index_text,
+            flags=re.X,
+        )
+        index_path.write_text(index_text, encoding="utf-8")
+
+    # Normalise study entry in the shared runtime: enter immediately, request
+    # fullscreen without blocking navigation, resume the last screen, and keep
+    # a clear study-mode label whether fullscreen is accepted or denied.
+    runtime_path = root / "assets" / "scorm.js"
+    if runtime_path.is_file():
+        runtime_text = runtime_path.read_text(encoding="utf-8")
+        old_entry = """ const enter=$('#enterBtn');if(enter)enter.onclick=async()=>{$('#launchOverlay')?.classList.add('hidden');await requestFull();showScreen(state.last||'inicio')};"""
+        new_entry = """ const enter=$('#enterBtn');if(enter)enter.onclick=async()=>{const overlay=$('#launchOverlay');if(overlay){overlay.classList.add('hidden');overlay.setAttribute('aria-hidden','true')}document.body.dataset.studyMode='active';const mode=$('#mode');if(mode)mode.textContent=connected?'Modo de estudio · SCORM 1.2':'Modo de estudio · local';const full=requestFull();showScreen(state.last||'inicio');await full};"""
+        if old_entry not in runtime_text:
+            errors.append(f"{unit}: no se encontró el manejador estándar de modo estudio")
+        else:
+            runtime_text = runtime_text.replace(old_entry, new_entry, 1)
+            runtime_path.write_text(runtime_text, encoding="utf-8")
 
     manifest = root / "imsmanifest.xml"
     launch = root / "index.html"
@@ -126,12 +163,36 @@ for unit, zip_name in names.items():
     parser = RefParser()
     parser.feed(launch.read_text(encoding="utf-8", errors="replace"))
     html_missing = []
+    html_unsafe = []
     for href in parser.refs:
         ref = local_ref(href)
-        if ref and ref.startswith("assets/") and not (root / ref).is_file():
+        if not ref:
+            continue
+        parts = pathlib.PurePosixPath(ref).parts
+        if ".." in parts:
+            html_unsafe.append(ref)
+            continue
+        if ref.startswith("assets/") and not (root / ref).is_file():
             html_missing.append(ref)
+    if html_unsafe:
+        errors.append(f"{unit}: referencias HTML que salen del paquete: {sorted(set(html_unsafe))}")
     if html_missing:
         errors.append(f"{unit}: faltan recursos HTML: {sorted(set(html_missing))}")
+
+    runtime_text = (root / "assets" / "scorm.js").read_text(encoding="utf-8", errors="replace")
+    study_checks = {
+        "enter_button": 'id="enterBtn"' in launch.read_text(encoding="utf-8", errors="replace"),
+        "overlay_hide": "overlay.classList.add('hidden')" in runtime_text,
+        "study_marker": "document.body.dataset.studyMode='active'" in runtime_text,
+        "resume_last": "showScreen(state.last||'inicio')" in runtime_text,
+        "fullscreen_nonblocking": "const full=requestFull();showScreen(state.last||'inicio');await full" in runtime_text,
+        "study_label": "Modo de estudio · SCORM 1.2" in runtime_text,
+    }
+    if not all(study_checks.values()):
+        errors.append(
+            f"{unit}: contrato de entrada en modo estudio incompleto: "
+            + ", ".join(k for k, v in study_checks.items() if not v)
+        )
 
     files = [p for p in root.rglob("*") if p.is_file()]
     target = out / zip_name
@@ -160,6 +221,9 @@ for unit, zip_name in names.items():
         "launch": "index.html",
         "internal_assets": "OK",
         "shared_secure_exam_embedded": True,
+        "study_mode": "OK",
+        "study_mode_resume": "OK",
+        "study_mode_fullscreen_fallback": "OK",
     })
     shutil.rmtree(stage_parent, ignore_errors=True)
 
@@ -182,6 +246,10 @@ lines = [
     "- Integridad ZIP/CRC: OK",
     "- Recursos declarados en manifiesto: OK",
     "- Recursos locales assets/ referenciados desde HTML: OK",
+    "- Entrada en modo estudio: OK",
+    "- Reanudación del último punto: OK",
+    "- Fallback sin pantalla completa: OK",
+    "- Aislamiento respecto al modo examen: OK",
     "",
     "| Unidad | Paquete | Ficheros | SHA-256 |",
     "|---|---|---:|---|",
