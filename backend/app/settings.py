@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     admin_token: str = "dev-admin-change-me"
     lti_private_key_path: str = "./storage/keys/lti-private.pem"
     storage_root: str = "./storage"
+    scorm_content_base_url: str = ""
+    max_scorm_upload_mb: int = 256
     cors_origins: str = "http://localhost:8080"
 
     @property
@@ -22,6 +24,10 @@ class Settings(BaseSettings):
     @property
     def key_path(self) -> Path:
         return Path(self.lti_private_key_path)
+
+    @property
+    def content_base_url(self) -> str:
+        return self.scorm_content_base_url.rstrip("/") if self.scorm_content_base_url else self.base_url + "/scorm-content"
 
     @property
     def cors_list(self) -> list[str]:
