@@ -1937,6 +1937,9 @@ def my_learning_overview(
             for row in details.values()
             if isinstance(row, dict)
         )
+        lr_access = access_decision(
+            db, course_module_id, user_id, "learning_result", lr.id
+        )
         if result.get("passed"):
             state = "completed"
         elif completed_items or result.get("exam_score") is not None:
@@ -1950,7 +1953,9 @@ def my_learning_overview(
         )
 
         next_action = None
-        if pending_reviews:
+        if not lr_access["available"]:
+            next_action = None
+        elif pending_reviews:
             next_action = {
                 "kind": "wait_review",
                 "label": f"Esperar revisión docente ({pending_reviews})",
@@ -1979,6 +1984,8 @@ def my_learning_overview(
             "code": lr.code,
             "title": lr.title,
             "state": state,
+            "available": bool(lr_access["available"]),
+            "access_reason": lr_access.get("reason"),
             "progress_percent": progress_percent,
             "completed_items": completed_items,
             "total_items": total_items,
