@@ -210,3 +210,14 @@ class ScormRegistration(Base):
     suspend_data: Mapped[str] = mapped_column(Text, default="")
     cmi_json: Mapped[dict] = mapped_column(JSON, default=dict)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ModulePermission(Base):
+    __tablename__ = "module_permissions"
+    __table_args__ = (UniqueConstraint("module_id", "user_id", name="uq_module_permission"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    permission: Mapped[str] = mapped_column(String(40), default="editor")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
