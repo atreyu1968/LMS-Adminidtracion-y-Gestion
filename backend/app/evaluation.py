@@ -1204,6 +1204,7 @@ def evaluation_structure(
                     select(AssessmentItem)
                     .where(
                         AssessmentItem.criterion_id == criterion.id,
+                        AssessmentItem.instrument.in_(["portfolio", "practice"]),
                         AssessmentItem.active.is_(True),
                     )
                     .order_by(AssessmentItem.position, AssessmentItem.id)
