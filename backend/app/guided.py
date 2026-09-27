@@ -8,6 +8,7 @@ import re
 import zipfile
 from copy import deepcopy
 from datetime import datetime, timezone
+from html import escape as html_escape
 from pathlib import Path
 
 import httpx
@@ -257,6 +258,146 @@ def _milestone(project: dict, key: str) -> dict:
         if str(row.get("key")) == key:
             return row
     raise HTTPException(status_code=404, detail="Hito no encontrado")
+
+
+
+def _document_html(
+    *,
+    project_title: str,
+    learner_name: str,
+    milestone: dict,
+    document: dict,
+) -> str:
+    fields = document.get("fields") or {}
+    field_rows = "".join(
+        "<tr><th>" + html_escape(str(key).replace("_", " ").title()) + "</th><td>"
+        + html_escape(str(value)) + "</td></tr>"
+        for key, value in fields.items()
+    )
+    variant = milestone.get("variant") or {}
+    variant_html = ""
+    if variant:
+        variant_html = (
+            '<div class="variant"><strong>'
+            + html_escape(str(variant.get("title") or "Variante asignada"))
+            + "</strong><br>"
+            + html_escape(str(variant.get("note") or ""))
+            + "</div>"
+        )
+    return f"""<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{html_escape(str(document.get("subject") or document.get("id") or "Documento"))}</title>
+<style>
+body{{font-family:Arial,sans-serif;color:#172033;max-width:850px;margin:36px auto;line-height:1.5}}
+header{{border-bottom:3px solid #1f5f99;padding-bottom:14px;margin-bottom:24px}}
+h1{{font-size:24px;margin:.2rem 0}}h2{{font-size:18px;margin-top:26px}}
+.meta{{color:#607086;font-size:14px}}.variant{{background:#fff7d8;border:1px solid #e3cb79;border-radius:10px;padding:12px;margin:16px 0}}
+table{{width:100%;border-collapse:collapse;margin-top:14px}}th,td{{border:1px solid #dce4ed;padding:9px 10px;text-align:left;vertical-align:top}}th{{width:32%;background:#f4f7fa}}
+.warning{{margin-top:28px;padding:12px;border-left:4px solid #a63b3b;background:#fff4f1}}
+footer{{margin-top:34px;border-top:1px solid #dce4ed;padding-top:12px;color:#607086;font-size:12px}}
+@media print{{body{{margin:15mm}}}}
+</style>
+</head>
+<body>
+<header>
+<div class="meta">{html_escape(project_title)} · {html_escape(str(milestone.get("period") or ""))}</div>
+<h1>{html_escape(str(document.get("subject") or document.get("id") or "Documento"))}</h1>
+<div class="meta">{html_escape(str(document.get("type") or "Documento"))} · Origen: {html_escape(str(document.get("from") or "RRHH"))}</div>
+</header>
+{variant_html}
+<p>{html_escape(str(document.get("body") or ""))}</p>
+{("<h2>Datos de trabajo</h2><table>" + field_rows + "</table>") if field_rows else ""}
+<div class="warning"><strong>Documento de simulación educativa.</strong> Los datos pertenecen al supuesto didáctico y no deben utilizarse para trámites reales.</div>
+<footer>Alumno/a: {html_escape(learner_name)} · Documento {html_escape(str(document.get("id") or ""))}</footer>
+</body>
+</html>"""
+
+
+def _dossier_index_html(project: dict, user: User) -> str:
+    rows = []
+    for milestone in project.get("milestones") or []:
+        documents = milestone.get("documents") or []
+        if not documents:
+            continue
+        items = "".join(
+            "<li><strong>"
+            + html_escape(str(doc.get("id") or ""))
+            + "</strong> — "
+            + html_escape(str(doc.get("subject") or "Documento"))
+            + "</li>"
+            for doc in documents
+        )
+        variant = milestone.get("variant") or {}
+        variant_text = (
+            " · " + html_escape(str(variant.get("title") or ""))
+            if variant
+            else ""
+        )
+        rows.append(
+            "<section><h2>"
+            + html_escape(str(milestone.get("key") or ""))
+            + " · "
+            + html_escape(str(milestone.get("title") or ""))
+            + variant_text
+            + "</h2><ul>"
+            + items
+            + "</ul></section>"
+        )
+    return """<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Expediente anual NOMINASOL</title>
+<style>body{font-family:Arial,sans-serif;color:#172033;max-width:900px;margin:36px auto;line-height:1.5}
+header{border-bottom:3px solid #1f5f99;padding-bottom:14px}section{border-bottom:1px solid #dce4ed;padding:10px 0}h1{font-size:26px}h2{font-size:17px}</style>
+</head><body><header><h1>""" + html_escape(str(project.get("title") or "Proyecto NOMINASOL")) + """</h1>
+<p>Expediente documental personalizado de """ + html_escape(user.display_name) + """.</p>
+<p>Los documentos son exclusivamente educativos y no deben utilizarse para trámites reales.</p></header>""" + "".join(rows) + "</body></html>"
+
+
+def _dossier_zip_bytes(project: dict, scenario: dict, user: User) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("00_INDICE.html", _dossier_index_html(project, user))
+        archive.writestr(
+            "00_DATOS_EMPRESA.json",
+            json.dumps(
+                {
+                    "learner": {"id": user.id, "name": user.display_name},
+                    "scenario": scenario,
+                    "project": {
+                        "id": project.get("project_id"),
+                        "title": project.get("title"),
+                        "version": project.get("version"),
+                    },
+                },
+                ensure_ascii=False,
+                indent=2,
+                default=str,
+            ),
+        )
+        archive.writestr(
+            "LEEME.txt",
+            "EXPEDIENTE DE SIMULACIÓN EDUCATIVA\n\n"
+            "Estos documentos pertenecen al proyecto anual de NOMINASOL. "
+            "Todos los datos son ficticios y no deben emplearse en trámites reales.\n"
+            "Las variantes incluidas corresponden al alumno/a para el que se generó este ZIP.\n",
+        )
+        for milestone in project.get("milestones") or []:
+            key = _safe_name(str(milestone.get("key") or "HITO"))
+            for index, document in enumerate(milestone.get("documents") or [], start=1):
+                doc_id = _safe_name(str(document.get("id") or f"DOC{index:02d}"))
+                name = f"{key}/{index:02d}_{doc_id}.html"
+                archive.writestr(
+                    name,
+                    _document_html(
+                        project_title=str(project.get("title") or "Proyecto NOMINASOL"),
+                        learner_name=user.display_name,
+                        milestone=milestone,
+                        document=document,
+                    ),
+                )
+    return buffer.getvalue()
 
 
 def _progress_dict(row: GuidedMilestoneProgress | None) -> dict:
@@ -791,6 +932,33 @@ def teacher_progress(
             }
         )
     return result
+
+
+
+@router.get("/api/guided/registrations/{registration_id}/dossier.zip")
+def teacher_dossier_zip(
+    registration_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    from fastapi.responses import StreamingResponse
+
+    registration = db.get(ScormRegistration, registration_id)
+    if not registration:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    _teacher_registration(db, registration, int(session["sub"]))
+    user = db.get(User, registration.user_id)
+    package = db.get(ScormPackage, registration.package_id)
+    if not user or not package:
+        raise HTTPException(status_code=404, detail="No se puede reconstruir el expediente")
+    project, scenario = _personalized_project(package, user)
+    content = _dossier_zip_bytes(project, scenario, user)
+    filename = f"nominasol-2026-expediente-{_safe_name(user.display_name)}.zip"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/api/guided/registrations/{registration_id}/evidence")
