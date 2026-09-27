@@ -457,10 +457,12 @@ async function openGuidedTeacherGuide(courseModuleId){
     const before=(g.before_class||[]).map(x=>'<li>'+esc(x)+'</li>').join("");
     const rows=(g.milestones||[]).map(m=>'<details class="item"><summary><strong>'+esc(m.key)+' · '+esc(m.title)+'</strong>'+(m.manual_validation?' <span class="badge">Revisión docente</span>':'')+'</summary><p><strong>Objetivo didáctico:</strong> '+esc(m.teaching_goal||"")+'</p><p><strong>Estado esperado:</strong> '+esc(m.expected_checkpoint||"")+'</p><p><strong>Qué revisar:</strong> '+esc(m.review_focus||"")+'</p></details>').join("");
     const rhythm=Object.entries(g.suggested_rhythm||{}).map(([k,v])=>'<div class="item"><strong>'+esc(k)+'</strong><span class="muted">'+esc(v)+'</span></div>').join("");
-    panel.innerHTML='<div class="group-title"><div><h3>'+esc(g.title||"Guía docente")+'</h3><p class="muted">'+esc(g.audience||"")+'</p></div><button class="btn secondary" onclick="document.querySelector(\\'#guidedProgressPanel\\').classList.add(\\'hidden\\')">Cerrar</button></div>'
+    panel.innerHTML='<div class="group-title"><div><h3>'+esc(g.title||"Guía docente")+'</h3><p class="muted">'+esc(g.audience||"")+'</p></div><button class="btn secondary" id="closeGuidedGuide">Cerrar</button></div>'
       +'<div class="notice"><strong>Idea de trabajo</strong><br>'+esc(g.principle||"")+'</div>'
       +'<div class="grid"><div><h3>Antes de empezar con el grupo</h3><ul>'+before+'</ul></div><div><h3>Ritmo orientativo</h3><div class="list">'+rhythm+'</div></div></div>'
       +'<h3 style="margin-top:18px">Guía por hitos</h3><div class="list">'+rows+'</div>';
+    const closeBtn=panel.querySelector("#closeGuidedGuide");
+    if(closeBtn)closeBtn.addEventListener("click",()=>panel.classList.add("hidden"));
     panel.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){panel.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
