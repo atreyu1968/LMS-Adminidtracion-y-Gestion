@@ -215,6 +215,7 @@ async def _store_scorm(
             select(ScormPackage).where(
                 ScormPackage.owner_user_id == owner_user_id,
                 ScormPackage.sha256 == sha,
+                ScormPackage.is_current.is_(True),
             )
         )
         if existing:
