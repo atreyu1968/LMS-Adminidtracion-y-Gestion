@@ -221,3 +221,18 @@ class ModulePermission(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     permission: Mapped[str] = mapped_column(String(40), default="editor")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LTIDeepLinkRequest(Base):
+    __tablename__ = "lti_deep_link_requests"
+
+    token: Mapped[str] = mapped_column(String(180), primary_key=True)
+    platform_id: Mapped[int] = mapped_column(ForeignKey("lti_platforms.id", ondelete="CASCADE"), index=True)
+    deployment_id: Mapped[str] = mapped_column(String(500))
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    return_url: Mapped[str] = mapped_column(String(1500))
+    data: Mapped[str | None] = mapped_column(Text, nullable=True)
+    accepts: Mapped[list] = mapped_column(JSON, default=list)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
