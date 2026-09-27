@@ -84,6 +84,7 @@ textarea{min-height:92px;resize:vertical}
     <div id="summary" class="summary">Cargando progreso…</div>
     <button id="glossaryBtn" class="btn secondary glossary-btn" type="button">Consultar glosario</button>
     <button id="portfolioBtn" class="btn secondary portfolio-btn" type="button">Ver mi evolución</button>
+    <button id="dossierBtn" class="btn secondary portfolio-btn" type="button">Guardar expediente de trabajo</button>
     <div id="milestones" style="margin-top:12px"></div>
   </aside>
   <main>
@@ -195,6 +196,58 @@ function renderFields(fields){
     return '<div class="doc-field"><b>'+esc(k.replace(/_/g," "))+'</b>'+esc(fields[k])+'</div>';
   }).join("")+'</div>';
 }
+function findCaseDocument(milestoneKey,documentId){
+  var milestone=(data.project.milestones||[]).find(function(x){return x.key===milestoneKey;});
+  if(!milestone)return null;
+  var document=(milestone.documents||[]).find(function(x){return x.id===documentId;});
+  return document?{milestone:milestone,document:document}:null;
+}
+function caseDocumentHtml(milestone,document){
+  var fields=document.fields||{};
+  var fieldRows=Object.keys(fields).map(function(k){
+    return '<tr><th>'+esc(k.replace(/_/g," "))+'</th><td>'+esc(fields[k])+'</td></tr>';
+  }).join("");
+  var variant=milestone.variant||{};
+  var variantHtml=variant.title?'<div class="variant"><strong>'+esc((variant.key?variant.key+" · ":"")+(variant.title||""))+'</strong><br>'+esc(variant.note||"")+'</div>':"";
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+esc(document.subject||document.id||"Documento")+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;color:#172033;max-width:850px;margin:36px auto;line-height:1.5}header{border-bottom:3px solid #1f5f99;padding-bottom:14px;margin-bottom:24px}h1{font-size:24px;margin:.2rem 0}h2{font-size:18px}.meta{color:#607086;font-size:14px}.variant{background:#fff7d8;border:1px solid #e3cb79;border-radius:10px;padding:12px;margin:16px 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #dce4ed;padding:9px 10px;text-align:left;vertical-align:top}th{width:32%;background:#f4f7fa}.warning{margin-top:28px;padding:12px;border-left:4px solid #a63b3b;background:#fff4f1}footer{margin-top:34px;border-top:1px solid #dce4ed;padding-top:12px;color:#607086;font-size:12px}@media print{body{margin:15mm}.no-print{display:none}}</style></head><body>'
+    +'<button class="no-print" onclick="window.print()">Imprimir / Guardar como PDF</button>'
+    +'<header><div class="meta">'+esc(data.project.title||"Proyecto NOMINASOL")+' · '+esc(milestone.period||"")+'</div>'
+    +'<h1>'+esc(document.subject||document.id||"Documento")+'</h1><div class="meta">'+esc(document.type||"Documento")+' · Origen: '+esc(document.from||"RRHH")+'</div></header>'
+    +variantHtml+'<p>'+esc(document.body||"")+'</p>'
+    +(fieldRows?'<h2>Datos de trabajo</h2><table>'+fieldRows+'</table>':"")
+    +'<div class="warning"><strong>Documento de simulación educativa.</strong> Los datos pertenecen al supuesto didáctico y no deben utilizarse para trámites reales.</div>'
+    +'<footer>Alumno/a: '+esc(data.learner?.name||"")+' · Documento '+esc(document.id||"")+'</footer></body></html>';
+}
+function printCaseDocument(milestoneKey,documentId){
+  var found=findCaseDocument(milestoneKey,documentId);if(!found)return;
+  var w=window.open("","_blank");if(!w){alert("Permite ventanas emergentes para imprimir el documento.");return}
+  w.document.open();w.document.write(caseDocumentHtml(found.milestone,found.document));w.document.close();
+}
+function downloadCaseDocument(milestoneKey,documentId){
+  var found=findCaseDocument(milestoneKey,documentId);if(!found)return;
+  var html=caseDocumentHtml(found.milestone,found.document);
+  var blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=(documentId||"documento")+".html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},500);
+}
+function fullDossierHtml(){
+  var sections=(data.project.milestones||[]).map(function(m){
+    var docs=m.documents||[];if(!docs.length)return "";
+    return '<section><h2>'+esc(m.key)+' · '+esc(m.title)+'</h2>'
+      +(m.variant?'<p><strong>'+esc((m.variant.key?m.variant.key+" · ":"")+(m.variant.title||""))+'</strong> · '+esc(m.variant.note||"")+'</p>':"")
+      +docs.map(function(d){return '<article><h3>'+esc(d.subject||d.id||"Documento")+'</h3><p class="meta">'+esc(d.type||"Documento")+' · '+esc(d.from||"")+'</p><p>'+esc(d.body||"")+'</p>'+renderFields(d.fields||{})+'</article>';}).join("")+'</section>';
+  }).join("");
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Expediente NOMINASOL</title><style>body{font-family:Arial,sans-serif;color:#172033;max-width:900px;margin:36px auto;line-height:1.5}header{border-bottom:3px solid #1f5f99;padding-bottom:14px}section{border-bottom:1px solid #dce4ed;padding:18px 0}article{break-inside:avoid;margin:14px 0;padding:12px;background:#f7f9fb;border-radius:8px}.doc-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.doc-field{padding:8px;border:1px solid #dce4ed;background:white}.doc-field b{display:block}.meta{color:#607086;font-size:13px}@media print{body{margin:15mm}}</style></head><body>'
+    +'<header><h1>'+esc(data.project.title||"Proyecto NOMINASOL")+'</h1><p>Expediente de trabajo de '+esc(data.learner?.name||"")+'. Todos los datos son ficticios y exclusivamente educativos.</p></header>'+sections+'</body></html>';
+}
+function downloadFullDossier(){
+  var blob=new Blob([fullDossierHtml()],{type:"text/html;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="expediente-nominasol-"+String(data.learner?.id||"alumno")+".html";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},500);
+}
 function renderDocuments(m){
   var docs=m.documents||[];
   if(!docs.length)return "";
@@ -203,7 +256,9 @@ function renderDocuments(m){
     +(m.variant?'<div class="variant"><strong>'+esc(m.variant.title||"Tu variante")+'</strong><br>'+esc(m.variant.note||"")+'</div>':"")
     +'<div class="inbox">'+docs.map(function(d){
       return '<details class="doc"><summary><strong>'+esc(d.subject||d.id)+'</strong><span>'+esc(d.type||"Documento")+' · '+esc(d.from||"")+'</span></summary>'
-        +'<div class="doc-body"><p>'+esc(d.body||"")+'</p>'+renderFields(d.fields||{})+'</div></details>';
+        +'<div class="doc-body"><p>'+esc(d.body||"")+'</p>'+renderFields(d.fields||{})
+        +'<div class="actions" style="margin-top:12px"><button class="btn secondary" type="button" onclick="printCaseDocument(\''+esc(m.key)+'\',\''+esc(d.id)+'\')">Imprimir / PDF</button>'
+        +'<button class="btn secondary" type="button" onclick="downloadCaseDocument(\''+esc(m.key)+'\',\''+esc(d.id)+'\')">Guardar documento</button></div></div></details>';
     }).join("")+'</div></section>';
 }
 function renderDossier(){
@@ -439,6 +494,7 @@ async function reload(preferred){
 async function boot(){
   document.getElementById("glossaryBtn").addEventListener("click",openGlossary);
   document.getElementById("portfolioBtn").addEventListener("click",openPortfolio);
+  document.getElementById("dossierBtn").addEventListener("click",downloadFullDossier);
   document.getElementById("portfolioPrintBtn").addEventListener("click",printPortfolio);
   document.getElementById("portfolioJsonBtn").addEventListener("click",downloadPortfolioJson);
   document.getElementById("imageModalClose").addEventListener("click",function(){document.getElementById("imageModal").classList.add("hidden");});
