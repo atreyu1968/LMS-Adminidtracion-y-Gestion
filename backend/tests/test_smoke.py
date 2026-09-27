@@ -1870,3 +1870,261 @@ def test_exam_combines_40_60_and_creates_recovery_without_exposing_answers():
             assert plan is not None
             assert plan.criteria_json == ["1.a"]
             assert plan.status == "pending"
+
+
+def test_recovery_changes_ce_status_without_rewriting_original_40_60_grade():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("recovery-flow")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            course_module = CourseModule(
+                course_id=course_id,
+                module_id=module_id,
+                settings_json={},
+                active=True,
+            )
+            student = User(
+                display_name="Alumno recuperación",
+                email="recovery-student@example.test",
+            )
+            db.add_all([course_module, student])
+            db.flush()
+            db.add(
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=[],
+                    active=True,
+                )
+            )
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA1",
+                title="RA recuperación",
+                position=1,
+                active=True,
+            )
+            db.add(lr)
+            db.flush()
+            ce_a = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.a",
+                title="CE A",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            ce_b = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="1.b",
+                title="CE B",
+                position=2,
+                pass_score=50,
+                active=True,
+            )
+            db.add_all([ce_a, ce_b])
+            db.flush()
+            p_a = AssessmentItem(
+                criterion_id=ce_a.id,
+                instrument="portfolio",
+                item_key="P-A",
+                item_type="choice",
+                prompt="Portfolio A",
+                options_json=["No", "Sí"],
+                public_hash="e" * 64,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            p_b = AssessmentItem(
+                criterion_id=ce_b.id,
+                instrument="portfolio",
+                item_key="P-B",
+                item_type="choice",
+                prompt="Portfolio B",
+                options_json=["No", "Sí"],
+                public_hash="f" * 64,
+                max_attempts=2,
+                position=1,
+                active=True,
+            )
+            db.add_all([p_a, p_b])
+            db.flush()
+            db.add_all([
+                AssessmentKey(
+                    item_id=p_a.id,
+                    answer_json={"value": 1},
+                    public_hash=p_a.public_hash,
+                    source="test",
+                    active=True,
+                ),
+                AssessmentKey(
+                    item_id=p_b.id,
+                    answer_json={"value": 1},
+                    public_hash=p_b.public_hash,
+                    source="test",
+                    active=True,
+                ),
+            ])
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(student)
+            db.refresh(lr)
+            db.refresh(p_a)
+            db.refresh(p_b)
+            course_module_id = course_module.id
+            student_id = student.id
+            lr_id = lr.id
+            p_a_id = p_a.id
+            p_b_id = p_b.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        cfg = client.put(
+            f"/api/evaluation/course-modules/{course_module_id}/config",
+            json={
+                "portfolio_weight": 40,
+                "exam_weight": 60,
+                "pass_score": 50,
+                "ce_pass_score": 50,
+                "ce_pass_percent": 80,
+                "exam_enabled": True,
+                "exam_questions_per_ce": 1,
+                "exam_minutes": 45,
+                "exam_max_attempts": 1,
+                "recovery_max_attempts": 1,
+            },
+        )
+        assert cfg.status_code == 200, cfg.text
+
+        exam_bank = client.put(
+            f"/api/evaluation/modules/{module_id}/learning-results/{lr_id}/exam-bank",
+            json={
+                "questions": [
+                    {
+                        "id": "EX-A",
+                        "ce": "1.a",
+                        "q": "Pregunta A",
+                        "options": ["Incorrecta A", "Correcta A"],
+                        "answer": 1,
+                        "type": "choice",
+                    },
+                    {
+                        "id": "EX-B",
+                        "ce": "1.b",
+                        "q": "Pregunta B",
+                        "options": ["Incorrecta B", "Correcta B"],
+                        "answer": 1,
+                        "type": "choice",
+                    },
+                ]
+            },
+        )
+        assert exam_bank.status_code == 200, exam_bank.text
+
+        recovery_bank = client.put(
+            f"/api/evaluation/modules/{module_id}/learning-results/{lr_id}/recovery-bank",
+            json={
+                "items": [
+                    {
+                        "id": "REC-B",
+                        "ce": "1.b",
+                        "kind": "choice",
+                        "prompt": "Recupera el CE B",
+                        "options": ["Incorrecta", "Correcta"],
+                        "answer": 1,
+                        "feedback": "Revisa el criterio B.",
+                    }
+                ]
+            },
+        )
+        assert recovery_bank.status_code == 200, recovery_bank.text
+
+        client.cookies.clear()
+        client.cookies.set(
+            "lms_session",
+            session_cookie(student_id, course_id, role="student"),
+        )
+        for item_id in (p_a_id, p_b_id):
+            started = client.post(
+                f"/api/evaluation/course-modules/{course_module_id}/items/{item_id}/attempts",
+                json={"metadata": {}},
+            )
+            assert started.status_code == 200
+            submitted = client.post(
+                f"/api/evaluation/attempts/{started.json()['attempt_id']}/submit",
+                json={"response": 1, "metadata": {}},
+            )
+            assert submitted.status_code == 200
+            assert submitted.json()["score"] == 100.0
+
+        exam = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/learning-results/{lr_id}/exam/start"
+        )
+        assert exam.status_code == 200, exam.text
+        exam_payload = exam.json()
+        answers = {}
+        for question in exam_payload["questions"]:
+            if question["ce"] == "1.a":
+                answers[str(question["id"])] = question["options"].index("Correcta A")
+            else:
+                answers[str(question["id"])] = question["options"].index("Incorrecta B")
+
+        exam_submit = client.post(
+            f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/submit",
+            json={"answers": answers, "timeout": False},
+        )
+        assert exam_submit.status_code == 200, exam_submit.text
+        before = exam_submit.json()["progress"]
+        assert before["portfolio_score"] == 100.0
+        assert before["exam_score"] == 50.0
+        assert before["final_score"] == 70.0
+        assert before["criteria_passed"] == 1
+        assert before["criteria_needed"] == 2
+        assert before["passed"] is False
+        assert before["status"] == "recovery-required"
+        assert before["recovery"] == ["1.b"]
+
+        recovery = client.get(
+            f"/api/evaluation/course-modules/{course_module_id}/learning-results/{lr_id}/recovery"
+        )
+        assert recovery.status_code == 200, recovery.text
+        recovery_payload = recovery.json()
+        assert recovery_payload["criteria"] == ["1.b"]
+        assert len(recovery_payload["items"]) == 1
+        recovery_item = recovery_payload["items"][0]
+        assert recovery_item["key"] == "REC-B"
+        assert "answer" not in recovery_item
+
+        rec_start = client.post(
+            f"/api/evaluation/course-modules/{course_module_id}/items/{recovery_item['id']}/attempts",
+            json={"metadata": {"source": "recovery"}},
+        )
+        assert rec_start.status_code == 200
+        rec_submit = client.post(
+            f"/api/evaluation/attempts/{rec_start.json()['attempt_id']}/submit",
+            json={"response": 1, "metadata": {"source": "recovery"}},
+        )
+        assert rec_submit.status_code == 200, rec_submit.text
+        after = rec_submit.json()["progress"]
+        assert after["final_score"] == 70.0
+        assert after["criteria_passed_original"] == 1
+        assert after["criteria_passed"] == 2
+        assert after["criteria"]["1.b"]["recovered"] is True
+        assert after["recovery"] == []
+        assert after["passed"] is True
+        assert after["status"] == "passed"
+
+        with SessionLocal() as db:
+            plan = db.scalar(
+                __import__("sqlalchemy").select(RecoveryPlan).where(
+                    RecoveryPlan.course_module_id == course_module_id,
+                    RecoveryPlan.user_id == student_id,
+                    RecoveryPlan.learning_result_id == lr_id,
+                )
+            )
+            assert plan is not None
+            assert plan.criteria_json == []
+            assert plan.status == "passed"
