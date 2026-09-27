@@ -1836,7 +1836,10 @@ def test_exam_combines_40_60_and_creates_recovery_without_exposing_answers():
         assert event.json()["force_submit"] is False
 
         question = exam_payload["questions"][0]
-        wrong_answer = 0
+        # Las opciones del examen se barajan de forma determinista por alumno/intento.
+        # La prueba debe elegir la opción semánticamente incorrecta, no asumir que
+        # seguirá ocupando el índice 0 tras el barajado.
+        wrong_answer = question["options"].index("Incorrecta")
         saved = client.put(
             f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/draft",
             json={"answers": {str(question["id"]): wrong_answer}},
