@@ -489,3 +489,57 @@ def test_scorm_2004_detection_launch_and_runtime_persistence():
         )
         assert restored.json()["cmi"]["cmi.location"] == "tema-2"
         assert restored.json()["cmi"]["cmi.suspend_data"] == "estado-2004"
+
+
+def test_group_self_enrolment_is_opt_in_and_module_catalog_is_scoped():
+    with TestClient(app) as client:
+        teacher_id, teacher_course_id, teacher_module_id = teacher_fixture("self-enrol-teacher")
+        student_id, student_course_id, student_module_id = teacher_fixture("self-enrol-student")
+        # Convert the second synthetic teacher into a student context for this test.
+        student_token = session_cookie(student_id, student_course_id, role="student")
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, teacher_course_id))
+        created = client.post(
+            "/api/groups",
+            json={
+                "title": "Grupo autoinscripción",
+                "settings": {"allow_self_enrol": False},
+            },
+        )
+        assert created.status_code == 200
+        group_id = created.json()["id"]
+        join_code = created.json()["join_code"]
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", student_token)
+        denied = client.post("/api/groups/join", json={"code": join_code})
+        assert denied.status_code == 403
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, teacher_course_id))
+        enabled = client.patch(
+            f"/api/groups/{group_id}",
+            json={
+                "settings": {
+                    "allow_self_enrol": True,
+                    "show_scores": True,
+                    "max_attempts_default": 2,
+                }
+            },
+        )
+        assert enabled.status_code == 200
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", student_token)
+        joined = client.post("/api/groups/join", json={"code": join_code})
+        assert joined.status_code == 200
+        assert joined.json()["group_id"] == group_id
+        assert joined.json()["role"] == "student"
+
+        # A student must not see unrelated modules from other teachers.
+        catalog = client.get("/api/modules")
+        assert catalog.status_code == 200
+        visible_ids = {item["id"] for item in catalog.json()}
+        assert teacher_module_id not in visible_ids
+        assert student_module_id not in visible_ids
