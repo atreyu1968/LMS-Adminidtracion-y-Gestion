@@ -1,0 +1,258 @@
+{
+  "module": {
+    "slug": "gth-0652",
+    "code": "0652",
+    "title": "Gestión de Recursos Humanos",
+    "source_commit": "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17"
+  },
+  "evaluation_defaults": {
+    "practice_max_attempts": 3,
+    "portfolio_max_attempts": 2,
+    "exam_max_attempts": 1,
+    "recovery_max_attempts": 1,
+    "pass_score": 5,
+    "ce_pass_score": 5,
+    "ce_pass_percent": 80,
+    "ra_weights_verified": false
+  },
+  "learning_results": [
+    {
+      "code": "RA1",
+      "legacy_course_id": "GRH0652_UT1",
+      "unit": "ut1",
+      "title": "Gestión de la contratación laboral",
+      "position": 1,
+      "weight": null,
+      "criteria": [
+        {
+          "code": "1.a",
+          "title": "Se ha seleccionado la normativa que regula la contratación laboral.",
+          "position": 1,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.b",
+          "title": "Se han identificado las fases del proceso de contratación.",
+          "position": 2,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.c",
+          "title": "Se han interpretado las funciones de los organismos públicos que intervienen en el proceso de contratación.",
+          "position": 3,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.d",
+          "title": "Se han determinado las distintas modalidades de contratación laboral vigentes y sus elementos, aplicables a cada colectivo.",
+          "position": 4,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.e",
+          "title": "Se ha propuesto la modalidad de contrato más adecuado a las necesidades del puesto de trabajo y a las características de empresas y trabajadores.",
+          "position": 5,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.f",
+          "title": "Se han especificado las funciones de los convenios colectivos y las variables que regulan con relación a la contratación laboral.",
+          "position": 6,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.g",
+          "title": "Se ha cumplimentado la documentación que se genera en cada una de las fases del proceso de contratación.",
+          "position": 7,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.h",
+          "title": "Se han reconocido las vías de comunicación convencionales y telemáticas con las personas y organismos oficiales que intervienen en el proceso de contratación.",
+          "position": 8,
+          "portfolio_items": 6
+        },
+        {
+          "code": "1.i",
+          "title": "Se han empleado programas informáticos específicos para la confección, registro y archivo de la información y documentación relevante en el proceso de contratación.",
+          "position": 9,
+          "portfolio_items": 6
+        }
+      ]
+    },
+    {
+      "code": "RA2",
+      "legacy_course_id": "GRH0652_UT2",
+      "unit": "ut2",
+      "title": "Modificación, suspensión y extinción del contrato de trabajo",
+      "position": 2,
+      "weight": null,
+      "criteria": [
+        {
+          "code": "2.a",
+          "title": "Seleccionar e interpretar la normativa aplicable a modificación, suspensión y extinción del contrato.",
+          "position": 1,
+          "portfolio_items": 6
+        },
+        {
+          "code": "2.b",
+          "title": "Realizar los cálculos derivados de estos procesos: salarios pendientes, vacaciones, indemnizaciones y otras cantidades que procedan.",
+          "position": 2,
+          "portfolio_items": 6
+        },
+        {
+          "code": "2.c",
+          "title": "Preparar y cumplimentar la documentación administrativa correspondiente.",
+          "position": 3,
+          "portfolio_items": 6
+        },
+        {
+          "code": "2.d",
+          "title": "Identificar y utilizar las vías de comunicación con personas y organismos competentes.",
+          "position": 4,
+          "portfolio_items": 6
+        },
+        {
+          "code": "2.e",
+          "title": "Comunicar a la persona trabajadora los cambios y decisiones que afecten a su relación laboral con claridad y trazabilidad.",
+          "position": 5,
+          "portfolio_items": 6
+        },
+        {
+          "code": "2.f",
+          "title": "Utilizar aplicaciones informáticas para confeccionar, registrar y archivar la documentación del proceso.",
+          "position": 6,
+          "portfolio_items": 6
+        }
+      ]
+    },
+    {
+      "code": "RA3",
+      "legacy_course_id": "GRH0652_UT3",
+      "unit": "ut3",
+      "title": "Obligaciones empresariales con la Seguridad Social",
+      "position": 3,
+      "weight": null,
+      "criteria": [
+        {
+          "code": "3.a",
+          "title": "Normativa y trámites empresariales",
+          "position": 1,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.b",
+          "title": "Bases y aportaciones",
+          "position": 2,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.c",
+          "title": "Prestaciones económicas",
+          "position": 3,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.d",
+          "title": "Afiliación, altas, bajas y variaciones",
+          "position": 4,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.e",
+          "title": "Vías de comunicación",
+          "position": 5,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.f",
+          "title": "Órganos inspectores y fiscalizadores",
+          "position": 6,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.g",
+          "title": "Previsión social complementaria",
+          "position": 7,
+          "portfolio_items": 6
+        },
+        {
+          "code": "3.h",
+          "title": "Aplicaciones informáticas",
+          "position": 8,
+          "portfolio_items": 6
+        }
+      ]
+    },
+    {
+      "code": "RA4",
+      "legacy_course_id": "GRH0652_UT4",
+      "unit": "ut4",
+      "title": "Retribución, nóminas, cotización e IRPF",
+      "position": 4,
+      "weight": null,
+      "criteria": [
+        {
+          "code": "4.a",
+          "title": "Procesos retributivos y modalidades salariales",
+          "position": 1,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.b",
+          "title": "SMI, IPREM e índices de referencia",
+          "position": 2,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.c",
+          "title": "Incentivos y retribución variable",
+          "position": 3,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.d",
+          "title": "Conceptos y estructura de nómina",
+          "position": 4,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.e",
+          "title": "Devengos y deducciones",
+          "position": 5,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.f",
+          "title": "Bases, cuotas e IRPF",
+          "position": 6,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.g",
+          "title": "Recibo salarial y documentos de cotización",
+          "position": 7,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.h",
+          "title": "Plazos de pago y presentación",
+          "position": 8,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.i",
+          "title": "Vías de comunicación",
+          "position": 9,
+          "portfolio_items": 6
+        },
+        {
+          "code": "4.j",
+          "title": "Aplicaciones informáticas y archivo",
+          "position": 10,
+          "portfolio_items": 6
+        }
+      ]
+    }
+  ]
+}
