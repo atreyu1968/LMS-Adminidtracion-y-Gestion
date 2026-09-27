@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Actividades y evaluación · LMS Administración y Gestión</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb;--ink:#10233f;--line:#dfe6ef;--muted:#64748b;--brand:#18508f}
+*{box-sizing:border-box}body{margin:0}.top{background:var(--ink);color:#fff;padding:16px 4vw;display:flex;justify-content:space-between;gap:14px;align-items:center}.top h1{margin:0;font-size:1.3rem}.top a{color:#fff}.wrap{max-width:1250px;margin:22px auto;padding:0 16px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 22px rgba(20,40,70,.05);margin-bottom:14px}.muted{color:var(--muted)}.tiny{font-size:.82rem}.badge{display:inline-block;border-radius:999px;background:#edf3fb;color:#23528b;padding:4px 8px;font-size:.75rem;font-weight:700}.btn{border:0;border-radius:9px;background:var(--brand);color:#fff;padding:9px 12px;font-weight:700;cursor:pointer;text-decoration:none}.btn.secondary{background:#e9eef5;color:#203652}.btn.danger{background:#a52b32}.notice{padding:11px 13px;border-radius:10px;background:#eef6ff;color:#23466f;margin:10px 0}.ok{background:#ecfdf5;color:#166534}.warn{background:#fff7ed;color:#9a3412}.error{background:#fff1f2;color:#9f1239}.ra summary{font-size:1.05rem;font-weight:800;cursor:pointer}.ce{margin:12px 0 12px 16px;border-left:3px solid #dbe6f5;padding-left:12px}.items{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:12px;padding:13px}.answer{display:grid;gap:8px;margin-top:10px}textarea,input,select{font:inherit;border:1px solid #cbd5e1;border-radius:8px;padding:8px}.answer textarea{min-height:80px;width:100%}.option{display:flex;gap:8px;align-items:flex-start}.result{margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.metric{border:1px solid var(--line);border-radius:12px;padding:12px}.metric b{display:block;font-size:1.35rem}.exam-overlay{position:fixed;inset:0;background:#fff;z-index:9999;display:none;overflow:auto}.exam-overlay.active{display:block}.exam-head{position:sticky;top:0;background:var(--ink);color:#fff;padding:12px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center;z-index:2}.exam-body{max-width:1000px;margin:auto;padding:20px}.exam-question{border:1px solid var(--line);border-radius:13px;padding:15px;margin-bottom:12px}.timer{font-size:1.2rem;font-weight:800}.security{font-size:.82rem;color:#fde68a}.exam-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px;display:flex;justify-content:flex-end;gap:8px}
+</style>
+</head>
+<body>
+<header class="top"><div><h1>Actividades y evaluación</h1><div id="subtitle" class="tiny">Cargando…</div></div><a href="/">Volver</a></header>
+<main class="wrap">
+<div id="flash"></div>
+<div id="summary" class="metrics"></div>
+<div id="content"></div>
+</main>
+
+<div id="examOverlay" class="exam-overlay">
+  <div class="exam-head">
+    <div><strong id="examTitle">Examen</strong><div id="securityInfo" class="security"></div></div>
+    <div id="timer" class="timer">--:--</div>
+  </div>
+  <div id="examBody" class="exam-body"></div>
+  <div class="exam-actions"><button class="btn danger" id="submitExamBtn">Entregar examen</button></div>
+</div>
+
+<script>
+const cmid=Number(new URLSearchParams(location.search).get("course_module"));
+let structure=null,results=[],currentExam=null,examTimer=null,autosaveTimer=null,examSubmitting=false;
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
+async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
+function json(method,body){return{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}}
+
+async function load(){
+ if(!cmid){document.querySelector(".wrap").innerHTML='<div class="notice error">Falta el identificador del módulo.</div>';return}
+ try{
+   [structure,results]=await Promise.all([
+     api("/api/evaluation/course-modules/"+cmid+"/structure"),
+     api("/api/evaluation/course-modules/"+cmid+"/my-results")
+   ]);
+   document.querySelector("#subtitle").textContent="Grupo-módulo "+cmid;
+   render();
+ }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+function render(){
+ const passed=results.filter(r=>r.passed).length;
+ document.querySelector("#summary").innerHTML=[
+   ["RA",structure.learning_results.length],
+   ["RA superados",passed],
+   ["Revisiones pendientes",results.reduce((n,r)=>n+Object.values(r.criteria||{}).reduce((x,c)=>x+Number(c.pending_review||0),0),0)]
+ ].map(x=>'<div class="metric"><span class="tiny muted">'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
+ const byId=new Map(results.map(r=>[r.learning_result_id,r]));
+ document.querySelector("#content").innerHTML=(structure.learning_results||[]).map(ra=>{
+   const rr=byId.get(ra.id);
+   const status=rr?rr.status:"sin actividad";
+   return '<section class="card"><details class="ra" open><summary>'+esc(ra.code)+' · '+esc(ra.title)+' <span class="badge">'+esc(status)+'</span></summary>'
+     +(rr?'<div class="notice"><strong>Portafolio:</strong> '+esc(rr.portfolio_score)+'/100'+(rr.exam_score!==null?' · <strong>Examen:</strong> '+esc(rr.exam_score)+'/100':'')+(rr.final_score!==null?' · <strong>Final:</strong> '+esc(rr.final_score)+'/100':'')+'</div>':'')
+     +ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+'</strong><div class="items">'+ce.items.filter(i=>i.instrument==="portfolio").map(item=>renderItem(item,ce,ra)).join("")+'</div></div>').join("")
+     +(structure.config.exam_enabled?'<div class="notice"><strong>Examen de '+esc(ra.code)+'</strong><br><span class="muted">Duración: '+esc(structure.config.exam_minutes)+' min · '+esc(structure.config.exam_questions_per_ce)+' preguntas por CE.</span><br><button class="btn" style="margin-top:8px" onclick="startExam('+ra.id+',\''+esc(ra.code)+'\')">Iniciar o reanudar examen</button></div>':'<div class="notice warn">El examen todavía no está habilitado por el profesor.</div>')
+     +'</details></section>';
+ }).join("");
+}
+function renderItem(item,ce,ra){
+ let control='';
+ if(item.type==="choice"){
+   control=(item.options||[]).map((o,i)=>'<label class="option"><input type="radio" name="item-'+item.id+'" value="'+i+'"> '+esc(o)+'</label>').join("");
+ }else if(item.type==="tf"){
+   control='<label class="option"><input type="radio" name="item-'+item.id+'" value="true"> Verdadero</label><label class="option"><input type="radio" name="item-'+item.id+'" value="false"> Falso</label>';
+ }else if(item.type==="multi"){
+   control=(item.options||[]).map((o,i)=>'<label class="option"><input type="checkbox" name="item-'+item.id+'" value="'+i+'"> '+esc(o)+'</label>').join("");
+ }else if(item.type==="calculation"){
+   control='<input id="value-'+item.id+'" type="text" inputmode="decimal" placeholder="Introduce el resultado">';
+ }else if(item.type==="order"||item.type==="match"){
+   control='<textarea id="value-'+item.id+'" placeholder="Escribe la respuesta en el orden indicado."></textarea>';
+ }else{
+   control='<textarea id="value-'+item.id+'" placeholder="Redacta tu respuesta."></textarea>';
+ }
+ return '<article class="item"><div class="tiny muted">'+esc(item.key)+' · máximo '+esc(item.max_attempts)+' intentos</div><p><strong>'+esc(item.prompt)+'</strong></p><div class="answer">'+control+'<button class="btn secondary" onclick="submitItem('+item.id+',\''+esc(item.type)+'\')">Entregar actividad</button><div id="result-'+item.id+'" class="result"></div></div></article>';
+}
+function collectItem(itemId,type){
+ if(type==="choice"){
+   const x=document.querySelector('input[name="item-'+itemId+'"]:checked');return x?Number(x.value):null;
+ }
+ if(type==="tf"){
+   const x=document.querySelector('input[name="item-'+itemId+'"]:checked');return x?x.value==="true":null;
+ }
+ if(type==="multi"){
+   return [...document.querySelectorAll('input[name="item-'+itemId+'"]:checked')].map(x=>Number(x.value));
+ }
+ return document.querySelector("#value-"+itemId)?.value??"";
+}
+async function submitItem(itemId,type){
+ const value=collectItem(itemId,type),root=document.querySelector("#result-"+itemId);
+ if(value===null||(Array.isArray(value)&&!value.length)||(typeof value==="string"&&!value.trim())){root.innerHTML='<div class="notice warn">Completa la respuesta antes de entregar.</div>';return}
+ try{
+   const started=await api("/api/evaluation/course-modules/"+cmid+"/items/"+itemId+"/attempts",json("POST",{metadata:{surface:"student-ui"}}));
+   const submitted=await api("/api/evaluation/attempts/"+started.attempt_id+"/submit",json("POST",{response:value,metadata:{surface:"student-ui"}}));
+   root.innerHTML='<div class="notice '+(submitted.pending_review?"warn":"ok")+'">'+(submitted.pending_review?"Respuesta guardada. Pendiente de revisión docente.":"Puntuación: "+esc(submitted.score)+"/100")+(submitted.feedback?"<br>"+esc(submitted.feedback):"")+'</div>';
+   results=await api("/api/evaluation/course-modules/"+cmid+"/my-results");render();
+ }catch(e){root.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+}
+
+async function startExam(lrId,code){
+ if(currentExam)return;
+ try{
+   if(document.documentElement.requestFullscreen){try{await document.documentElement.requestFullscreen()}catch(e){}}
+   currentExam=await api("/api/evaluation/course-modules/"+cmid+"/learning-results/"+lrId+"/exam/start",{method:"POST"});
+   currentExam.lrId=lrId;currentExam.code=code;
+   document.querySelector("#examOverlay").classList.add("active");
+   document.querySelector("#examTitle").textContent="Examen "+code;
+   renderExam();
+   startExamTimers();
+   await sendExamEvent("exam-open",{resumed:currentExam.resumed});
+ }catch(e){currentExam=null;flash(e.message,"error");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+}
+function renderExam(){
+ const saved=currentExam.saved_answers||{};
+ document.querySelector("#securityInfo").textContent=currentExam.config.exam_fullscreen_required?"Pantalla completa requerida · las salidas quedan registradas":"Incidencias de navegación registradas";
+ document.querySelector("#examBody").innerHTML=currentExam.questions.map((q,n)=>{
+   let c='';
+   const savedValue=saved[String(q.id)]??saved[q.item_key];
+   if(q.type==="choice"){
+     c=q.options.map((o,i)=>'<label class="option"><input type="radio" name="exam-'+q.id+'" value="'+i+'" '+(Number(savedValue)===i?"checked":"")+'> '+esc(o)+'</label>').join("");
+   }else if(q.type==="tf"){
+     c='<label class="option"><input type="radio" name="exam-'+q.id+'" value="true" '+(savedValue===true?"checked":"")+'> Verdadero</label><label class="option"><input type="radio" name="exam-'+q.id+'" value="false" '+(savedValue===false?"checked":"")+'> Falso</label>';
+   }else{
+     const arr=Array.isArray(savedValue)?savedValue:[];
+     c=q.options.map((o,i)=>'<label class="option"><input type="checkbox" name="exam-'+q.id+'" value="'+i+'" '+(arr.includes(i)?"checked":"")+'> '+esc(o)+'</label>').join("");
+   }
+   return '<div class="exam-question"><div class="tiny muted">'+esc(q.ce)+' · pregunta '+(n+1)+'</div><p><strong>'+esc(q.q)+'</strong></p>'+c+'</div>';
+ }).join("");
+}
+function collectExamAnswers(){
+ const answers={};
+ for(const q of currentExam.questions){
+   if(q.type==="choice"){
+     const x=document.querySelector('input[name="exam-'+q.id+'"]:checked');if(x)answers[String(q.id)]=Number(x.value);
+   }else if(q.type==="tf"){
+     const x=document.querySelector('input[name="exam-'+q.id+'"]:checked');if(x)answers[String(q.id)]=x.value==="true";
+   }else{
+     const xs=[...document.querySelectorAll('input[name="exam-'+q.id+'"]:checked')];answers[String(q.id)]=xs.map(x=>Number(x.value));
+   }
+ }
+ return answers;
+}
+async function saveExamDraft(){
+ if(!currentExam||examSubmitting)return;
+ try{await api("/api/evaluation/exam-sessions/"+currentExam.exam_session_id+"/draft",json("PUT",{answers:collectExamAnswers()}))}catch(e){}
+}
+function startExamTimers(){
+ clearInterval(examTimer);clearInterval(autosaveTimer);
+ examTimer=setInterval(()=>{
+   if(!currentExam)return;
+   const ms=new Date(currentExam.deadline_at).getTime()-Date.now();
+   const t=document.querySelector("#timer");
+   if(ms<=0){t.textContent="00:00";submitExam(true);return}
+   const sec=Math.floor(ms/1000),m=Math.floor(sec/60),s=sec%60;t.textContent=String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+ },1000);
+ autosaveTimer=setInterval(saveExamDraft,15000);
+}
+async function sendExamEvent(event,detail={}){
+ if(!currentExam)return;
+ try{
+   const r=await api("/api/evaluation/exam-sessions/"+currentExam.exam_session_id+"/events",json("POST",{event,detail}));
+   document.querySelector("#securityInfo").textContent="Incidencias registradas: "+r.incidents+" / "+r.limit;
+   if(r.force_submit&&!examSubmitting)submitExam(false);
+ }catch(e){}
+}
+async function submitExam(timeout=false){
+ if(!currentExam||examSubmitting)return;
+ examSubmitting=true;clearInterval(examTimer);clearInterval(autosaveTimer);
+ try{
+   const r=await api("/api/evaluation/exam-sessions/"+currentExam.exam_session_id+"/submit",json("POST",{answers:collectExamAnswers(),timeout}));
+   alert("Examen entregado. Puntuación: "+r.score+"/100");
+   currentExam=null;document.querySelector("#examOverlay").classList.remove("active");
+   if(document.fullscreenElement)await document.exitFullscreen().catch(()=>{});
+   results=await api("/api/evaluation/course-modules/"+cmid+"/my-results");render();
+ }catch(e){flash(e.message,"error")}finally{examSubmitting=false}
+}
+document.querySelector("#submitExamBtn").addEventListener("click",()=>{if(confirm("¿Entregar definitivamente el examen?"))submitExam(false)});
+document.addEventListener("visibilitychange",()=>{if(currentExam&&document.hidden)sendExamEvent("visibility-hidden",{})});
+window.addEventListener("blur",()=>{if(currentExam)sendExamEvent("blur",{})});
+document.addEventListener("fullscreenchange",()=>{if(currentExam&&!document.fullscreenElement&&currentExam.config.exam_fullscreen_required)sendExamEvent("fullscreen-exit",{})});
+document.addEventListener("copy",()=>{if(currentExam)sendExamEvent("copy",{})});
+document.addEventListener("paste",()=>{if(currentExam)sendExamEvent("paste",{})});
+document.addEventListener("contextmenu",e=>{if(currentExam){e.preventDefault();sendExamEvent("contextmenu",{})}});
+window.addEventListener("beforeunload",e=>{if(currentExam){e.preventDefault();e.returnValue=""}});
+load();
+</script>
+</body>
+</html>
