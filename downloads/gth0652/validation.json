@@ -1,0 +1,55 @@
+{
+  "source_repository": "atreyu1968/CFGSAF",
+  "source_commit": "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17",
+  "standard": "SCORM 1.2",
+  "packages": [
+    {
+      "unit": "UT1",
+      "title": "RA1 · Gestión de la contratación laboral",
+      "filename": "GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip",
+      "files": 21,
+      "bytes": 70667,
+      "sha256": "159a782ef488e27ea6a3d1567030c7c906979c57798c17683f00865f4453dd7f",
+      "manifest": "OK",
+      "launch": "index.html",
+      "internal_assets": "OK",
+      "shared_secure_exam_embedded": true
+    },
+    {
+      "unit": "UT2",
+      "title": "RA2 · Modificación, suspensión y extinción del contrato",
+      "filename": "GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip",
+      "files": 19,
+      "bytes": 50712,
+      "sha256": "0783f746eb8911247401d1aa992e9c874d8bab0c623840745d45d04ecd808eb3",
+      "manifest": "OK",
+      "launch": "index.html",
+      "internal_assets": "OK",
+      "shared_secure_exam_embedded": true
+    },
+    {
+      "unit": "UT3",
+      "title": "RA3 · Obligaciones empresariales con la Seguridad Social",
+      "filename": "GTH_RA3_Seguridad_Social_SCORM_1.2.zip",
+      "files": 19,
+      "bytes": 52243,
+      "sha256": "baa1824e009bb6b91afb5440d9961fa7a31cb300f3d8d8ec43a710a7af2e89f8",
+      "manifest": "OK",
+      "launch": "index.html",
+      "internal_assets": "OK",
+      "shared_secure_exam_embedded": true
+    },
+    {
+      "unit": "UT4",
+      "title": "RA4 · Retribución, nóminas, cotización e IRPF",
+      "filename": "GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip",
+      "files": 19,
+      "bytes": 81839,
+      "sha256": "2e5fe6546ab475b93a9418c7780b3505fecf13c104b1615fbbf92ddc9bb0c993",
+      "manifest": "OK",
+      "launch": "index.html",
+      "internal_assets": "OK",
+      "shared_secure_exam_embedded": true
+    }
+  ]
+}
