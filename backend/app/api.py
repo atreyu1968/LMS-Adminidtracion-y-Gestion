@@ -172,6 +172,12 @@ class ModuleCreate(BaseModel):
     module_type: str = "scorm"
 
 
+class ModuleUpdate(BaseModel):
+    code: str | None = Field(default=None, max_length=80)
+    title: str | None = Field(default=None, min_length=2, max_length=300)
+    description: str | None = None
+
+
 def _slugify(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     ascii_text = normalized.encode("ascii", "ignore").decode("ascii").lower()
@@ -236,6 +242,37 @@ def create_module(
     db.commit()
     db.refresh(module)
     return {"id": module.id, "slug": module.slug, "title": module.title}
+
+
+@router.patch("/modules/{module_id}")
+def update_module(
+    module_id: int,
+    payload: ModuleUpdate,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    _module_editor(db, module_id, user_id)
+    module = db.get(Module, module_id)
+    if not module or not module.active:
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    changes = payload.model_dump(exclude_unset=True)
+    if "code" in changes:
+        module.code = changes["code"]
+    if "title" in changes and changes["title"] is not None:
+        module.title = changes["title"]
+    if "description" in changes:
+        module.description = changes["description"] or ""
+    db.commit()
+    return {
+        "id": module.id,
+        "slug": module.slug,
+        "code": module.code,
+        "title": module.title,
+        "description": module.description,
+        "version": module.version,
+    }
 
 
 @router.post("/courses/{course_id}/modules/{module_id}")
