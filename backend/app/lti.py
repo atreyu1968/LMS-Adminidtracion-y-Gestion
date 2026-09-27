@@ -24,6 +24,7 @@ from .models import (
     LTIDeployment,
     LTIResourceLink,
     LTIState,
+    LearningResult,
     Membership,
     Module,
     ModulePermission,
@@ -63,6 +64,7 @@ class PlatformIn(BaseModel):
 class DeepLinkSelectionIn(BaseModel):
     request_token: str
     module_id: int
+    learning_result_id: int | None = None
 
 
 def _utcnow() -> datetime:
@@ -90,6 +92,16 @@ def _teacher_can_edit_module(db: Session, user_id: int, module_id: int) -> bool:
         )
     )
     return bool(permission and permission.permission in {"owner", "editor"})
+
+
+def _teacher_can_use_module(db: Session, user_id: int, module_id: int) -> bool:
+    permission = db.scalar(
+        select(ModulePermission).where(
+            ModulePermission.module_id == module_id,
+            ModulePermission.user_id == user_id,
+        )
+    )
+    return bool(permission and permission.permission in {"owner", "editor", "viewer"})
 
 
 async def _params(request: Request) -> dict:
@@ -419,7 +431,12 @@ def _bind_resource_link(
     custom = claims.get(CLAIM_CUSTOM) or {}
     module_slug = str(custom.get("lms_module_slug") or "").strip()
     if module_slug:
-        module = db.scalar(select(Module).where(Module.slug == module_slug, Module.active.is_(True)))
+        module = db.scalar(
+            select(Module).where(
+                Module.slug == module_slug,
+                Module.active.is_(True),
+            )
+        )
         if module:
             course_module = db.scalar(
                 select(CourseModule).where(
@@ -429,6 +446,13 @@ def _bind_resource_link(
             )
             if course_module:
                 link.course_module_id = course_module.id
+                raw_lr = str(custom.get("lms_learning_result_id") or "").strip()
+                if raw_lr.isdigit():
+                    lr = db.get(LearningResult, int(raw_lr))
+                    if lr and lr.module_id == module.id and lr.active:
+                        link.learning_result_id = lr.id
+                else:
+                    link.learning_result_id = None
     return link
 
 
@@ -513,7 +537,16 @@ async def launch(request: Request, db: Session = Depends(get_db)):
     session_token = create_session_token(user.id, course.id, local_role)
     target = f"{settings.base_url}/?course_id={course.id}"
     if link and link.course_module_id:
-        target = f"{settings.base_url}/?course_id={course.id}&course_module_id={link.course_module_id}"
+        target = (
+            f"{settings.base_url}/?course_id={course.id}"
+            f"&course_module_id={link.course_module_id}"
+        )
+        if link.learning_result_id:
+            target = (
+                f"{settings.base_url}/evaluation-student.html"
+                f"?course_module={link.course_module_id}"
+                f"&learning_result={link.learning_result_id}"
+            )
     response = RedirectResponse(url=target, status_code=303)
     response.set_cookie(
         "lms_session",
@@ -546,7 +579,7 @@ def deep_link_options(
         db.scalars(
             select(ModulePermission).where(
                 ModulePermission.user_id == request_row.user_id,
-                ModulePermission.permission.in_(["owner", "editor"]),
+                ModulePermission.permission.in_(["owner", "editor", "viewer"]),
             )
         )
     )
@@ -573,6 +606,22 @@ def deep_link_options(
                 "title": module.title,
                 "description": module.description,
                 "version": module.version,
+                "learning_results": [
+                    {
+                        "id": lr.id,
+                        "code": lr.code,
+                        "title": lr.title,
+                        "position": lr.position,
+                    }
+                    for lr in db.scalars(
+                        select(LearningResult)
+                        .where(
+                            LearningResult.module_id == module.id,
+                            LearningResult.active.is_(True),
+                        )
+                        .order_by(LearningResult.position, LearningResult.id)
+                    )
+                ],
             }
             for module in modules
         ],
@@ -598,8 +647,8 @@ def deep_link_select(
     module = db.get(Module, payload.module_id)
     if not module or not module.active:
         raise HTTPException(status_code=404, detail="Module not found")
-    if not _teacher_can_edit_module(db, request_row.user_id, module.id):
-        raise HTTPException(status_code=403, detail="Module edit permission required")
+    if not _teacher_can_use_module(db, request_row.user_id, module.id):
+        raise HTTPException(status_code=403, detail="Module access permission required")
 
     course_module = db.scalar(
         select(CourseModule).where(
@@ -618,7 +667,51 @@ def deep_link_select(
     if not platform:
         raise HTTPException(status_code=404, detail="LTI platform not found")
 
+    learning_result = None
+    if payload.learning_result_id is not None:
+        learning_result = db.get(LearningResult, payload.learning_result_id)
+        if (
+            not learning_result
+            or not learning_result.active
+            or learning_result.module_id != module.id
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Resultado de aprendizaje no válido para este módulo",
+            )
+
     now = _utcnow()
+    item_title = (
+        f"{module.title} · {learning_result.code}"
+        if learning_result
+        else module.title
+    )
+    custom_claims = {
+        "lms_module_slug": module.slug,
+        "lms_course_module_id": str(course_module.id),
+    }
+    if learning_result:
+        custom_claims["lms_learning_result_id"] = str(learning_result.id)
+
+    content_item = {
+        "type": "ltiResourceLink",
+        "title": item_title,
+        "text": (
+            learning_result.title
+            if learning_result
+            else (module.description or module.title)
+        ),
+        "url": f"{settings.base_url}/lti/launch",
+        "custom": custom_claims,
+    }
+    if learning_result:
+        content_item["lineItem"] = {
+            "scoreMaximum": 100,
+            "label": item_title,
+            "resourceId": f"module:{module.slug}:ra:{learning_result.code}",
+            "tag": f"lms-{learning_result.code.lower()}",
+        }
+
     response_claims = {
         "iss": platform.client_id,
         "aud": platform.issuer,
@@ -628,24 +721,7 @@ def deep_link_select(
         CLAIM_DEPLOYMENT: request_row.deployment_id,
         CLAIM_MESSAGE_TYPE: "LtiDeepLinkingResponse",
         CLAIM_VERSION: "1.3.0",
-        CLAIM_DL_CONTENT_ITEMS: [
-            {
-                "type": "ltiResourceLink",
-                "title": module.title,
-                "text": module.description or module.title,
-                "url": f"{settings.base_url}/lti/launch",
-                "custom": {
-                    "lms_module_slug": module.slug,
-                    "lms_course_module_id": str(course_module.id),
-                },
-                "lineItem": {
-                    "scoreMaximum": 100,
-                    "label": module.title,
-                    "resourceId": f"module:{module.slug}",
-                    "tag": "lms-module",
-                },
-            }
-        ],
+        CLAIM_DL_CONTENT_ITEMS: [content_item],
     }
     if request_row.data is not None:
         response_claims[CLAIM_DL_DATA] = request_row.data
