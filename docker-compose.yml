@@ -23,9 +23,11 @@ services:
       LMS_DATABASE_URL: ${LMS_DATABASE_URL:-postgresql+psycopg://lms:lms@db:5432/lms}
       LMS_PUBLIC_BASE_URL: ${LMS_PUBLIC_BASE_URL:-http://localhost:8080}
       LMS_STORAGE_ROOT: /data
+      LMS_MODULES_ROOT: /modules
       LMS_LTI_PRIVATE_KEY_PATH: /data/keys/lti-private.pem
     volumes:
       - lms-data:/data
+      - ./modules:/modules:ro
     depends_on:
       db:
         condition: service_healthy
