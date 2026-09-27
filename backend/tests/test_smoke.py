@@ -2935,3 +2935,152 @@ def test_adaptive_release_exception_and_exemption_are_effective():
         ra = results.json()[0]
         assert ra["criteria_total"] == 1
         assert ra["criteria"]["1.b"]["exempt"] is True
+
+
+def test_experience_search_favorites_recent_calendar_notifications_and_signals():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("experience-suite")
+        with SessionLocal() as db:
+            course = db.get(Course, course_id)
+            course.owner_user_id = teacher_id
+            student = User(display_name="Alumno Experiencia", email="experience@example.test")
+            cm = CourseModule(course_id=course_id, module_id=module_id, settings_json={}, active=True)
+            lr = LearningResult(
+                module_id=module_id,
+                code="RA-BUSCA",
+                title="Gestión documental searchable",
+                description="Contenido para la búsqueda global",
+                position=1,
+                active=True,
+            )
+            db.add_all([student, cm, lr])
+            db.flush()
+            ce = AssessmentCriterion(
+                learning_result_id=lr.id,
+                code="B.a",
+                title="Criterio localizable",
+                description="criterio buscable",
+                position=1,
+                pass_score=50,
+                active=True,
+            )
+            db.add(ce); db.flush()
+            item = AssessmentItem(
+                criterion_id=ce.id,
+                instrument="portfolio",
+                item_key="buscar-actividad",
+                item_type="free",
+                prompt="Describe el documento buscable.",
+                evaluable=True,
+                max_attempts=2,
+                active=True,
+            )
+            db.add(item); db.flush()
+            db.add_all([
+                Membership(
+                    course_id=course_id,
+                    user_id=student.id,
+                    role="student",
+                    lti_roles=["Learner"],
+                    active=True,
+                ),
+                AssessmentAttempt(
+                    course_module_id=cm.id,
+                    user_id=student.id,
+                    item_id=item.id,
+                    attempt_no=1,
+                    status="submitted",
+                    response_json={"value": "texto"},
+                    pending_review=True,
+                    submitted_at=datetime.now(timezone.utc) - timedelta(days=8),
+                ),
+                ContentReleaseRule(
+                    course_module_id=cm.id,
+                    content_type="item",
+                    content_key=str(item.id),
+                    open_at=datetime.now(timezone.utc) - timedelta(days=1),
+                    close_at=datetime.now(timezone.utc) + timedelta(days=2),
+                    requirements_json=[],
+                    audience_json={},
+                    active=True,
+                    created_by_user_id=teacher_id,
+                ),
+            ])
+            db.flush()
+            attempt = db.scalar(
+                __import__("sqlalchemy").select(AssessmentAttempt).where(
+                    AssessmentAttempt.course_module_id == cm.id,
+                    AssessmentAttempt.user_id == student.id,
+                    AssessmentAttempt.item_id == item.id,
+                )
+            )
+            db.add(
+                AssessmentReview(
+                    attempt_id=attempt.id,
+                    source="teacher",
+                    status="pending",
+                    feedback="Pendiente",
+                )
+            )
+            db.commit()
+            db.refresh(cm); db.refresh(student); db.refresh(lr)
+            cmid, sid, lrid = cm.id, student.id, lr.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        search = client.get("/api/experience/search", params={"q": "buscable"})
+        assert search.status_code == 200, search.text
+        assert any(row["kind"] in {"learning_result", "activity"} for row in search.json()["results"])
+
+        scoped = client.get(
+            "/api/experience/search",
+            params={"q": "documento", "course_module_id": cmid},
+        )
+        assert scoped.status_code == 200
+        assert all(row["course_module_id"] == cmid for row in scoped.json()["results"])
+
+        fav = client.post("/api/experience/favorites/toggle", json={"kind": "module", "id": module_id})
+        assert fav.status_code == 200
+        assert module_id in fav.json()["value"]["modules"]
+        favs = client.get("/api/experience/favorites")
+        assert module_id in favs.json()["modules"]
+
+        recent = client.post(
+            "/api/experience/recent",
+            json={
+                "kind": "course_module",
+                "id": str(cmid),
+                "title": "Experiencia reciente",
+                "href": f"/evaluation-teacher.html?course_module={cmid}",
+            },
+        )
+        assert recent.status_code == 200
+        assert recent.json()["items"][0]["title"] == "Experiencia reciente"
+
+        calendar = client.get("/api/experience/calendar", params={"course_module_id": cmid})
+        assert calendar.status_code == 200
+        assert {event["kind"] for event in calendar.json()["events"]} == {"opens", "closes"}
+
+        notifications = client.get("/api/experience/notifications")
+        assert notifications.status_code == 200
+        kinds = {row["kind"] for row in notifications.json()["items"]}
+        assert "review" in kinds
+        assert "deadline" in kinds
+
+        signals = client.get(f"/api/experience/course-modules/{cmid}/signals")
+        assert signals.status_code == 200
+        row = next(x for x in signals.json()["students"] if x["user_id"] == sid)
+        assert row["submitted_activities"] == 1
+        assert any(signal["kind"] == "pending_review" for signal in row["signals"])
+        assert "predicciones" in signals.json()["note"]
+
+
+def test_primary_frontends_include_basic_accessibility_landmarks():
+    frontend_root = Path(__file__).resolve().parents[2] / "frontend"
+    for filename in ["teacher.html", "evaluation-teacher.html", "evaluation-student.html"]:
+        text_content = (frontend_root / filename).read_text(encoding="utf-8")
+        assert '<html lang="es">' in text_content
+        assert 'name="viewport"' in text_content
+        assert "Saltar al contenido" in text_content
+        assert 'aria-live="polite"' in text_content
+        assert 'id="mainContent"' in text_content
