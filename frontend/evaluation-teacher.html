@@ -23,8 +23,11 @@
 </nav>
 
 <section id="panel-gradebook" class="panel active card">
-  <h2>Cuaderno del grupo</h2>
-  <p class="muted">Las notas mostradas son el estado interno del LMS. La nota final del RA permanecerá pendiente mientras falte el instrumento exigido por la configuración.</p>
+  <div class="actions" style="justify-content:space-between;align-items:flex-start">
+    <div><h2>Cuaderno del grupo</h2><p class="muted">Las notas mostradas son el estado interno del LMS. La nota final del RA permanecerá pendiente mientras falte el instrumento exigido por la configuración.</p></div>
+    <button class="btn" id="syncCampusGradesBtn">Enviar calificaciones definitivas a CAMPUS</button>
+  </div>
+  <div id="campusSyncResult"></div>
   <div id="gradebook"></div>
 </section>
 
@@ -132,6 +135,17 @@ async function reloadDynamic(){
  ]);renderMetrics();renderGradebook();renderReviews();renderReadiness();
 }
 document.querySelector("#reloadReviews").addEventListener("click",reloadDynamic);
+document.querySelector("#syncCampusGradesBtn").addEventListener("click",async()=>{
+ const btn=document.querySelector("#syncCampusGradesBtn"),out=document.querySelector("#campusSyncResult");
+ btn.disabled=true;out.innerHTML='<div class="notice">Enviando únicamente calificaciones definitivas…</div>';
+ try{
+   const r=await api("/api/lti/course-modules/"+cmid+"/sync-grades",{method:"POST"});
+   const noLink=(r.without_link||[]).length?" · Sin enlace AGS: "+(r.without_link||[]).join(", "):"";
+   out.innerHTML='<div class="notice '+(r.sent?"ok":"warn")+'"><strong>Sincronización CAMPUS</strong><br>Enviadas: '+esc(r.sent)+' · Pendientes: '+esc(r.pending)+' · Sin identidad LTI: '+esc(r.missing_identity)+esc(noLink)+'</div>';
+ }catch(e){out.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
+ finally{btn.disabled=false}
+});
+
 function renderStructure(){
  document.querySelector("#structure").innerHTML=(structure.learning_results||[]).map(ra=>'<details class="ra" open><summary>'+esc(ra.code)+' · '+esc(ra.title)+'</summary>'+ra.criteria.map(ce=>'<div class="ce"><strong>'+esc(ce.code)+' · '+esc(ce.title)+'</strong><div class="tiny muted">Umbral: '+esc(ce.pass_score)+'/100 · '+esc(ce.items.length)+' actividades</div><div class="list" style="margin-top:8px">'+ce.items.map(it=>'<div class="item"><strong>'+esc(it.key)+'</strong><div>'+esc(it.prompt)+'</div><div class="tiny muted">'+esc(it.type)+' · '+esc(it.instrument)+' · '+esc(it.max_attempts)+' intentos</div></div>').join("")+'</div></div>').join("")+'</details>').join("");
 }
