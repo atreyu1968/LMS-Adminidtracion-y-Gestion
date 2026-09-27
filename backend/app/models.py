@@ -524,3 +524,57 @@ class CourseModuleAIConfig(Base):
     auto_review: Mapped[bool] = mapped_column(Boolean, default=False)
     allowed_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class GuidedMilestoneProgress(Base):
+    __tablename__ = "guided_milestone_progress"
+    __table_args__ = (
+        UniqueConstraint(
+            "registration_id",
+            "milestone_key",
+            name="uq_guided_milestone_registration_key",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    registration_id: Mapped[int] = mapped_column(
+        ForeignKey("scorm_registrations.id", ondelete="CASCADE"),
+        index=True,
+    )
+    milestone_key: Mapped[str] = mapped_column(String(160), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="not_started", index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    ai_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    teacher_comment: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class GuidedEvidence(Base):
+    __tablename__ = "guided_evidence"
+    __table_args__ = (
+        UniqueConstraint(
+            "registration_id",
+            "milestone_key",
+            "attempt_no",
+            name="uq_guided_evidence_attempt",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    registration_id: Mapped[int] = mapped_column(
+        ForeignKey("scorm_registrations.id", ondelete="CASCADE"),
+        index=True,
+    )
+    milestone_key: Mapped[str] = mapped_column(String(160), index=True)
+    attempt_no: Mapped[int] = mapped_column(Integer)
+    original_filename: Mapped[str] = mapped_column(String(500))
+    mime_type: Mapped[str] = mapped_column(String(160))
+    storage_path: Mapped[str] = mapped_column(String(1000))
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="submitted", index=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    ai_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    teacher_comment: Mapped[str] = mapped_column(Text, default="")
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
