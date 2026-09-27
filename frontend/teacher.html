@@ -455,10 +455,21 @@ async function openGuidedTeacherGuide(courseModuleId){
   try{
     const g=await api("/api/guided/course-modules/"+courseModuleId+"/guide");
     const before=(g.before_class||[]).map(x=>'<li>'+esc(x)+'</li>').join("");
-    const rows=(g.milestones||[]).map(m=>'<details class="item"><summary><strong>'+esc(m.key)+' · '+esc(m.title)+'</strong>'+(m.manual_validation?' <span class="badge">Revisión docente</span>':'')+'</summary><p><strong>Objetivo didáctico:</strong> '+esc(m.teaching_goal||"")+'</p><p><strong>Estado esperado:</strong> '+esc(m.expected_checkpoint||"")+'</p><p><strong>Qué revisar:</strong> '+esc(m.review_focus||"")+'</p></details>').join("");
+    const rows=(g.milestones||[]).map(m=>{
+      const audit=m.audit||{};
+      const technical=(audit.checks||[]).map(c=>'<li><strong>'+esc(c.field||"Comprobación")+'</strong> · '+esc(c.operator||"")+(c.expected!==undefined?' → '+esc(typeof c.expected==="object"?JSON.stringify(c.expected):c.expected):'')+(c.severity?' <span class="badge">'+esc(c.severity)+'</span>':'')+'</li>').join("");
+      const variants=Object.entries(audit.variant_checks||{}).map(([key,checks])=>'<details style="margin-top:8px"><summary><strong>Variante '+esc(key)+'</strong></summary><ul>'+checks.map(c=>'<li>'+esc(c.field||"")+' · '+esc(c.operator||"")+' → '+esc(typeof c.expected==="object"?JSON.stringify(c.expected):c.expected)+'</li>').join("")+'</ul></details>').join("");
+      return '<details class="item"><summary><strong>'+esc(m.key)+' · '+esc(m.title)+'</strong>'+((m.manual_validation||audit.manual_validation)?' <span class="badge">Revisión docente obligatoria</span>':'')+'</summary>'
+        +'<p><strong>Objetivo didáctico:</strong> '+esc(m.teaching_goal||"")+'</p>'
+        +'<p><strong>Estado esperado:</strong> '+esc(m.expected_checkpoint||"")+'</p>'
+        +'<p><strong>Qué revisar:</strong> '+esc(m.review_focus||"")+'</p>'
+        +(technical?'<div class="notice"><strong>Solucionario técnico de auditoría</strong><ul>'+technical+'</ul>'+variants+'</div>':'')
+        +'</details>';
+    }).join("");
     const rhythm=Object.entries(g.suggested_rhythm||{}).map(([k,v])=>'<div class="item"><strong>'+esc(k)+'</strong><span class="muted">'+esc(v)+'</span></div>').join("");
     panel.innerHTML='<div class="group-title"><div><h3>'+esc(g.title||"Guía docente")+'</h3><p class="muted">'+esc(g.audience||"")+'</p></div><button class="btn secondary" id="closeGuidedGuide">Cerrar</button></div>'
       +'<div class="notice"><strong>Idea de trabajo</strong><br>'+esc(g.principle||"")+'</div>'
+      +'<div class="notice"><strong>Auditoría técnica '+esc(g.audit_version||"")+'</strong><br>Estas reglas son visibles solo para el profesorado. La IA las utiliza como solucionario oculto, pero sus pistas al alumno no deben revelar directamente el dato que falta.</div>'
       +'<div class="grid"><div><h3>Antes de empezar con el grupo</h3><ul>'+before+'</ul></div><div><h3>Ritmo orientativo</h3><div class="list">'+rhythm+'</div></div></div>'
       +'<h3 style="margin-top:18px">Guía por hitos</h3><div class="list">'+rows+'</div>';
     const closeBtn=panel.querySelector("#closeGuidedGuide");

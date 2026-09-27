@@ -106,6 +106,18 @@ def _load_teacher_guide(package: ScormPackage) -> dict:
         raise HTTPException(status_code=500, detail="teacher-guide.json no es JSON válido") from exc
 
 
+def _load_audit_rules(package: ScormPackage) -> dict:
+    folder = _project_folder(package)
+    root = Path(settings.modules_root).resolve()
+    path = (root / folder / "audit-rules.json").resolve()
+    if root not in path.parents or not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="audit-rules.json no es JSON válido") from exc
+
+
 def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
     if not variants:
         return None
@@ -169,6 +181,49 @@ def _personalized_project(package: ScormPackage, user: User) -> tuple[dict, dict
     }
     personalized["scenario"] = scenario_public
     return personalized, scenario_public
+
+
+def _personalized_audit(
+    package: ScormPackage,
+    user: User,
+    milestone_key: str,
+    project: dict | None = None,
+) -> dict:
+    rules = _load_audit_rules(package)
+    milestone_rules = deepcopy((rules.get("milestones") or {}).get(milestone_key) or {})
+    if not milestone_rules:
+        return {
+            "version": rules.get("version"),
+            "general_rules": rules.get("general_rules") or [],
+            "milestone_key": milestone_key,
+            "manual_validation": False,
+            "critical": [],
+            "checks": [],
+            "variant_key": None,
+        }
+
+    personalized = project
+    if personalized is None:
+        personalized, _ = _personalized_project(package, user)
+    milestone = _milestone(personalized, milestone_key)
+    variant_key = (milestone.get("variant") or {}).get("key")
+    checks = deepcopy(milestone_rules.get("checks") or [])
+    if variant_key:
+        checks.extend(
+            deepcopy(
+                (milestone_rules.get("variants") or {}).get(str(variant_key)) or []
+            )
+        )
+
+    return {
+        "version": rules.get("version"),
+        "general_rules": deepcopy(rules.get("general_rules") or []),
+        "milestone_key": milestone_key,
+        "manual_validation": bool(milestone_rules.get("manual_validation", False)),
+        "critical": deepcopy(milestone_rules.get("critical") or []),
+        "checks": checks,
+        "variant_key": variant_key,
+    }
 
 
 def _milestone(project: dict, key: str) -> dict:
@@ -272,6 +327,7 @@ async def _ai_review_image(
     image_bytes: bytes,
     mime_type: str,
     notes: str,
+    audit_context: dict | None = None,
 ) -> dict:
     encoded = base64.b64encode(image_bytes).decode("ascii")
     checks = milestone.get("ai_checks") or milestone.get("checklist") or []
@@ -283,6 +339,7 @@ async def _ai_review_image(
         "checks": checks,
         "case_variant": milestone.get("variant") or {},
         "case_documents": milestone.get("documents") or [],
+        "hidden_audit": audit_context or {},
         "student_notes": notes,
         "teacher_rubric": ai.get("default_rubric") or "",
     }
@@ -293,7 +350,11 @@ async def _ai_review_image(
         "Devuelve exclusivamente JSON válido con las claves verdict, confidence, summary, checks y next_hint. "
         "verdict solo puede ser pass, retry o review. confidence debe estar entre 0 y 1. "
         "checks debe ser una lista de objetos con label, status y detail; status solo pass, fail o uncertain. "
-        "No reveles una solución numérica completa si el alumno aún no la ha alcanzado; ofrece una pista concreta y progresiva."
+        "Las reglas de hidden_audit son un solucionario técnico privado: úsalas para decidir, pero no copies al alumno "
+        "los valores esperados que todavía no haya alcanzado. Si falla una comprobación, explica qué campo o proceso debe "
+        "revisar sin darle la cifra o dato exacto que debe escribir. Si un requisito crítico no puede verificarse en la "
+        "captura, usa verdict=review. Si hidden_audit.manual_validation es true, nunca presentes tu revisión como decisión "
+        "definitiva: devuelve verdict=review aunque todo parezca correcto."
     )
     body = {
         "model": ai["model"],
@@ -463,6 +524,7 @@ async def runtime_submit_evidence(
     registration, user, package = _get_registration(registration_id, authorization, db)
     project, _ = _personalized_project(package, user)
     milestone = _milestone(project, milestone_key)
+    audit_context = _personalized_audit(package, user, milestone_key, project)
     mime = (file.content_type or "application/octet-stream").lower()
     suffix = Path(file.filename or "").suffix.lower()
     if mime not in ALLOWED_EVIDENCE and suffix not in SAFE_EXTENSIONS:
@@ -525,11 +587,24 @@ async def runtime_submit_evidence(
         and mime.startswith("image/")
     )
     if accepts_ai:
-        ai_result = await _ai_review_image(ai, milestone, data, mime, notes)
+        ai_result = await _ai_review_image(
+            ai,
+            milestone,
+            data,
+            mime,
+            notes,
+            audit_context=audit_context,
+        )
         threshold = float(ai.get("confidence_threshold") or 0.75)
         verdict = ai_result.get("verdict")
         confidence = float(ai_result.get("confidence") or 0)
-        if verdict == "pass" and confidence >= threshold and milestone.get("ai_can_complete", True):
+        manual_validation = bool(audit_context.get("manual_validation"))
+        if (
+            verdict == "pass"
+            and confidence >= threshold
+            and milestone.get("ai_can_complete", True)
+            and not manual_validation
+        ):
             evidence.status = "accepted"
             progress.status = "completed"
         elif verdict == "retry" and confidence >= max(0.55, threshold - 0.15):
@@ -608,7 +683,20 @@ def teacher_guide(
     )
     if not package or not (package.manifest_json or {}).get("guided_project_folder"):
         raise HTTPException(status_code=404, detail="Este módulo no tiene una guía docente asociada")
-    return _load_teacher_guide(package)
+    guide = deepcopy(_load_teacher_guide(package))
+    audit = _load_audit_rules(package)
+    by_key = audit.get("milestones") or {}
+    for milestone in guide.get("milestones") or []:
+        rule = by_key.get(str(milestone.get("key"))) or {}
+        milestone["audit"] = {
+            "manual_validation": bool(rule.get("manual_validation", False)),
+            "critical": deepcopy(rule.get("critical") or []),
+            "checks": deepcopy(rule.get("checks") or []),
+            "variant_checks": deepcopy(rule.get("variants") or {}),
+        }
+    guide["audit_version"] = audit.get("version")
+    guide["audit_general_rules"] = deepcopy(audit.get("general_rules") or [])
+    return guide
 
 
 @router.get("/api/guided/course-modules/{course_module_id}/progress")

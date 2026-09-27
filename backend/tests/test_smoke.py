@@ -1215,7 +1215,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.2"
+        assert payload["project"]["version"] == "2026.3"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1285,8 +1285,18 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         )
         assert guide.status_code == 200, guide.text
         assert guide.json()["title"].startswith("Guía docente")
+        assert guide.json()["audit_version"] == "2026.3"
         assert len(guide.json()["milestones"]) >= 17
         assert any(row["manual_validation"] for row in guide.json()["milestones"])
+        guide_by_key = {row["key"]: row for row in guide.json()["milestones"]}
+        assert guide_by_key["M02"]["audit"]["manual_validation"] is True
+        assert guide_by_key["M08"]["audit"]["manual_validation"] is True
+        assert guide_by_key["M16"]["audit"]["manual_validation"] is True
+        assert any(
+            check["field"] == "agreement_code"
+            for check in guide_by_key["M02"]["audit"]["checks"]
+        )
+        assert "F02-B" in guide_by_key["M05"]["audit"]["variant_checks"]
 
         client.cookies.clear()
         client.cookies.set(
