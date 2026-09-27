@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router as api_router
+from .ai import router as ai_router
 from .db import init_db
 from .lti import router as lti_router
 from .integrations import router as integration_router
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(ai_router)
 app.include_router(lti_router)
 app.include_router(integration_router)
 app.include_router(groups_router)
