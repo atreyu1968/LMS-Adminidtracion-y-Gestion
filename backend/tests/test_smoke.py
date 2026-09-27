@@ -1238,7 +1238,11 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.9"
+        assert payload["project"]["educational_download"]["url"] == "https://academy.sdelsol.com/course/view.php?id=8"
+        assert payload["project"]["educational_download"]["fallback_url"] == "https://www.sdelsol.com/universidades-y-cc-ff/"
+        assert payload["project"]["educational_download"]["requires_login"] is True
+        assert payload["project"]["educational_download"]["year"] == 2026
+        assert payload["project"]["version"] == "2026.11"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1279,7 +1283,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
                 headers=auth,
             )
             assert pinned.status_code == 200
-            assert pinned.json()["project"]["version"] == "2026.9"
+            assert pinned.json()["project"]["version"] == "2026.11"
         finally:
             snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
