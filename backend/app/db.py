@@ -27,4 +27,6 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     from . import models  # noqa: F401
+    from .schema import migrate_schema
     Base.metadata.create_all(bind=engine)
+    migrate_schema(engine)
