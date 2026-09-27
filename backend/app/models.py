@@ -61,10 +61,16 @@ class Course(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     organization_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     platform_issuer: Mapped[str] = mapped_column(String(500))
     context_id: Mapped[str] = mapped_column(String(500))
+    source_type: Mapped[str] = mapped_column(String(40), default="lti", index=True)
     title: Mapped[str] = mapped_column(String(300))
     label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    academic_year: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    join_code: Mapped[str | None] = mapped_column(String(40), nullable=True, unique=True)
+    settings_json: Mapped[dict] = mapped_column(JSON, default=dict)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -183,14 +189,33 @@ class ScormPackage(Base):
     __tablename__ = "scorm_packages"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), index=True)
+    module_id: Mapped[int | None] = mapped_column(ForeignKey("modules.id", ondelete="SET NULL"), nullable=True, index=True)
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="")
+    original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
     version: Mapped[str] = mapped_column(String(80), default="1")
     standard: Mapped[str] = mapped_column(String(40), default="SCORM_1.2")
     entrypoint: Mapped[str] = mapped_column(String(1000))
     storage_path: Mapped[str] = mapped_column(String(1000))
     sha256: Mapped[str] = mapped_column(String(64))
     manifest_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    visibility: Mapped[str] = mapped_column(String(30), default="private", index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ModuleScormPackage(Base):
+    __tablename__ = "module_scorm_packages"
+    __table_args__ = (UniqueConstraint("module_id", "package_id", name="uq_module_scorm_package"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), index=True)
+    package_id: Mapped[int] = mapped_column(ForeignKey("scorm_packages.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    required: Mapped[bool] = mapped_column(Boolean, default=True)
+    weight: Mapped[float] = mapped_column(Float, default=1.0)
+    settings_json: Mapped[dict] = mapped_column(JSON, default=dict)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
