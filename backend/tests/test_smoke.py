@@ -21,6 +21,7 @@ os.environ["LMS_PUBLIC_BASE_URL"] = "https://lms.example.test"
 os.environ["LMS_STORAGE_ROOT"] = str(STORAGE)
 
 import jwt
+from sqlalchemy import create_engine, inspect, text
 from fastapi.testclient import TestClient
 
 from app.db import SessionLocal
@@ -54,6 +55,7 @@ from app.models import (
     User,
 )
 from app.security import create_session_token
+from app.schema import SCHEMA_VERSION, migrate_schema
 
 
 def teacher_fixture(slug: str = "modulo-prueba"):
@@ -3422,3 +3424,121 @@ def test_sequential_release_rules_can_enforce_ra_and_activity_order():
         )
         assert ra2_available.status_code == 200
         assert ra2_available.json()["available"] is True
+
+
+def test_schema_migration_upgrades_legacy_tables_without_losing_rows(tmp_path):
+    legacy_path = tmp_path / "legacy.db"
+    legacy_engine = create_engine(f"sqlite:///{legacy_path}")
+    with legacy_engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                display_name VARCHAR(250) NOT NULL,
+                email VARCHAR(320),
+                active BOOLEAN NOT NULL DEFAULT 1,
+                created_at DATETIME
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE modules (
+                id INTEGER PRIMARY KEY,
+                slug VARCHAR(120) NOT NULL,
+                code VARCHAR(80),
+                title VARCHAR(300) NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                module_type VARCHAR(40) NOT NULL DEFAULT 'scorm',
+                version VARCHAR(40) NOT NULL DEFAULT '0.1.0',
+                metadata_json JSON NOT NULL DEFAULT '{}',
+                active BOOLEAN NOT NULL DEFAULT 1
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE courses (
+                id INTEGER PRIMARY KEY,
+                organization_id INTEGER,
+                platform_issuer VARCHAR(500) NOT NULL,
+                context_id VARCHAR(500) NOT NULL,
+                title VARCHAR(300) NOT NULL,
+                label VARCHAR(120),
+                active BOOLEAN NOT NULL DEFAULT 1,
+                created_at DATETIME
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE lti_resource_links (
+                id INTEGER PRIMARY KEY,
+                platform_id INTEGER NOT NULL,
+                deployment_id VARCHAR(500) NOT NULL,
+                resource_link_id VARCHAR(500) NOT NULL,
+                course_id INTEGER NOT NULL,
+                course_module_id INTEGER,
+                lineitem_url VARCHAR(1500),
+                lineitems_url VARCHAR(1500),
+                memberships_url VARCHAR(1500),
+                scopes JSON NOT NULL DEFAULT '[]',
+                last_launch_at DATETIME
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE scorm_packages (
+                id INTEGER PRIMARY KEY,
+                module_id INTEGER NOT NULL,
+                title VARCHAR(300) NOT NULL,
+                version VARCHAR(80) NOT NULL DEFAULT '1',
+                standard VARCHAR(40) NOT NULL DEFAULT 'SCORM_1.2',
+                entrypoint VARCHAR(1000) NOT NULL,
+                storage_path VARCHAR(1000) NOT NULL,
+                sha256 VARCHAR(64) NOT NULL,
+                manifest_json JSON NOT NULL DEFAULT '{}',
+                active BOOLEAN NOT NULL DEFAULT 1
+            )
+        """))
+        conn.execute(
+            text("INSERT INTO users (id, display_name, email, active) VALUES (1, 'Docente legado', 'legacy@example.test', 1)")
+        )
+        conn.execute(
+            text("INSERT INTO modules (id, slug, title, active) VALUES (1, 'legacy', 'Legacy', 1)")
+        )
+        conn.execute(
+            text("INSERT INTO courses (id, platform_issuer, context_id, title, active) VALUES (1, 'https://legacy.example', 'ctx', 'Curso legado', 1)")
+        )
+        conn.execute(
+            text("""
+                INSERT INTO scorm_packages
+                    (id, module_id, title, entrypoint, storage_path, sha256, active)
+                VALUES
+                    (1, 1, 'SCORM legado', 'index.html', 'legacy/path', 'abc123', 1)
+            """)
+        )
+
+    version = migrate_schema(legacy_engine)
+    assert version == SCHEMA_VERSION
+    inspector = inspect(legacy_engine)
+    course_cols = {col["name"] for col in inspector.get_columns("courses")}
+    assert {
+        "owner_user_id", "source_type", "description", "academic_year",
+        "join_code", "settings_json",
+    }.issubset(course_cols)
+    link_cols = {col["name"] for col in inspector.get_columns("lti_resource_links")}
+    assert "learning_result_id" in link_cols
+    scorm_cols = {col["name"] for col in inspector.get_columns("scorm_packages")}
+    assert {
+        "owner_user_id", "description", "original_filename", "lineage_root_id",
+        "supersedes_id", "revision_number", "is_current", "lifecycle_status",
+        "visibility", "uploaded_at",
+    }.issubset(scorm_cols)
+
+    with legacy_engine.begin() as conn:
+        course = conn.execute(text("SELECT title, source_type, description FROM courses WHERE id = 1")).first()
+        assert course[0] == "Curso legado"
+        assert course[1] == "lti"
+        package = conn.execute(
+            text("SELECT title, lineage_root_id, revision_number, is_current FROM scorm_packages WHERE id = 1")
+        ).first()
+        assert package[0] == "SCORM legado"
+        assert package[1] == 1
+        assert package[2] == 1
+        assert bool(package[3]) is True
+
+    # Re-running the migration must be harmless.
+    assert migrate_schema(legacy_engine) == SCHEMA_VERSION
