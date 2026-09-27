@@ -162,6 +162,9 @@ class LTIResourceLink(Base):
     resource_link_id: Mapped[str] = mapped_column(String(500))
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     course_module_id: Mapped[int | None] = mapped_column(ForeignKey("course_modules.id"), nullable=True)
+    learning_result_id: Mapped[int | None] = mapped_column(
+        ForeignKey("learning_results.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     lineitem_url: Mapped[str | None] = mapped_column(String(1500), nullable=True)
     lineitems_url: Mapped[str | None] = mapped_column(String(1500), nullable=True)
     memberships_url: Mapped[str | None] = mapped_column(String(1500), nullable=True)
