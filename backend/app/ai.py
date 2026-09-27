@@ -28,7 +28,7 @@ from .settings import get_settings
 
 router = APIRouter(prefix="/api/ai")
 settings = get_settings()
-ALLOWED_KINDS = {"free", "text", "case", "calculation"}
+ALLOWED_KINDS = {"free", "text", "case", "calculation", "evidence"}
 
 
 def _now() -> datetime:
