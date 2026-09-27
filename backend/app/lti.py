@@ -606,6 +606,12 @@ def deep_link_select(
                     "lms_module_slug": module.slug,
                     "lms_course_module_id": str(course_module.id),
                 },
+                "lineItem": {
+                    "scoreMaximum": 100,
+                    "label": module.title,
+                    "resourceId": f"module:{module.slug}",
+                    "tag": "lms-module",
+                },
             }
         ],
     }
