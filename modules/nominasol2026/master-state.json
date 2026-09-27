@@ -1,0 +1,254 @@
+{
+  "version": "2026.9",
+  "teacher_only": true,
+  "project_id": "nominasol-2026-anual",
+  "company": "ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+  "purpose": "Referencia privada del estado que debe tener la empresa al terminar cada hito. No se entrega al alumnado y no sustituye la revisión de la copia de seguridad.",
+  "principles": [
+    "Comprobar primero datos maestros y después resultados derivados.",
+    "No corregir una nómina manualmente para ocultar un error de ficha, contrato, convenio o incidencia.",
+    "Conservar el histórico: los cambios deben surtir efecto desde su fecha y no reescribir periodos cerrados.",
+    "Las variantes individuales de febrero, marzo y noviembre se resuelven por alumno y se añaden a este estado base.",
+    "Los modelos, ficheros y comunicaciones del proyecto son exclusivamente de simulación y nunca se transmiten a organismos reales."
+  ],
+  "milestones": {
+    "M00": {
+      "title": "Primer contacto",
+      "expected_state": [
+        "NOMINASOL 2026 abierto y reconocible.",
+        "El alumno identifica empresa activa, Trabajadores y Nóminas."
+      ],
+      "active_workers": null,
+      "teacher_check": "No exigir memorización; confirmar orientación básica en la interfaz."
+    },
+    "M01": {
+      "title": "Empresa tutorial",
+      "expected_state": [
+        "Existe EMPRESA TUTORIAL.",
+        "Existe al menos un trabajador ficticio de prueba.",
+        "Se ha calculado al menos una nómina de prueba.",
+        "Existe una copia de seguridad localizable."
+      ],
+      "active_workers": null,
+      "teacher_check": "La empresa tutorial no debe confundirse con AGI ni arrastrarse al proyecto definitivo."
+    },
+    "M02": {
+      "title": "Empresa definitiva",
+      "expected_state": [
+        "Empresa activa: ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+        "Código interno: AGI.",
+        "Ejercicio: 2026.",
+        "Centro CT01 · Centro Tenerife Sur.",
+        "Convenio 99001355011983 asociado.",
+        "Calendario y banco de prácticas configurados."
+      ],
+      "active_workers": 0,
+      "critical_fields": {
+        "company_code": "AGI",
+        "year": 2026,
+        "work_center": "CT01",
+        "agreement_code": "99001355011983"
+      },
+      "teacher_check": "No permitir continuar si empresa, ejercicio, centro o convenio están mal."
+    },
+    "M03": {
+      "title": "Plantilla inicial",
+      "expected_state": [
+        "T01-T08 creados y consultables.",
+        "T06 configurada al 60 % de jornada.",
+        "Contratos, centro, clasificación profesional y conceptos asociados según expediente.",
+        "No se han usado datos personales reales."
+      ],
+      "active_workers": 8,
+      "roster": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T08"
+      ],
+      "teacher_check": "Revisar especialmente T06 y la correspondencia área/grupo/nivel."
+    },
+    "M04": {
+      "title": "Enero",
+      "expected_state": [
+        "Nóminas ordinarias de enero calculadas para T01-T08.",
+        "Copia AGI_2026_M01_CIERRE creada.",
+        "Enero queda como mes patrón sin incidencias extraordinarias."
+      ],
+      "active_workers": 8,
+      "period": "01/2026",
+      "teacher_check": "Comparar estructura de varias nóminas; no validar solo por el líquido."
+    },
+    "M05": {
+      "title": "Febrero",
+      "expected_state": [
+        "Nóminas de febrero calculadas.",
+        "Variable puntual aplicada solo al trabajador de la variante.",
+        "T08 registra 186 km de desplazamiento.",
+        "Los salarios fijos no se han alterado para introducir variables."
+      ],
+      "active_workers": 8,
+      "period": "02/2026",
+      "variant_required": true,
+      "variant_keys": [
+        "F02-A",
+        "F02-B",
+        "F02-C"
+      ],
+      "teacher_check": "Usar la variante asignada antes de comparar importes entre alumnos."
+    },
+    "M06": {
+      "title": "Marzo",
+      "expected_state": [
+        "IT por enfermedad común registrada en T04.",
+        "Fechas de IT coinciden con la variante individual.",
+        "Marzo recalculado desde la incidencia, no editado manualmente."
+      ],
+      "active_workers": 8,
+      "period": "03/2026",
+      "variant_required": true,
+      "variant_keys": [
+        "IT-A",
+        "IT-B",
+        "IT-C"
+      ],
+      "teacher_check": "Comprobar contingencia, fechas y reincorporación."
+    },
+    "M07": {
+      "title": "Abril",
+      "expected_state": [
+        "T09 · Paula Santana Pérez creada.",
+        "Alta T09: 08/04/2026.",
+        "Fin previsto T09: 15/09/2026.",
+        "Primer trimestre revisado mediante acumulados y modelo de práctica."
+      ],
+      "active_workers": 9,
+      "roster_add": [
+        "T09"
+      ],
+      "period": "04/2026",
+      "teacher_check": "T09 no debe aparecer en enero-marzo. No debe existir transmisión real del modelo."
+    },
+    "M08": {
+      "title": "Mayo · actualización y atrasos",
+      "expected_state": [
+        "Tablas 2026 actualizadas según BOE-A-2026-9024.",
+        "Efectos económicos desde 01/01/2026.",
+        "Liquidación separada de atrasos enero-abril.",
+        "Nóminas históricas enero-abril permanecen conservadas.",
+        "IRPF revisado/regularizado cuando proceda."
+      ],
+      "active_workers": 9,
+      "updated_annual_totals_area1": {
+        "C1": "17.654,00 €",
+        "C2": "17.574,00 €",
+        "D2": "17.334,00 €",
+        "E2": "17.094,00 €"
+      },
+      "teacher_check": "Hito crítico: revisar copia previa, tabla aplicada y liquidación de atrasos separada."
+    },
+    "M09": {
+      "title": "Junio",
+      "expected_state": [
+        "T03 recibe +125,00 €/mes desde 01/06/2026.",
+        "T02 recibe retribución en especie de 48,00 €/mes desde 01/06/2026.",
+        "Enero-mayo no han sido reescritos."
+      ],
+      "active_workers": 9,
+      "period": "06/2026",
+      "teacher_check": "Comprobar fecha de vigencia y naturaleza de la retribución en especie."
+    },
+    "M10": {
+      "title": "Julio",
+      "expected_state": [
+        "Nóminas ordinarias de julio cerradas.",
+        "Paga extraordinaria de julio calculada.",
+        "T02, T06 y T09 pueden mostrar importes diferentes por historia/jornada."
+      ],
+      "active_workers": 9,
+      "period": "07/2026",
+      "teacher_check": "No forzar pagas iguales; revisar devengo y proporcionalidad."
+    },
+    "M11": {
+      "title": "Agosto",
+      "expected_state": [
+        "Vacaciones T06: 03/08/2026-14/08/2026.",
+        "Vacaciones T07: 17/08/2026-28/08/2026.",
+        "T10 · Diego Marrero Cruz creado como sustitución al 60 %.",
+        "T10 activo del 03/08/2026 al 14/08/2026 y finalizado después.",
+        "Vacaciones no registradas como IT."
+      ],
+      "active_workers_at_month_end": 9,
+      "temporary_worker": "T10",
+      "teacher_check": "Hito crítico: puede requerir dos evidencias o restauración de copia para verificar todo."
+    },
+    "M12": {
+      "title": "Septiembre",
+      "expected_state": [
+        "T09 causa baja con último día 15/09/2026.",
+        "T09 permanece en histórico, no eliminado.",
+        "Existe finiquito y documentación de salida de práctica."
+      ],
+      "active_workers_at_month_end": 8,
+      "roster_remove": [
+        "T09"
+      ],
+      "teacher_check": "Comprobar fecha de baja, histórico y finiquito."
+    },
+    "M13": {
+      "title": "Octubre",
+      "expected_state": [
+        "T02 registra descanso por nacimiento/cuidado del 05/10/2026 al 01/11/2026.",
+        "La relación laboral de T02 no se extingue.",
+        "Octubre refleja la incidencia temporal."
+      ],
+      "active_employment_relationships": 8,
+      "teacher_check": "Distinguir parte temporal de una baja definitiva."
+    },
+    "M14": {
+      "title": "Noviembre",
+      "expected_state": [
+        "Nómina de noviembre cerrada.",
+        "Incidencia extraordinaria coincide con la variante individual.",
+        "Salario fijo no modificado para cuadrar el líquido."
+      ],
+      "active_workers": 8,
+      "period": "11/2026",
+      "variant_required": true,
+      "variant_keys": [
+        "NOV-A",
+        "NOV-B",
+        "NOV-C"
+      ],
+      "teacher_check": "Mirar código de variante antes de revisar trabajador, concepto e importe."
+    },
+    "M15": {
+      "title": "Diciembre",
+      "expected_state": [
+        "Nóminas ordinarias de diciembre cerradas.",
+        "Paga extraordinaria de diciembre calculada.",
+        "Acumulados anuales revisados.",
+        "No se han usado ajustes manuales en diciembre para compensar errores anteriores."
+      ],
+      "active_workers": 8,
+      "period": "12/2026",
+      "teacher_check": "Si hay descuadre, localizar y corregir el mes de origen."
+    },
+    "M16": {
+      "title": "Cierre anual",
+      "expected_state": [
+        "Documentación anual de práctica generada y revisada.",
+        "No se ha realizado ninguna presentación real.",
+        "Copia final AGI_2026_FINAL creada y restaurable.",
+        "Ejercicio 2027 abierto en la misma empresa.",
+        "Ejercicio 2026 sigue accesible."
+      ],
+      "active_workers_carried_to_2027": 8,
+      "teacher_check": "Validación manual obligatoria. Restaurar o inspeccionar la copia final cuando sea necesario."
+    }
+  }
+}
