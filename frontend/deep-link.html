@@ -16,7 +16,7 @@
 <body>
 <header class="top"><h1>Seleccionar contenido para CAMPUS</h1></header>
 <main class="wrap"><section class="card">
-  <p class="muted">Selecciona el módulo que quieres insertar como herramienta externa en el curso de CAMPUS.</p>
+  <p class="muted">Puedes insertar el módulo como acceso general o un resultado de aprendizaje concreto. Los enlaces de RA crean un elemento calificable independiente en CAMPUS.</p>
   <div id="content" class="grid"><p>Cargando módulos…</p></div>
 </section></main>
 <script>
@@ -28,15 +28,16 @@ async function load(){
   const r=await fetch("/api/lti/deep-link/"+encodeURIComponent(requestToken),{credentials:"include"});
   if(!r.ok){root.innerHTML="<div class='error'>La solicitud ha caducado o no está autorizada.</div>";return;}
   const d=await r.json();
-  if(!d.modules.length){root.innerHTML="<div class='error'>No tienes módulos editables disponibles para insertar.</div>";return;}
-  root.innerHTML=d.modules.map(m=>`<article class="item"><main><strong>${esc(m.title)}</strong><div class="muted">${esc(m.code||"")} · versión ${esc(m.version)}</div><p>${esc(m.description||"")}</p></main><button class="btn" data-id="${m.id}">Insertar</button></article>`).join("");
-  root.querySelectorAll("button[data-id]").forEach(b=>b.addEventListener("click",()=>selectModule(b)));
+  if(!d.modules.length){root.innerHTML="<div class='error'>No tienes módulos disponibles para insertar.</div>";return;}
+  root.innerHTML=d.modules.map(m=>`<article class="item"><main><strong>${esc(m.title)}</strong><div class="muted">${esc(m.code||"")} · versión ${esc(m.version)}</div><p>${esc(m.description||"")}</p><div style="display:grid;gap:8px;margin-top:12px"><button class="btn" data-module="${m.id}" data-lr="">Insertar acceso al módulo</button>${(m.learning_results||[]).map(ra=>`<button class="btn" style="background:#e9eef5;color:#203652;text-align:left" data-module="${m.id}" data-lr="${ra.id}">Insertar ${esc(ra.code)} · ${esc(ra.title)} <span class="muted">— calificable</span></button>`).join("")}</div></main></article>`).join("");
+  root.querySelectorAll("button[data-module]").forEach(b=>b.addEventListener("click",()=>selectContent(b)));
 }
-async function selectModule(button){
+async function selectContent(button){
   button.disabled=true;
+  const lr=button.dataset.lr?Number(button.dataset.lr):null;
   const r=await fetch("/api/lti/deep-link/select",{
     method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({request_token:requestToken,module_id:Number(button.dataset.id)})
+    body:JSON.stringify({request_token:requestToken,module_id:Number(button.dataset.module),learning_result_id:lr})
   });
   const text=await r.text();
   if(!r.ok){button.disabled=false;root.insertAdjacentHTML("afterbegin","<div class='error'>No se pudo insertar el módulo.</div>");return;}
