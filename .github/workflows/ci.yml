@@ -39,3 +39,70 @@ jobs:
         env:
           PYTHONPATH: .
         run: python -m pytest -q
+
+
+  stack-smoke:
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare production-like environment
+        run: |
+          SESSION_SECRET="$(openssl rand -hex 32)"
+          ADMIN_TOKEN="$(openssl rand -hex 32)"
+          AI_SECRET="$(openssl rand -hex 32)"
+          DB_PASSWORD="$(openssl rand -hex 32)"
+          cat > .env <<EOF
+          LMS_DATABASE_URL=postgresql+psycopg://lms:${DB_PASSWORD}@db:5432/lms
+          LMS_PUBLIC_BASE_URL=https://lms-ci.example.test
+          LMS_AI_ENCRYPTION_SECRET=${AI_SECRET}
+          LMS_SESSION_SECRET=${SESSION_SECRET}
+          LMS_ADMIN_TOKEN=${ADMIN_TOKEN}
+          LMS_LTI_PRIVATE_KEY_PATH=/data/keys/lti-private.pem
+          LMS_MODULES_ROOT=/modules
+          LMS_STORAGE_ROOT=/data
+          LMS_SCORM_CONTENT_BASE_URL=https://lms-ci.example.test/scorm-content
+          LMS_MAX_SCORM_UPLOAD_MB=512
+          LMS_MAX_MEDIA_UPLOAD_MB=2048
+          LMS_MAX_EVIDENCE_UPLOAD_MB=256
+          LMS_CORS_ORIGINS=https://lms-ci.example.test
+          POSTGRES_DB=lms
+          POSTGRES_USER=lms
+          POSTGRES_PASSWORD=${DB_PASSWORD}
+          EOF
+          chmod 600 .env
+      - name: Build and start full stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs --tail=200 api web db
+          exit 1
+      - name: Verify running installation
+        run: bash scripts/verify-installation.sh
+      - name: Exercise backup and restore
+        run: |
+          sudo bash scripts/backup.sh /tmp/lms-ci-backup
+          test -s /tmp/lms-ci-backup/database.sql.gz
+          test -s /tmp/lms-ci-backup/storage.tar.gz
+          test -s /tmp/lms-ci-backup/SHA256SUMS
+          sudo bash scripts/restore.sh /tmp/lms-ci-backup --yes
+          curl -fsS http://127.0.0.1:8080/api/health | grep -q '"ok":true'
+      - name: Final diagnostics
+        run: |
+          set -a
+          source .env
+          set +a
+          curl -fsS -H "X-Admin-Token: ${LMS_ADMIN_TOKEN}"             http://127.0.0.1:8080/api/admin/readiness | tee /tmp/readiness.json
+          grep -q '"code_ready":true' /tmp/readiness.json
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=250 api web db || true
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v || true
