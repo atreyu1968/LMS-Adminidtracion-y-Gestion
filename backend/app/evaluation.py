@@ -697,6 +697,7 @@ class EvaluationConfigIn(BaseModel):
     require_both_instruments: bool | None = None
     exam_enabled: bool | None = None
     exam_questions_per_ce: int | None = Field(default=None, ge=1, le=20)
+    recovery_items_per_ce: int | None = Field(default=None, ge=1, le=20)
     exam_minutes: int | None = Field(default=None, ge=1, le=300)
     exam_integrity_enabled: bool | None = None
     exam_fullscreen_required: bool | None = None
