@@ -413,6 +413,33 @@ class AssessmentAttempt(Base):
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class AssessmentReview(Base):
+    __tablename__ = "assessment_reviews"
+    __table_args__ = (UniqueConstraint("attempt_id", name="uq_assessment_review_attempt"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    attempt_id: Mapped[int] = mapped_column(
+        ForeignKey("assessment_attempts.id", ondelete="CASCADE"), index=True
+    )
+    ai_teacher_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    source: Mapped[str] = mapped_column(String(40), default="teacher", index=True)
+    status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    proposed_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    verdict: Mapped[str] = mapped_column(String(40), default="")
+    feedback: Mapped[str] = mapped_column(Text, default="")
+    breakdown_json: Mapped[list] = mapped_column(JSON, default=list)
+    reviewed_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    teacher_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    teacher_feedback: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class ExamSession(Base):
     __tablename__ = "exam_sessions"
     __table_args__ = (
