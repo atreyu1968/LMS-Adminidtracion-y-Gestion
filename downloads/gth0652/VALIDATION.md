@@ -14,7 +14,7 @@
 
 | Unidad | Paquete | Ficheros | SHA-256 |
 |---|---|---:|---|
-| UT1 | GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip | 21 | 2001e257d557e615eaecf3fc8b53324d57f3a0b0d10c46757544269bf2896974 |
-| UT2 | GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip | 19 | 35e162152593b20d8cec74a78f4aec71aab6f97d9c7d2126f131e66f8dbde846 |
-| UT3 | GTH_RA3_Seguridad_Social_SCORM_1.2.zip | 19 | 986d098480276bb8bf957d3861d599d9c53676a667af23743d76b1dc9e2f2d94 |
-| UT4 | GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip | 19 | 2be221fcd2024f4b983595bdeba27ad76d2081f77cace1a87b37341fb0508fd5 |
+| UT1 | GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip | 21 | 88a58c2c65be068145ee14c8e3303f76e36d0bf44a523555a5266804b838ba1c |
+| UT2 | GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip | 19 | a17c4ecea95f9f1bd2c4c9b62132dd2cec936d3740c28cf2ae6db95d4b3af513 |
+| UT3 | GTH_RA3_Seguridad_Social_SCORM_1.2.zip | 19 | a01449f037ece15529aedfe20e4fb688731b3bf595c21fa5616e9bb9f5d1d3db |
+| UT4 | GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip | 19 | d619e94e1267ab99ac1d8bb575910adb182b28cc0a461cee95f290fbd3a7bb6d |

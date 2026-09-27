@@ -8,60 +8,64 @@
       "title": "RA1 · Gestión de la contratación laboral",
       "filename": "GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip",
       "files": 21,
-      "bytes": 70733,
-      "sha256": "2001e257d557e615eaecf3fc8b53324d57f3a0b0d10c46757544269bf2896974",
+      "bytes": 70722,
+      "sha256": "88a58c2c65be068145ee14c8e3303f76e36d0bf44a523555a5266804b838ba1c",
       "manifest": "OK",
       "launch": "index.html",
       "internal_assets": "OK",
       "shared_secure_exam_embedded": true,
       "study_mode": "OK",
       "study_mode_resume": "OK",
-      "study_mode_fullscreen_fallback": "OK"
+      "study_mode_fullscreen_fallback": "OK",
+      "study_runtime": "shared"
     },
     {
       "unit": "UT2",
       "title": "RA2 · Modificación, suspensión y extinción del contrato",
       "filename": "GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip",
       "files": 19,
-      "bytes": 50780,
-      "sha256": "35e162152593b20d8cec74a78f4aec71aab6f97d9c7d2126f131e66f8dbde846",
+      "bytes": 50769,
+      "sha256": "a17c4ecea95f9f1bd2c4c9b62132dd2cec936d3740c28cf2ae6db95d4b3af513",
       "manifest": "OK",
       "launch": "index.html",
       "internal_assets": "OK",
       "shared_secure_exam_embedded": true,
       "study_mode": "OK",
       "study_mode_resume": "OK",
-      "study_mode_fullscreen_fallback": "OK"
+      "study_mode_fullscreen_fallback": "OK",
+      "study_runtime": "shared"
     },
     {
       "unit": "UT3",
       "title": "RA3 · Obligaciones empresariales con la Seguridad Social",
       "filename": "GTH_RA3_Seguridad_Social_SCORM_1.2.zip",
       "files": 19,
-      "bytes": 52310,
-      "sha256": "986d098480276bb8bf957d3861d599d9c53676a667af23743d76b1dc9e2f2d94",
+      "bytes": 52299,
+      "sha256": "a01449f037ece15529aedfe20e4fb688731b3bf595c21fa5616e9bb9f5d1d3db",
       "manifest": "OK",
       "launch": "index.html",
       "internal_assets": "OK",
       "shared_secure_exam_embedded": true,
       "study_mode": "OK",
       "study_mode_resume": "OK",
-      "study_mode_fullscreen_fallback": "OK"
+      "study_mode_fullscreen_fallback": "OK",
+      "study_runtime": "shared"
     },
     {
       "unit": "UT4",
       "title": "RA4 · Retribución, nóminas, cotización e IRPF",
       "filename": "GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip",
       "files": 19,
-      "bytes": 81863,
-      "sha256": "2be221fcd2024f4b983595bdeba27ad76d2081f77cace1a87b37341fb0508fd5",
+      "bytes": 82082,
+      "sha256": "d619e94e1267ab99ac1d8bb575910adb182b28cc0a461cee95f290fbd3a7bb6d",
       "manifest": "OK",
       "launch": "index.html",
       "internal_assets": "OK",
       "shared_secure_exam_embedded": true,
       "study_mode": "OK",
       "study_mode_resume": "OK",
-      "study_mode_fullscreen_fallback": "OK"
+      "study_mode_fullscreen_fallback": "OK",
+      "study_runtime": "inline"
     }
   ]
 }
