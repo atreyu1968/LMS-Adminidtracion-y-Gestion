@@ -919,6 +919,17 @@
         "overrides": {
           "variable_worker": "T03 · Lucía Vera Padrón",
           "variable_amount": "210,00 €"
+        },
+        "document_overrides": {
+          "M05-D01": {
+            "subject": "Variable de proyecto de Lucía Vera Padrón",
+            "body": "Se autoriza una retribución variable puntual por cierre de proyecto. Debe figurar únicamente en febrero y no convertirse en salario fijo.",
+            "fields": {
+              "trabajador": "T03 · Lucía Vera Padrón",
+              "importe": "210,00 €",
+              "periodo": "02/2026"
+            }
+          }
         }
       },
       {
@@ -928,6 +939,17 @@
         "overrides": {
           "variable_worker": "T07 · Iván Rodríguez Díaz",
           "variable_amount": "145,00 €"
+        },
+        "document_overrides": {
+          "M05-D01": {
+            "subject": "Variable de soporte de Iván Rodríguez Díaz",
+            "body": "Se autoriza una retribución variable puntual por intervención técnica extraordinaria. Debe figurar únicamente en febrero.",
+            "fields": {
+              "trabajador": "T07 · Iván Rodríguez Díaz",
+              "importe": "145,00 €",
+              "periodo": "02/2026"
+            }
+          }
         }
       }
     ],
@@ -940,6 +962,22 @@
           "worker": "T04 · Elena Martín Armas",
           "start": "12/03/2026",
           "end": "18/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "12/03/2026",
+              "fin": "18/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "19/03/2026"
+            }
+          }
         }
       },
       {
@@ -950,6 +988,22 @@
           "worker": "T04 · Elena Martín Armas",
           "start": "09/03/2026",
           "end": "15/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "09/03/2026",
+              "fin": "15/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "16/03/2026"
+            }
+          }
         }
       },
       {
@@ -960,6 +1014,22 @@
           "worker": "T04 · Elena Martín Armas",
           "start": "16/03/2026",
           "end": "22/03/2026"
+        },
+        "document_overrides": {
+          "M06-D01": {
+            "fields": {
+              "trabajador": "T04 · Elena Martín Armas",
+              "contingencia": "Enfermedad común",
+              "inicio": "16/03/2026",
+              "fin": "22/03/2026"
+            }
+          },
+          "M06-D02": {
+            "body": "La trabajadora se reincorpora al día siguiente de la fecha de fin del proceso. Comprueba que la incidencia no se prolonga más allá.",
+            "fields": {
+              "reincorporacion": "23/03/2026"
+            }
+          }
         }
       }
     ],
