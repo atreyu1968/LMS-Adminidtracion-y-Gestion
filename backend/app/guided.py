@@ -600,22 +600,12 @@ def teacher_guide(
         raise HTTPException(status_code=403, detail="No eres profesor de este grupo")
     package = db.scalar(
         select(ScormPackage)
-        .join(ScormRegistration, ScormRegistration.package_id == ScormPackage.id, isouter=True)
         .where(
             ScormPackage.module_id == cm.module_id,
             ScormPackage.active.is_(True),
         )
         .order_by(ScormPackage.id.desc())
     )
-    if not package:
-        package = db.scalar(
-            select(ScormPackage)
-            .where(
-                ScormPackage.module_id == cm.module_id,
-                ScormPackage.active.is_(True),
-            )
-            .order_by(ScormPackage.id.desc())
-        )
     if not package or not (package.manifest_json or {}).get("guided_project_folder"):
         raise HTTPException(status_code=404, detail="Este módulo no tiene una guía docente asociada")
     return _load_teacher_guide(package)
