@@ -8,6 +8,7 @@ from .db import init_db
 from .lti import router as lti_router
 from .integrations import router as integration_router
 from .groups import router as groups_router
+from .media import router as media_router
 from .scorm import router as scorm_router
 from .lti_keys import ensure_private_key
 from .settings import get_settings
@@ -41,4 +42,5 @@ app.include_router(api_router)
 app.include_router(lti_router)
 app.include_router(integration_router)
 app.include_router(groups_router)
+app.include_router(media_router)
 app.include_router(scorm_router)
