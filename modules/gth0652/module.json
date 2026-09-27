@@ -8,10 +8,16 @@
     "path": "grh0652"
   },
   "migration": {
-    "status": "source-pinned",
+    "status": "public-migrated-private-banks-pending",
     "preserve_source": true,
     "target_model": "native+scorm",
-    "source_commit": "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17"
+    "source_commit": "6eaa240ce13a69e328c5b8d11ae2bdca99be7d17",
+    "public_structure": {
+      "learning_results": 4,
+      "assessment_criteria": 33,
+      "portfolio_items": 198
+    },
+    "private_banks_in_git": false
   },
   "learning_results": [
     {
