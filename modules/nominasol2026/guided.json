@@ -91,8 +91,7 @@
           "look_for": "La ficha del trabajador puede abrirse de nuevo desde el listado.",
           "common_mistake": "Introducir datos reales de compañeros o familiares. Todos los datos de este proyecto son ficticios.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "07-trabajador-general.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Calcula y visualiza una nómina",
@@ -101,8 +100,7 @@
           "look_for": "Existe una nómina calculada y puedes visualizarla.",
           "common_mistake": "Confundir calcular con emitir. Primero se calcula; después se imprime o genera el documento.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "09-calculo-nomina.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Haz una copia de seguridad",
@@ -111,8 +109,7 @@
           "look_for": "Dispones de un archivo de copia que podrías restaurar.",
           "common_mistake": "Guardar la copia dentro de una carpeta que luego vas a borrar o no recordar.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081927499409",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "17-copia-seguridad.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -206,8 +203,7 @@
           "look_for": "Cada persona aparece en el listado y puede abrirse de nuevo.",
           "common_mistake": "Usar datos personales reales para que 'parezca más auténtico'. No es necesario ni adecuado.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "07-trabajador-general.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Asigna situación laboral y categoría",
@@ -216,8 +212,7 @@
           "look_for": "Categoría, grupo y centro coinciden con la ficha maestra.",
           "common_mistake": "Elegir una categoría solo porque produce el salario esperado.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "07-trabajador-general.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Crea el contrato",
@@ -226,8 +221,7 @@
           "look_for": "La modalidad, fecha de inicio y jornada son coherentes con el supuesto.",
           "common_mistake": "Guardar el trabajador y olvidar crear o asociar su contrato.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081913676817",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "08-trabajador-contrato.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Revisa conceptos retributivos e IRPF",
@@ -236,8 +230,7 @@
           "look_for": "La ficha contiene los conceptos y datos fiscales previstos antes de calcular enero.",
           "common_mistake": "Modificar una cifra para forzar el líquido de la nómina. Primero debe ser correcta la configuración.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "07-trabajador-general.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -273,8 +266,7 @@
           "look_for": "El proceso termina sin dejar trabajadores esperados fuera.",
           "common_mistake": "Calcular solo la nómina del trabajador que tienes abierto.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "09-calculo-nomina.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Aprende a leer el recibo",
@@ -291,8 +283,7 @@
           "look_for": "Existe una copia identificada como cierre de enero.",
           "common_mistake": "Sobrescribir la única copia de seguridad que tienes.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081927499409",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "17-copia-seguridad.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -328,8 +319,7 @@
           "look_for": "La variable aparece asociada solo al trabajador y mes correctos.",
           "common_mistake": "Modificar el salario fijo para incluir una cantidad que solo corresponde a febrero.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "09-calculo-nomina.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Comprueba kilometraje o dieta",
@@ -372,8 +362,7 @@
           "look_for": "La IT queda visible en la ficha o calendario del trabajador.",
           "common_mistake": "Introducir la ausencia como un simple día no trabajado.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082541235345",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "11-incapacidad-temporal.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Recalcula marzo y compara",
@@ -416,8 +405,7 @@
           "look_for": "El trabajador entra en abril y no figura en nóminas previas.",
           "common_mistake": "Usar como fecha de alta el 1 de enero por copiar una ficha anterior.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081913676817",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "08-trabajador-contrato.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Revisa acumulados del trimestre",
@@ -426,8 +414,7 @@
           "look_for": "Los importes pueden explicarse a partir de las nóminas cerradas.",
           "common_mistake": "Corregir directamente el total trimestral sin localizar la nómina que origina la diferencia.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081897665553",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "14-modelo-111.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -462,8 +449,7 @@
           "look_for": "Existe una copia previa a la actualización de mayo.",
           "common_mistake": "Actualizar primero y pensar en la copia después.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081927499409",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "17-copia-seguridad.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Actualiza las cuantías",
@@ -480,8 +466,7 @@
           "look_for": "Existe una liquidación de atrasos separada y trazable.",
           "common_mistake": "Reabrir y sustituir las nóminas antiguas en lugar de liquidar diferencias.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/33202923596561",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "13-atrasos.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Regulariza el IRPF cuando proceda",
@@ -490,8 +475,7 @@
           "look_for": "La retención futura refleja la nueva previsión cuando corresponda.",
           "common_mistake": "Cambiar manualmente el porcentaje sin usar la lógica de regularización.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/33202923596561",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "13-atrasos.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -527,8 +511,7 @@
           "look_for": "Junio refleja la nueva situación sin alterar meses cerrados.",
           "common_mistake": "Sobrescribir un concepto sin controlar la fecha de vigencia.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081893541777",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "07-trabajador-general.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Configura la retribución en especie",
@@ -571,8 +554,7 @@
           "look_for": "La configuración coincide con el supuesto.",
           "common_mistake": "Calcular sin comprobar qué conceptos entran en la paga.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082258836881",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "12-paga-extra.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Calcula y compara",
@@ -581,8 +563,7 @@
           "look_for": "Las diferencias entre trabajadores pueden justificarse.",
           "common_mistake": "Forzar todas las pagas para que sean iguales.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082258836881",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "12-paga-extra.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -617,8 +598,7 @@
           "look_for": "Los días están marcados con la causa correcta.",
           "common_mistake": "Registrar vacaciones como enfermedad o ausencia injustificada.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082541235345",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "11-incapacidad-temporal.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Gestiona la sustitución",
@@ -627,8 +607,7 @@
           "look_for": "La sustitución no se extiende fuera del periodo indicado.",
           "common_mistake": "Copiar un contrato indefinido y olvidar modificar la causa y fechas.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081913676817",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "08-trabajador-contrato.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -663,8 +642,7 @@
           "look_for": "La ficha conserva su historial y muestra la fecha de baja.",
           "common_mistake": "Borrar al trabajador del listado para que deje de aparecer.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/33203700875921",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "15-finiquito.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Calcula el finiquito",
@@ -673,8 +651,7 @@
           "look_for": "Existe un documento de liquidación vinculado al trabajador.",
           "common_mistake": "Escribir un importe manual sin partir del historial del trabajador.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/33203700875921",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "15-finiquito.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -709,8 +686,7 @@
           "look_for": "La situación queda acotada temporalmente.",
           "common_mistake": "Utilizar la opción de baja definitiva.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082541235345",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "11-incapacidad-temporal.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Comprueba octubre",
@@ -761,8 +737,7 @@
           "look_for": "El efecto aparece únicamente en el trabajador y periodo asignados.",
           "common_mistake": "Cambiar el salario fijo para obtener el líquido deseado.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "09-calculo-nomina.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -797,8 +772,7 @@
           "look_for": "Toda la plantilla activa tiene el resultado esperado.",
           "common_mistake": "Usar diciembre como mes de ajuste manual de errores anteriores.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082115876625",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "09-calculo-nomina.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Calcula la paga extraordinaria",
@@ -807,8 +781,7 @@
           "look_for": "La paga responde al periodo de devengo y a la historia laboral.",
           "common_mistake": "Suponer que debe coincidir exactamente con julio para todos.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082258836881",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "12-paga-extra.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Revisa acumulados",
@@ -817,8 +790,7 @@
           "look_for": "Los totales se corresponden con el historial del ejercicio.",
           "common_mistake": "Aceptar un total simplemente porque el programa no muestra avisos.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082584786449",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "16-modelo-190.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
@@ -853,8 +825,7 @@
           "look_for": "Los totales pueden justificarse a partir de las nóminas del ejercicio.",
           "common_mistake": "Presentar realmente un modelo con datos ficticios.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32082584786449",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "16-modelo-190.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Crea la copia definitiva",
@@ -863,8 +834,7 @@
           "look_for": "Existe un archivo final restaurable.",
           "common_mistake": "Guardar únicamente PDF y olvidar la base completa de NOMINASOL.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/32081927499409",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "17-copia-seguridad.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         },
         {
           "title": "Abre 2027",
@@ -873,8 +843,7 @@
           "look_for": "Puedes entrar en 2027 y volver a 2026 sin pérdida.",
           "common_mistake": "Crear una empresa nueva distinta en vez de abrir el nuevo ejercicio de la existente.",
           "screenshot": "https://ayuda.teamsystem.es/hc/article_attachments/45337886006929",
-          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL",
-          "screenshot_source_url": "18-apertura-ejercicio.png"
+          "screenshot_source": "TeamSystem España · Centro de ayuda de NOMINASOL"
         }
       ],
       "checklist": [
