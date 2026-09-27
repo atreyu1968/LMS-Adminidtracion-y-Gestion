@@ -11,13 +11,15 @@
 </head>
 <body>
 <header class="top"><div><h1>Evaluación del módulo</h1><div id="subtitle" class="tiny">Cargando…</div></div><a href="/teacher.html">Volver al panel docente</a></header>
-<main class="wrap">
-<div id="flash"></div>
+<a href="#mainContent" style="position:absolute;left:-9999px;top:auto" onfocus="this.style.left='12px';this.style.top='12px';this.style.zIndex='1000'" onblur="this.style.left='-9999px'">Saltar al contenido</a>
+<main class="wrap" id="mainContent" tabindex="-1">
+<div id="flash" aria-live="polite" aria-atomic="true"></div>
 <div class="metrics" id="metrics"></div>
-<nav class="tabs">
+<nav class="tabs" aria-label="Secciones de evaluación">
   <button class="tab active" data-tab="gradebook">Cuaderno</button>
   <button class="tab" data-tab="reviews">Revisiones</button>
   <button class="tab" data-tab="progress">Progreso</button>
+  <button class="tab" data-tab="activity">Actividad</button>
   <button class="tab" data-tab="structure">RA y CE</button>
   <button class="tab" data-tab="config">Configuración</button>
   <button class="tab" data-tab="availability">Disponibilidad</button>
@@ -39,6 +41,14 @@
     <select id="progressFilter" style="width:auto"><option value="all">Todos</option><option value="not_started">No iniciados</option><option value="in_progress">En curso</option><option value="completed">Completados</option></select>
   </div>
   <div id="progressMatrix"></div>
+</section>
+
+<section id="panel-activity" class="panel card">
+  <div class="actions" style="justify-content:space-between;align-items:flex-start">
+    <div><h2>Actividad observable</h2><p class="muted">Indicadores descriptivos basados únicamente en accesos, entregas y actividad registrada. No son predicciones ni diagnósticos.</p></div>
+    <button class="btn secondary" id="reloadSignalsBtn">Actualizar</button>
+  </div>
+  <div id="activitySignals"></div>
 </section>
 
 <section id="panel-reviews" class="panel card">
@@ -142,7 +152,7 @@
 const pageParams=new URLSearchParams(location.search);
 const cmid=Number(pageParams.get("course_module"));
 const requestedTab=pageParams.get("tab");
-let structure=null,readiness=null,gradebook=null,configData=null,reviews=[],progressMatrix=null,adaptive={rules:[],exceptions:[],exemptions:[]};
+let structure=null,readiness=null,gradebook=null,configData=null,reviews=[],progressMatrix=null,signals=null,adaptive={rules:[],exceptions:[],exemptions:[]};
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(msg,type="ok"){const el=document.querySelector("#flash");el.innerHTML='<div class="notice '+type+'">'+esc(msg)+'</div>';setTimeout(()=>el.innerHTML="",4500)}
 async function api(url,opts={}){const r=await fetch(url,{credentials:"include",...opts});const ct=r.headers.get("content-type")||"";const d=ct.includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(d?.detail?(typeof d.detail==="string"?d.detail:JSON.stringify(d.detail)):d||("HTTP "+r.status));return d}
@@ -164,18 +174,19 @@ async function load(){
    api("/api/evaluation/course-modules/"+cmid+"/config"),
    api("/api/evaluation/course-modules/"+cmid+"/reviews"),
    api("/api/evaluation/course-modules/"+cmid+"/progress-matrix"),
+   api("/api/experience/course-modules/"+cmid+"/signals"),
    api("/api/learning/course-modules/"+cmid+"/rules"),
    api("/api/learning/course-modules/"+cmid+"/exceptions")
   ]);
-  [structure,readiness,gradebook,configData,reviews,progressMatrix]=loaded.slice(0,6);
-  adaptive={rules:loaded[6]||[],...(loaded[7]||{})};
+  [structure,readiness,gradebook,configData,reviews,progressMatrix,signals]=loaded.slice(0,7);
+  adaptive={rules:loaded[7]||[],...(loaded[8]||{})};
   const moduleTitle=structure.learning_results.length?(structure.learning_results[0].title?"Módulo con "+structure.learning_results.length+" RA":"Módulo"):"Módulo";
   document.querySelector("#subtitle").textContent=moduleTitle+" · grupo-módulo "+cmid;
   renderAll();
   if(requestedTab)activateTab(requestedTab);
  }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
-function renderAll(){renderMetrics();renderGradebook();renderProgress();renderReviews();renderStructure();renderConfig();renderAvailability();renderReadiness()}
+function renderAll(){renderMetrics();renderGradebook();renderProgress();renderActivitySignals();renderReviews();renderStructure();renderConfig();renderAvailability();renderReadiness()}
 function renderMetrics(){
  const pending=reviews.length,students=gradebook.students.length,total=readiness.items_total,keys=readiness.keys_loaded;
  document.querySelector("#metrics").innerHTML=[
@@ -218,6 +229,18 @@ async function openStudentDetail(userId){
 }
 document.querySelector("#closeStudentDetailBtn").addEventListener("click",()=>document.querySelector("#studentDetailDrawer").classList.add("hidden"));
 document.querySelector("#studentDetailDrawer").addEventListener("click",e=>{if(e.target.id==="studentDetailDrawer")e.currentTarget.classList.add("hidden")});
+function renderActivitySignals(){
+ const root=document.querySelector("#activitySignals");if(!root)return;
+ const rows=signals?.students||[];
+ let html='<div class="notice">'+esc(signals?.note||"Se muestran únicamente señales basadas en actividad registrada.")+'</div>';
+ html+='<div class="table-wrap"><table><thead><tr><th>Alumno/a</th><th>Última actividad</th><th>Entregas</th><th>SCORM</th><th>Exámenes</th><th>Señales</th></tr></thead><tbody>';
+ html+=rows.map(x=>'<tr><td><button class="btn secondary" onclick="openStudentDetail('+x.user_id+')">'+esc(x.display_name)+'</button><div class="tiny muted">'+esc(x.email||"")+'</div></td><td>'+esc(x.last_activity?new Date(x.last_activity).toLocaleString():"Sin actividad")+'</td><td>'+esc(x.submitted_activities)+'</td><td>'+esc(x.scorm_registrations)+'</td><td>'+esc(x.exam_sessions)+'</td><td>'+((x.signals||[]).map(y=>'<span class="badge">'+esc(y.label)+'</span>').join(" ")||'<span class="muted">Sin señales</span>')+'</td></tr>').join("");
+ html+='</tbody></table></div>';root.innerHTML=html;
+}
+async function reloadSignals(){
+ try{signals=await api("/api/experience/course-modules/"+cmid+"/signals");renderActivitySignals();flash("Actividad actualizada.")}catch(e){flash(e.message,"error")}
+}
+document.querySelector("#reloadSignalsBtn")?.addEventListener("click",reloadSignals);
 function renderReviews(){
  const root=document.querySelector("#reviews");
  root.innerHTML=reviews.length?reviews.map(r=>'<article class="item review"><div><div class="actions"><span class="badge">'+esc(r.learning_result.code)+'</span><span class="badge">'+esc(r.criterion.code)+'</span><span class="badge">'+esc(r.source)+'</span></div><h3>'+esc(r.student.display_name)+'</h3><p><strong>'+esc(r.item.item_key)+' · '+esc(r.item.prompt)+'</strong></p><div class="response">'+esc(typeof r.response==="object"?JSON.stringify(r.response,null,2):r.response)+'</div>'+(r.proposed_score!==null&&r.proposed_score!==undefined?'<div class="notice"><strong>Propuesta IA: '+esc(r.proposed_score)+'/100</strong> · confianza '+esc(Math.round((r.confidence||0)*100))+'%<br>'+esc(r.feedback||"")+'</div>':'<div class="notice warn">'+esc(r.feedback||"Pendiente de valoración docente.")+'</div>')+'</div><div><label>Puntuación<input id="score-'+r.review_id+'" type="number" min="0" max="100" step="0.1" value="'+esc(r.proposed_score??"")+'"></label><label style="margin-top:8px">Comentario<textarea id="feedback-'+r.review_id+'">'+esc(r.feedback||"")+'</textarea></label><div class="actions" style="margin-top:9px"><button class="btn" onclick="decide('+r.review_id+',\'accepted\')">Aceptar puntuación</button><button class="btn danger" onclick="decide('+r.review_id+',\'rejected\')">Rechazar</button></div></div></article>').join(""):'<div class="notice ok">No hay respuestas pendientes de revisión.</div>';
