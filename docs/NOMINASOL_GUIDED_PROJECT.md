@@ -61,3 +61,20 @@ Al abrir el SCORM desde el LMS, scorm-bridge.js expone una pequeña API de proye
 Desde el grupo, el profesor dispone de **Seguimiento de hitos**. Puede ver el porcentaje de avance de cada alumno, el número de hitos superados, las evidencias pendientes, el historial de intentos, el resumen de la revisión IA y el archivo original. También puede aceptar una evidencia o devolverla con un comentario concreto.
 
 La validación docente permanece siempre disponible aunque la IA esté activa.
+
+
+## Expediente de empresa y bandeja mensual
+
+La versión 2026.2 incorpora `scenario.json`, que contiene la empresa ficticia completa, plantilla inicial, tablas salariales de referencia, política retributiva y la documentación que llega al departamento de Recursos Humanos durante el año.
+
+El alumno ya no recibe únicamente una instrucción del tipo “calcula febrero”. Antes de entrar en NOMINASOL abre la bandeja de RRHH y encuentra comunicaciones internas, solicitudes de trabajadores, partes de IT, autorizaciones de variables, comunicaciones de contratación, avisos de vencimiento, órdenes de liquidación y documentación de cierre.
+
+Algunos hitos tienen variantes asignadas de forma determinista por alumno. La misma persona conserva siempre la misma variante aunque cierre y vuelva a abrir el SCORM. Actualmente se individualizan, entre otros, la variable de febrero, las fechas de la IT de marzo y la incidencia económica de noviembre.
+
+La IA recibe también el contexto de la variante y los documentos de ese alumno, evitando validar una captura únicamente porque se parece a la solución de otro compañero.
+
+## Guía docente integrada
+
+`teacher-guide.json` aporta al profesorado un recorrido paralelo. Desde el propio grupo puede abrir la Guía docente y consultar qué pretende cada hito, cuál es el estado que se espera encontrar, qué conviene revisar y cuáles requieren validación manual.
+
+El objetivo es que el proyecto pueda impartirse aunque el docente todavía esté aprendiendo NOMINASOL.
