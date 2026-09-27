@@ -89,6 +89,27 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
             <button class="btn">Asignar módulo</button>
           </form>
         </div>
+        <div>
+          <h3>Configuración del grupo</h3>
+          <form id="groupSettingsForm">
+            <input type="hidden" name="group_id">
+            <label>Nombre<input name="title" required></label>
+            <div class="row">
+              <label>Etiqueta<input name="label"></label>
+              <label>Curso académico<input name="academic_year"></label>
+            </div>
+            <label>Descripción<textarea name="description"></textarea></label>
+            <label><input style="width:auto" type="checkbox" name="allow_self_enrol"> Permitir autoinscripción con código</label>
+            <label><input style="width:auto" type="checkbox" name="show_scores"> Mostrar calificaciones al alumnado</label>
+            <label>Intentos SCORM por defecto<input name="max_attempts_default" type="number" min="0" max="99"><small class="muted">0 = sin límite.</small></label>
+            <div id="joinCodeBox" class="notice hidden"></div>
+            <div class="actions">
+              <button class="btn">Guardar configuración</button>
+              <button type="button" id="rotateJoinCodeBtn" class="btn secondary hidden">Cambiar código</button>
+              <button type="button" id="closeGroupBtn" class="btn danger hidden">Cerrar grupo</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -205,8 +226,21 @@ async function openGroup(id){
     document.querySelector("#groupWorkspace").classList.remove("hidden");
     document.querySelector("#groupName").textContent=activeGroup.title;
     document.querySelector("#groupMeta").textContent=(activeGroup.source_type==="local"?"Grupo local":"Curso CAMPUS")+(activeGroup.academic_year?" · "+activeGroup.academic_year:"");
-    document.querySelectorAll("#addMemberForm input[name=group_id],#csvRosterForm input[name=group_id],#assignModuleForm input[name=group_id]").forEach(x=>x.value=id);
+    document.querySelectorAll("#addMemberForm input[name=group_id],#csvRosterForm input[name=group_id],#assignModuleForm input[name=group_id],#groupSettingsForm input[name=group_id]").forEach(x=>x.value=id);
     document.querySelector("#syncCampusBtn").classList.toggle("hidden",activeGroup.source_type!=="lti");
+    const gs=document.querySelector("#groupSettingsForm");
+    gs.elements.title.value=activeGroup.title||"";
+    gs.elements.label.value=activeGroup.label||"";
+    gs.elements.academic_year.value=activeGroup.academic_year||"";
+    gs.elements.description.value=activeGroup.description||"";
+    gs.elements.allow_self_enrol.checked=!!activeGroup.settings?.allow_self_enrol;
+    gs.elements.show_scores.checked=activeGroup.settings?.show_scores!==false;
+    gs.elements.max_attempts_default.value=Number(activeGroup.settings?.max_attempts_default||0);
+    const joinBox=document.querySelector("#joinCodeBox");
+    joinBox.classList.toggle("hidden",!activeGroup.join_code);
+    joinBox.innerHTML=activeGroup.join_code?"Código de acceso: <strong>"+esc(activeGroup.join_code)+"</strong>":"";
+    document.querySelector("#rotateJoinCodeBtn").classList.toggle("hidden",!activeGroup.owned||activeGroup.source_type!=="local");
+    document.querySelector("#closeGroupBtn").classList.toggle("hidden",!activeGroup.owned||activeGroup.source_type!=="local");
     document.querySelector("#membersList").innerHTML=members.map(m=>`<div class="item member"><div><strong>${esc(m.display_name)}</strong><small>${esc(m.email||"")} · ${esc(m.role)}</small></div>${m.user_id===me.user.id?"":'<button class="btn danger" onclick="removeMember('+id+','+m.user_id+')">Quitar</button>'}</div>`).join("")||'<div class="empty">Sin miembros.</div>';
     document.querySelector("#groupModules").innerHTML=gmods.map(m=>`<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")}</small><div class="actions" style="margin-top:8px"><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`).join("")||'<div class="empty">Sin módulos asignados.</div>';
     document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
@@ -236,6 +270,36 @@ document.querySelector("#uploadScormForm").addEventListener("submit",async e=>{
   e.preventDefault();const fd=new FormData(e.currentTarget);
   try{await api("/api/scorm-library",{method:"POST",body:fd});e.currentTarget.reset();myLibrary=await api("/api/scorm-library?scope=mine");renderLibrary();flash("SCORM importado en tu biblioteca.")}catch(err){flash(err.message,"error")}
 });
+document.querySelector("#groupSettingsForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!activeGroup)return;
+  const form=e.currentTarget;
+  const settings={
+    ...(activeGroup.settings||{}),
+    allow_self_enrol:form.elements.allow_self_enrol.checked,
+    show_scores:form.elements.show_scores.checked,
+    max_attempts_default:Number(form.elements.max_attempts_default.value||0)
+  };
+  try{
+    await api("/api/groups/"+activeGroup.id,json("PATCH",{
+      title:form.elements.title.value,
+      label:form.elements.label.value||null,
+      academic_year:form.elements.academic_year.value||null,
+      description:form.elements.description.value||"",
+      settings
+    }));
+    groups=await api("/api/groups");renderGroups();await openGroup(activeGroup.id);flash("Configuración guardada.");
+  }catch(err){flash(err.message,"error")}
+});
+document.querySelector("#rotateJoinCodeBtn").addEventListener("click",async()=>{
+  if(!activeGroup)return;
+  try{await api("/api/groups/"+activeGroup.id+"/rotate-join-code",{method:"POST"});groups=await api("/api/groups");renderGroups();await openGroup(activeGroup.id);flash("Código del grupo renovado.")}catch(e){flash(e.message,"error")}
+});
+document.querySelector("#closeGroupBtn").addEventListener("click",async()=>{
+  if(!activeGroup||!confirm("¿Cerrar este grupo local? El historial se conserva, pero dejará de estar activo."))return;
+  try{await api("/api/groups/"+activeGroup.id,{method:"DELETE"});activeGroup=null;document.querySelector("#groupWorkspace").classList.add("hidden");groups=await api("/api/groups");renderGroups();flash("Grupo cerrado.")}catch(e){flash(e.message,"error")}
+});
+
 document.querySelector("#activateGroupBtn").addEventListener("click",async()=>{
   if(!activeGroup)return;try{const r=await api("/api/groups/"+activeGroup.id+"/activate",{method:"POST"});document.querySelector("#currentContext").textContent="Contexto activo: "+r.title;flash("Grupo activado.")}catch(e){flash(e.message,"error")}
 });
