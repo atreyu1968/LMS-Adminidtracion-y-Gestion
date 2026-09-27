@@ -12,8 +12,11 @@ from .db import get_db
 from .lti import _role_from_lti
 from .lti_services import fetch_memberships, post_score
 from .models import (
+    CourseModule,
+    EvaluationResult,
     ExternalIdentity,
     GradeRecord,
+    LearningResult,
     LTIPlatform,
     LTIResourceLink,
     Membership,
@@ -270,6 +273,228 @@ async def send_score(
     }
 
 
+async def _sync_learning_result_grades(
+    *,
+    db: Session,
+    course_module: CourseModule,
+    learning_result: LearningResult,
+) -> dict:
+    link = db.scalar(
+        select(LTIResourceLink)
+        .where(
+            LTIResourceLink.course_id == course_module.course_id,
+            LTIResourceLink.course_module_id == course_module.id,
+            LTIResourceLink.learning_result_id == learning_result.id,
+            LTIResourceLink.lineitem_url.is_not(None),
+        )
+        .order_by(
+            LTIResourceLink.last_launch_at.desc(),
+            LTIResourceLink.id.desc(),
+        )
+    )
+    if not link:
+        return {
+            "learning_result_id": learning_result.id,
+            "code": learning_result.code,
+            "status": "no-link",
+            "sent": 0,
+            "pending": 0,
+            "missing_identity": 0,
+        }
+
+    platform = db.get(LTIPlatform, link.platform_id)
+    if not platform:
+        raise HTTPException(status_code=404, detail="LTI platform not found")
+
+    rows = db.execute(
+        select(EvaluationResult, User)
+        .join(User, User.id == EvaluationResult.user_id)
+        .join(
+            Membership,
+            (Membership.user_id == EvaluationResult.user_id)
+            & (Membership.course_id == course_module.course_id),
+        )
+        .where(
+            EvaluationResult.course_module_id == course_module.id,
+            EvaluationResult.learning_result_id == learning_result.id,
+            Membership.active.is_(True),
+            Membership.role == "student",
+            User.active.is_(True),
+        )
+        .order_by(User.display_name)
+    ).all()
+
+    sent = 0
+    pending = 0
+    missing_identity = 0
+    errors = []
+    for result, user in rows:
+        state = str((result.details_json or {}).get("status") or "")
+        if result.final_score is None or state not in {"passed", "not-passed"}:
+            pending += 1
+            continue
+
+        identity = db.scalar(
+            select(ExternalIdentity).where(
+                ExternalIdentity.user_id == user.id,
+                ExternalIdentity.issuer == platform.issuer,
+            )
+        )
+        if not identity:
+            missing_identity += 1
+            continue
+
+        try:
+            ags = await post_score(
+                platform=platform,
+                lineitem_url=str(link.lineitem_url),
+                lti_user_id=identity.subject,
+                score_given=float(result.final_score),
+                score_maximum=100.0,
+                comment=(
+                    f"{learning_result.code}: "
+                    f"{'superado' if result.passed else 'no superado'} "
+                    f"({float(result.final_score):.2f}/100)."
+                ),
+            )
+        except httpx.HTTPStatusError as exc:
+            errors.append(
+                {
+                    "user_id": user.id,
+                    "error": f"AGS HTTP {exc.response.status_code}",
+                }
+            )
+            continue
+        except httpx.HTTPError:
+            errors.append(
+                {
+                    "user_id": user.id,
+                    "error": "Error de conexión AGS",
+                }
+            )
+            continue
+
+        record = db.scalar(
+            select(GradeRecord).where(
+                GradeRecord.resource_link_id == link.id,
+                GradeRecord.user_id == user.id,
+            )
+        )
+        if not record:
+            record = GradeRecord(
+                resource_link_id=link.id,
+                user_id=user.id,
+            )
+            db.add(record)
+        record.score_given = float(result.final_score)
+        record.score_maximum = 100.0
+        record.comment = (
+            f"{learning_result.code}: "
+            f"{'superado' if result.passed else 'no superado'}"
+        )
+        record.activity_progress = "Completed"
+        record.grading_progress = "FullyGraded"
+        record.updated_at = datetime.now(timezone.utc)
+        record.last_sent_at = datetime.now(timezone.utc)
+        sent += 1
+
+    db.commit()
+    return {
+        "learning_result_id": learning_result.id,
+        "code": learning_result.code,
+        "status": "ok" if not errors else "partial",
+        "resource_link_id": link.id,
+        "sent": sent,
+        "pending": pending,
+        "missing_identity": missing_identity,
+        "errors": errors,
+    }
+
+
+@router.post(
+    "/course-modules/{course_module_id}/learning-results/{learning_result_id}/sync-grades"
+)
+async def sync_learning_result_grades(
+    course_module_id: int,
+    learning_result_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    teacher_id = int(session["sub"])
+    course_module = db.get(CourseModule, course_module_id)
+    if not course_module or not course_module.active:
+        raise HTTPException(status_code=404, detail="Módulo del grupo no encontrado")
+    if int(session.get("course_id") or 0) != course_module.course_id:
+        raise HTTPException(status_code=403, detail="Course context mismatch")
+    _teacher_membership(db, course_module.course_id, teacher_id)
+
+    lr = db.get(LearningResult, learning_result_id)
+    if not lr or not lr.active or lr.module_id != course_module.module_id:
+        raise HTTPException(status_code=404, detail="Resultado de aprendizaje no encontrado")
+
+    result = await _sync_learning_result_grades(
+        db=db,
+        course_module=course_module,
+        learning_result=lr,
+    )
+    if result["status"] == "no-link":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{lr.code} no tiene un enlace calificable AGS. "
+                "Insértalo en CAMPUS mediante Deep Linking."
+            ),
+        )
+    return result
+
+
+@router.post("/course-modules/{course_module_id}/sync-grades")
+async def sync_all_learning_result_grades(
+    course_module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    teacher_id = int(session["sub"])
+    course_module = db.get(CourseModule, course_module_id)
+    if not course_module or not course_module.active:
+        raise HTTPException(status_code=404, detail="Módulo del grupo no encontrado")
+    if int(session.get("course_id") or 0) != course_module.course_id:
+        raise HTTPException(status_code=403, detail="Course context mismatch")
+    _teacher_membership(db, course_module.course_id, teacher_id)
+
+    lrs = list(
+        db.scalars(
+            select(LearningResult)
+            .where(
+                LearningResult.module_id == course_module.module_id,
+                LearningResult.active.is_(True),
+            )
+            .order_by(LearningResult.position, LearningResult.id)
+        )
+    )
+    results = []
+    for lr in lrs:
+        results.append(
+            await _sync_learning_result_grades(
+                db=db,
+                course_module=course_module,
+                learning_result=lr,
+            )
+        )
+    return {
+        "course_module_id": course_module_id,
+        "learning_results": results,
+        "sent": sum(row.get("sent", 0) for row in results),
+        "pending": sum(row.get("pending", 0) for row in results),
+        "missing_identity": sum(
+            row.get("missing_identity", 0) for row in results
+        ),
+        "without_link": [
+            row["code"] for row in results if row.get("status") == "no-link"
+        ],
+    }
+
+
 @router.get("/courses/{course_id}/resource-links")
 def resource_links(
     course_id: int,
@@ -292,6 +517,7 @@ def resource_links(
             "id": row.id,
             "resource_link_id": row.resource_link_id,
             "course_module_id": row.course_module_id,
+            "learning_result_id": row.learning_result_id,
             "has_lineitem": bool(row.lineitem_url),
             "has_nrps": bool(row.memberships_url),
             "scopes": row.scopes or [],
