@@ -10,6 +10,7 @@ from .dashboard import router as dashboard_router
 from .evaluation import router as evaluation_router
 from .db import init_db
 from .lti import router as lti_router
+from .learning import router as learning_router
 from .integrations import router as integration_router
 from .groups import router as groups_router
 from .guided import router as guided_router
@@ -50,6 +51,7 @@ app.include_router(catalog_router)
 app.include_router(dashboard_router)
 app.include_router(evaluation_router)
 app.include_router(lti_router)
+app.include_router(learning_router)
 app.include_router(integration_router)
 app.include_router(groups_router)
 app.include_router(guided_router)
