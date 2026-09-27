@@ -95,24 +95,69 @@ for unit, zip_name in names.items():
     # The source tree can reach the shared exam runtime through ../../assets,
     # but a standalone SCORM ZIP cannot. Make every package self-contained.
     index_path = root / "index.html"
+    uses_shared_runtime = False
     if index_path.is_file():
         index_text = index_path.read_text(encoding="utf-8")
         index_text = index_text.replace(
             'src="../../assets/secure-exam.js"',
             'src="assets/secure-exam.js"',
         )
-        # UT4 historically added a second study-entry listener inline. The
-        # shared runtime already owns that action, so remove the duplicate.
-        index_text = re.sub(
-            r"""document\.getElementById\(['"]enterBtn['"]\)\?\.addEventListener\(
-                ['"]click['"],\(\)=>\{
-                document\.getElementById\(['"]launchOverlay['"]\)\.style\.display=['"]none['"];
-                document\.documentElement\.requestFullscreen\?\.\(\)\.catch\(\(\)=>\{\}\);
-                \}\);""",
-            "",
-            index_text,
-            flags=re.X,
-        )
+        uses_shared_runtime = 'src="assets/scorm.js"' in index_text
+
+        if uses_shared_runtime:
+            # RA1-RA3 delegate study entry to assets/scorm.js. Remove any
+            # legacy duplicate so there is exactly one owner of the action.
+            index_text = re.sub(
+                r"""document\.getElementById\(['"]enterBtn['"]\)\?\.addEventListener\(
+                    ['"]click['"],\(\)=>\{
+                    document\.getElementById\(['"]launchOverlay['"]\)\.style\.display=['"]none['"];
+                    document\.documentElement\.requestFullscreen\?\.\(\)\.catch\(\(\)=>\{\}\);
+                    \}\);""",
+                "",
+                index_text,
+                flags=re.X,
+            )
+        else:
+            # RA4 is intentionally self-contained and has its own SCORM
+            # implementation inline. Normalise that implementation rather than
+            # stacking the RA1-RA3 runtime on top of it.
+            old_inline_entry = """document.getElementById('enterBtn')?.addEventListener('click',()=>{document.getElementById('launchOverlay').style.display='none';document.documentElement.requestFullscreen?.().catch(()=>{});});"""
+            new_inline_entry = """document.getElementById('enterBtn')?.addEventListener('click',()=>{const overlay=document.getElementById('launchOverlay');if(overlay){overlay.classList.add('hidden');overlay.setAttribute('aria-hidden','true')}document.body.dataset.studyMode='active';const mode=document.getElementById('mode');if(mode)mode.textContent=api?'Modo de estudio · SCORM 1.2':'Modo de estudio · local';show(state.last&&document.getElementById(state.last)?state.last:'inicio');const full=document.documentElement.requestFullscreen?.();if(full&&typeof full.catch==='function')full.catch(()=>{});});"""
+            if old_inline_entry not in index_text:
+                errors.append(f"{unit}: no se encontró el manejador inline de modo estudio")
+            else:
+                index_text = index_text.replace(old_inline_entry, new_inline_entry, 1)
+
+            old_show = """function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));const el=document.getElementById(id);if(el)el.classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===id));window.scrollTo(0,0);}"""
+            new_show = """function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));const el=document.getElementById(id)||document.getElementById('inicio');if(el)el.classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.target===el?.id));state.last=el?.id||'inicio';localStorage.setItem(UNIT_ID,JSON.stringify(state));window.scrollTo(0,0);}"""
+            if old_show in index_text:
+                index_text = index_text.replace(old_show, new_show, 1)
+            else:
+                errors.append(f"{unit}: no se encontró la función show() inline")
+
+            index_text = index_text.replace(
+                "renderPractice();scormInit();show('inicio');",
+                "renderPractice();scormInit();show(state.last&&document.getElementById(state.last)?state.last:'inicio');",
+                1,
+            )
+            # In local mode the legacy scormInit left the status at
+            # 'Conectando…'. Make the pre-entry state truthful.
+            index_text = index_text.replace(
+                """function scormInit(){try{api=findAPI(window)||findAPI(window.opener);if(api){api.LMSInitialize('');const raw=api.LMSGetValue('cmi.suspend_data');if(raw){try{const remote=JSON.parse(raw);if(remote&&typeof remote==='object'){state.done=Object.assign({},state.done||{},remote.done||{});state.best=Math.max(state.best||0,Number(remote.best)||0);pruneState();localStorage.setItem(UNIT_ID,JSON.stringify(state));}}catch(_){}}document.getElementById('mode').textContent='SCORM 1.2 conectado';updateProgress();const bs=document.getElementById('bestScore');if(bs)bs.textContent=(state.best||0)+'%';}}catch(e){}}""",
+                """function scormInit(){try{api=findAPI(window)||findAPI(window.opener);if(api){api.LMSInitialize('');const raw=api.LMSGetValue('cmi.suspend_data');if(raw){try{const remote=JSON.parse(raw);if(remote&&typeof remote==='object'){state.done=Object.assign({},state.done||{},remote.done||{});state.best=Math.max(state.best||0,Number(remote.best)||0);state.last=remote.last||state.last||'inicio';pruneState();localStorage.setItem(UNIT_ID,JSON.stringify(state));}}catch(_){}}document.getElementById('mode').textContent='SCORM 1.2 conectado';updateProgress();const bs=document.getElementById('bestScore');if(bs)bs.textContent=(state.best||0)+'%';}else{const mode=document.getElementById('mode');if(mode)mode.textContent='Modo local';}}catch(e){const mode=document.getElementById('mode');if(mode)mode.textContent='Modo local';}}""",
+                1,
+            )
+            # RA4 loads secure-exam.js after its inline setup. Mount only after
+            # that file exists, matching RA1-RA3.
+            secure_tag = '<script src="assets/secure-exam.js"></script>'
+            secure_mount = '<script>window.GRH_SECURE_EXAM?.mount({startId:"startExamBtn",boxId:"examQuiz",resultId:"examResult"});</script>'
+            if secure_tag in index_text and secure_mount not in index_text:
+                index_text = index_text.replace(
+                    secure_tag,
+                    secure_tag + secure_mount,
+                    1,
+                )
+
         index_path.write_text(index_text, encoding="utf-8")
 
     # Normalise study entry in the shared runtime: enter immediately, request
@@ -197,15 +242,28 @@ for unit, zip_name in names.items():
     if html_missing:
         errors.append(f"{unit}: faltan recursos HTML: {sorted(set(html_missing))}")
 
+    launch_text = launch.read_text(encoding="utf-8", errors="replace")
     runtime_text = (root / "assets" / "scorm.js").read_text(encoding="utf-8", errors="replace")
-    study_checks = {
-        "enter_button": 'id="enterBtn"' in launch.read_text(encoding="utf-8", errors="replace"),
-        "overlay_hide": "overlay.classList.add('hidden')" in runtime_text,
-        "study_marker": "document.body.dataset.studyMode='active'" in runtime_text,
-        "resume_last": "showScreen(state.last||'inicio')" in runtime_text,
-        "fullscreen_nonblocking": "const full=requestFull();showScreen(state.last||'inicio');await full" in runtime_text,
-        "study_label": "Modo de estudio · SCORM 1.2" in runtime_text,
-    }
+    if uses_shared_runtime:
+        study_checks = {
+            "enter_button": 'id="enterBtn"' in launch_text,
+            "overlay_hide": "overlay.classList.add('hidden')" in runtime_text,
+            "study_marker": "document.body.dataset.studyMode='active'" in runtime_text,
+            "resume_last": "showScreen(state.last||'inicio')" in runtime_text,
+            "fullscreen_nonblocking": "const full=requestFull();showScreen(state.last||'inicio');await full" in runtime_text,
+            "study_label": "Modo de estudio · SCORM 1.2" in runtime_text,
+        }
+        study_runtime = "shared"
+    else:
+        study_checks = {
+            "enter_button": 'id="enterBtn"' in launch_text,
+            "overlay_hide": "overlay.classList.add('hidden')" in launch_text,
+            "study_marker": "document.body.dataset.studyMode='active'" in launch_text,
+            "resume_last": "state.last&&document.getElementById(state.last)?state.last:'inicio'" in launch_text,
+            "fullscreen_nonblocking": "const full=document.documentElement.requestFullscreen?.()" in launch_text,
+            "study_label": "Modo de estudio · SCORM 1.2" in launch_text,
+        }
+        study_runtime = "inline"
     if not all(study_checks.values()):
         errors.append(
             f"{unit}: contrato de entrada en modo estudio incompleto: "
@@ -242,6 +300,7 @@ for unit, zip_name in names.items():
         "study_mode": "OK",
         "study_mode_resume": "OK",
         "study_mode_fullscreen_fallback": "OK",
+        "study_runtime": study_runtime,
     })
     shutil.rmtree(stage_parent, ignore_errors=True)
 
