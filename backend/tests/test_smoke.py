@@ -1151,6 +1151,14 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert provisioned.status_code == 200, provisioned.text
         module_id = provisioned.json()["module_id"]
         package_id = provisioned.json()["package_id"]
+        assert provisioned.json()["snapshot_path"].startswith("guided-config/nominasol2026/")
+        snapshot = STORAGE / provisioned.json()["snapshot_path"]
+        assert (snapshot / "guided.json").is_file()
+        assert (snapshot / "scenario.json").is_file()
+        assert (snapshot / "support.json").is_file()
+        assert (snapshot / "teacher-guide.json").is_file()
+        assert (snapshot / "audit-rules.json").is_file()
+        assert len(provisioned.json()["config_hashes"]) == 5
 
         with SessionLocal() as db:
             teacher = User(display_name="Docente NOMINASOL", email="nominasol-teacher@example.test")
@@ -1219,7 +1227,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.5"
+        assert payload["project"]["version"] == "2026.6"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1245,6 +1253,24 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
             m for m in repeated.json()["project"]["milestones"] if m["key"] == "M05"
         )
         assert m05_repeated["variant"]["key"] == m05["variant"]["key"]
+
+        snapshot_source_path = Path(__file__).resolve().parents[2] / "modules" / "nominasol2026" / "guided.json"
+        snapshot_source_original = snapshot_source_path.read_text(encoding="utf-8")
+        try:
+            changed_source = __import__("json").loads(snapshot_source_original)
+            changed_source["version"] = "SOURCE-MODIFIED-AFTER-PROVISION"
+            snapshot_source_path.write_text(
+                __import__("json").dumps(changed_source, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            pinned = client.get(
+                f"/runtime-api/guided/registrations/{registration_id}/project",
+                headers=auth,
+            )
+            assert pinned.status_code == 200
+            assert pinned.json()["project"]["version"] == "2026.6"
+        finally:
+            snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
         started = client.post(
             f"/runtime-api/guided/registrations/{registration_id}/milestones/M00/start",

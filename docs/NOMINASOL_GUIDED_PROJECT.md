@@ -117,3 +117,16 @@ Desde cualquier momento del proyecto puede abrir **Ver mi evolución** y consult
 El portafolio no oculta los errores previos. Si una evidencia fue devuelta y posteriormente corregida, aparecen ambas. Esto refuerza el objetivo del proyecto: valorar que el alumno llega correctamente al resultado y documentar cómo lo consigue.
 
 El alumno puede preparar un informe imprimible desde el navegador y guardarlo como PDF mediante la función de impresión del propio sistema. También puede guardar un registro JSON con progreso y metadatos de las evidencias. La copia final restaurable de NOMINASOL continúa siendo una evidencia independiente e imprescindible del cierre anual.
+
+
+## Versionado inmutable del proyecto guiado
+
+La versión 2026.6 corrige un aspecto esencial para cursos ya iniciados. El LMS ya fijaba los intentos SCORM a la revisión con la que el alumno había empezado, pero la configuración narrativa del proyecto se cargaba desde los archivos actuales del repositorio.
+
+A partir de esta versión, al aprovisionar una revisión se crea una **instantánea privada** de `guided.json`, `scenario.json`, `support.json`, `teacher-guide.json` y `audit-rules.json`. Esa instantánea queda vinculada al paquete SCORM y no se sirve como contenido web público.
+
+El ZIP SCORM incorpora únicamente un marcador `guided-version.json` con la versión y las huellas de los archivos de configuración. De esta forma, cualquier modificación del caso, de la auditoría o de las ayudas produce una revisión nueva incluso aunque la interfaz SCORM no haya cambiado.
+
+Las revisiones sucesivas quedan enlazadas mediante `lineage_root_id`, `supersedes_id` y `revision_number`. La asociación del módulo apunta solo a la revisión actual para nuevos alumnos, mientras que un alumno con un registro previo continúa fijado a su revisión anterior y conserva también la configuración guiada de aquella revisión.
+
+Las reglas de auditoría permanecen en almacenamiento privado; el marcador público contiene únicamente hashes, nunca el solucionario.

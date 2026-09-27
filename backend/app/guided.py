@@ -24,6 +24,7 @@ from .models import (
     GuidedMilestoneProgress,
     Membership,
     Module,
+    ModuleScormPackage,
     ScormPackage,
     ScormRegistration,
     User,
@@ -64,70 +65,78 @@ def _project_folder(package: ScormPackage) -> str:
     return folder
 
 
-def _project_path(folder: str) -> Path:
+def _guided_config_path(
+    package: ScormPackage,
+    filename: str,
+    *,
+    required: bool = False,
+) -> Path | None:
+    if Path(filename).name != filename:
+        raise HTTPException(status_code=500, detail="Nombre de configuración guiada no válido")
+
+    snapshot = str((package.manifest_json or {}).get("guided_snapshot_path") or "").strip()
+    if snapshot:
+        storage = Path(settings.storage_root).resolve()
+        path = (storage / snapshot / filename).resolve()
+        if storage not in path.parents:
+            raise HTTPException(status_code=500, detail="Ruta de instantánea guiada no válida")
+        if path.is_file():
+            return path
+        if required:
+            raise HTTPException(
+                status_code=500,
+                detail=f"La revisión SCORM no conserva su instantánea de {filename}",
+            )
+
+    folder = _project_folder(package)
     root = Path(settings.modules_root).resolve()
-    path = (root / folder / "guided.json").resolve()
+    path = (root / folder / filename).resolve()
     if root not in path.parents or not path.is_file():
-        raise HTTPException(status_code=404, detail="No se encuentra la definición del proyecto guiado")
+        if required:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encuentra la configuración guiada {filename}",
+            )
+        return None
     return path
+
+
+def _load_guided_json(
+    package: ScormPackage,
+    filename: str,
+    *,
+    required: bool = False,
+) -> dict:
+    path = _guided_config_path(package, filename, required=required)
+    if path is None:
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"{filename} no es JSON válido") from exc
 
 
 def _load_project(package: ScormPackage) -> dict:
     folder = _project_folder(package)
-    try:
-        project = json.loads(_project_path(folder).read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="guided.json no es JSON válido") from exc
+    project = _load_guided_json(package, "guided.json", required=True)
     project["_folder"] = folder
     return project
 
 
 def _load_scenario(package: ScormPackage) -> dict:
-    folder = _project_folder(package)
-    root = Path(settings.modules_root).resolve()
-    path = (root / folder / "scenario.json").resolve()
-    if root not in path.parents or not path.is_file():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="scenario.json no es JSON válido") from exc
+    return _load_guided_json(package, "scenario.json")
 
 
 def _load_teacher_guide(package: ScormPackage) -> dict:
-    folder = _project_folder(package)
-    root = Path(settings.modules_root).resolve()
-    path = (root / folder / "teacher-guide.json").resolve()
-    if root not in path.parents or not path.is_file():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="teacher-guide.json no es JSON válido") from exc
+    return _load_guided_json(package, "teacher-guide.json")
 
 
 def _load_audit_rules(package: ScormPackage) -> dict:
-    folder = _project_folder(package)
-    root = Path(settings.modules_root).resolve()
-    path = (root / folder / "audit-rules.json").resolve()
-    if root not in path.parents or not path.is_file():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="audit-rules.json no es JSON válido") from exc
+    return _load_guided_json(package, "audit-rules.json")
 
 
 def _load_support(package: ScormPackage) -> dict:
-    folder = _project_folder(package)
-    root = Path(settings.modules_root).resolve()
-    path = (root / folder / "support.json").resolve()
-    if root not in path.parents or not path.is_file():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="support.json no es JSON válido") from exc
+    return _load_guided_json(package, "support.json")
 
 
 def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
@@ -868,6 +877,7 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
     catalog_root = Path(settings.modules_root).resolve()
     if catalog_root not in root.parents or not root.is_dir():
         raise HTTPException(status_code=404, detail="No se encuentra modules/nominasol2026")
+
     manifest = json.loads((root / "module.json").read_text(encoding="utf-8"))
     module = db.scalar(select(Module).where(Module.slug == manifest["slug"]))
     metadata = {
@@ -877,6 +887,7 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
         "guided_project": True,
         "software": "TeamSystem Nominasol 2026 Educativa",
         "screenshot_policy": "real-only",
+        "guided_revision_snapshots": True,
     }
     if not module:
         module = Module(
@@ -901,9 +912,51 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
         module.active = True
         db.flush()
 
+    previous_packages = list(
+        db.scalars(
+            select(ScormPackage)
+            .where(
+                ScormPackage.module_id == module.id,
+                ScormPackage.owner_user_id.is_(None),
+                ScormPackage.active.is_(True),
+            )
+            .order_by(ScormPackage.id.desc())
+        )
+    )
+    previous_package = next(
+        (
+            row
+            for row in previous_packages
+            if (row.manifest_json or {}).get("guided_project_folder") == "nominasol2026"
+        ),
+        None,
+    )
+
+    config_names = [
+        "guided.json",
+        "scenario.json",
+        "support.json",
+        "teacher-guide.json",
+        "audit-rules.json",
+    ]
+    config_bytes: dict[str, bytes] = {}
+    config_hashes: dict[str, str] = {}
+    for filename in config_names:
+        path = root / filename
+        if not path.is_file():
+            raise HTTPException(status_code=500, detail=f"Falta {filename} en NOMINASOL")
+        raw = path.read_bytes()
+        config_bytes[filename] = raw
+        config_hashes[filename] = hashlib.sha256(raw).hexdigest()
+
     scorm_root = root / "scorm" / "master"
     if not (scorm_root / "imsmanifest.xml").is_file():
         raise HTTPException(status_code=500, detail="Falta el SCORM maestro de NOMINASOL")
+    marker = {
+        "project": "nominasol2026",
+        "version": manifest.get("version") or "2026.1",
+        "config_hashes": config_hashes,
+    }
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(scorm_root.rglob("*")):
@@ -917,6 +970,11 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
                         path,
                         "assets/screenshots/" + path.relative_to(screenshot_root).as_posix(),
                     )
+        archive.writestr(
+            "guided-version.json",
+            json.dumps(marker, ensure_ascii=False, sort_keys=True, indent=2),
+        )
+
     upload = UploadFile(
         file=io.BytesIO(buf.getvalue()),
         filename="nominasol-2026-proyecto-anual.zip",
@@ -933,12 +991,33 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
         visibility="shared",
         legacy_module_id=module.id,
     )
+
+    if previous_package and previous_package.id != package.id:
+        lineage_root = int(previous_package.lineage_root_id or previous_package.id)
+        package.lineage_root_id = lineage_root
+        package.supersedes_id = previous_package.id
+        package.revision_number = int(previous_package.revision_number or 1) + 1
+        package.is_current = True
+        previous_package.is_current = False
+
+    snapshot_rel = Path("guided-config") / "nominasol2026" / f"package-{package.id}"
+    snapshot_dir = (Path(settings.storage_root) / snapshot_rel).resolve()
+    storage_root = Path(settings.storage_root).resolve()
+    if storage_root not in snapshot_dir.parents:
+        raise HTTPException(status_code=500, detail="Ruta de instantánea fuera del almacenamiento")
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    for filename, raw in config_bytes.items():
+        (snapshot_dir / filename).write_bytes(raw)
+
     package.manifest_json = {
         **(package.manifest_json or {}),
         "guided_project_folder": "nominasol2026",
         "guided_project_version": manifest.get("version") or "2026.1",
+        "guided_snapshot_path": snapshot_rel.as_posix(),
+        "guided_config_hashes": config_hashes,
         "screenshots": "real-only",
     }
+
     association = _attach_package(
         db,
         module.id,
@@ -947,14 +1026,36 @@ async def provision_nominasol2026(db: Session = Depends(get_db)) -> dict:
             position=1,
             required=True,
             weight=1,
-            settings={"guided_project": "nominasol2026"},
+            settings={
+                "guided_project": "nominasol2026",
+                "guided_project_version": manifest.get("version") or "2026.1",
+            },
         ),
     )
+
+    old_associations = list(
+        db.scalars(
+            select(ModuleScormPackage).where(
+                ModuleScormPackage.module_id == module.id,
+                ModuleScormPackage.package_id != package.id,
+                ModuleScormPackage.active.is_(True),
+            )
+        )
+    )
+    for old in old_associations:
+        old_package = db.get(ScormPackage, old.package_id)
+        if old_package and (old_package.manifest_json or {}).get("guided_project_folder") == "nominasol2026":
+            old.active = False
+
     db.commit()
     return {
         "module_id": module.id,
         "package_id": package.id,
         "association_id": association.id,
         "deduplicated": deduplicated,
+        "revision_number": package.revision_number,
+        "supersedes_id": package.supersedes_id,
+        "snapshot_path": snapshot_rel.as_posix(),
+        "config_hashes": config_hashes,
         "title": module.title,
     }
