@@ -26,6 +26,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
     <button class="tab" data-tab="modules">Mis módulos</button>
     <button class="tab" data-tab="library">Mi biblioteca SCORM</button>
     <button class="tab" data-tab="shared">SCORM compartidos</button>
+    <button class="tab" data-tab="media">Biblioteca multimedia</button>
   </nav>
 
   <section id="panel-groups" class="panel active">
@@ -135,7 +136,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
   <section id="panel-library" class="panel">
     <div class="split">
       <div class="card">
-        <h2>Mi biblioteca SCORM</h2>
+        <div class="group-title"><div><h2>Mi biblioteca SCORM</h2><p class="muted">Cada edición publicada crea una revisión nueva sin alterar intentos ni calificaciones anteriores.</p></div><a class="btn secondary" href="/api/scorm-library/export/all">Exportar todos</a></div>
         <div id="libraryList" class="list"></div>
       </div>
       <aside class="card">
@@ -158,10 +159,30 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
       <div id="sharedList" class="list"></div>
     </div>
   </section>
+
+  <section id="panel-media" class="panel">
+    <div class="split">
+      <div class="card">
+        <h2>Biblioteca multimedia</h2>
+        <p class="muted">Vídeos, audios, imágenes y PDF reutilizables. Al insertarlos en un SCORM se copian dentro del paquete para conservar su portabilidad.</p>
+        <div id="mediaLibraryList" class="list"></div>
+      </div>
+      <aside class="card">
+        <h3>Subir recurso</h3>
+        <form id="uploadMediaForm" enctype="multipart/form-data">
+          <label>Archivo<input name="file" type="file" accept="video/*,audio/*,image/*,application/pdf" required></label>
+          <label>Título opcional<input name="title"></label>
+          <label>Descripción<textarea name="description"></textarea></label>
+          <label>Visibilidad<select name="visibility"><option value="private">Privado</option><option value="shared">Compartido con otros profesores</option></select></label>
+          <button class="btn">Añadir a la biblioteca</button>
+        </form>
+      </aside>
+    </div>
+  </section>
 </main>
 
 <script>
-let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[];
+let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[];
 
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
@@ -190,10 +211,14 @@ async function boot(){
   }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 async function refreshAll(){
-  [groups,modules,myLibrary,sharedLibrary]=await Promise.all([
-    api("/api/groups"),api("/api/modules/mine"),api("/api/scorm-library?scope=mine"),api("/api/scorm-library?scope=shared")
+  [groups,modules,myLibrary,sharedLibrary,mediaLibrary]=await Promise.all([
+    api("/api/groups"),
+    api("/api/modules/mine"),
+    api("/api/scorm-library?scope=mine"),
+    api("/api/scorm-library?scope=shared"),
+    api("/api/media-library?scope=mine")
   ]);
-  renderGroups();renderModules();renderLibrary();renderShared();refreshModuleSelects();
+  renderGroups();renderModules();renderLibrary();renderShared();renderMediaLibrary();refreshModuleSelects();
 }
 function renderGroups(){
   const root=document.querySelector("#groupsList");
@@ -210,11 +235,19 @@ function renderModules(){
 }
 function packageCard(p,shared=false){
   const moduleOptions=modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
-  return `<article class="item scorm"><div><strong>${esc(p.title)}</strong><div class="muted tiny">${esc(p.original_filename||"")} · ${esc(p.standard)} · ${esc(p.visibility)}</div><p>${esc(p.description||"")}</p></div>
-  <div style="min-width:220px"><select id="pkg-module-${p.id}"><option value="">Asignar a módulo…</option>${moduleOptions}</select><div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="attachPackage(${p.id})">Asignar</button>${!shared?'<button class="btn secondary" onclick="toggleVisibility('+p.id+',\''+(p.visibility==="shared"?"private":"shared")+'\')">'+(p.visibility==="shared"?"Hacer privado":"Compartir")+"</button>":""}</div></div></article>`;
+  const ownershipActions=shared
+    ? '<button class="btn secondary" onclick="forkScorm('+p.id+')">Crear copia editable</button>'
+    : '<button class="btn secondary" onclick="editScorm('+p.id+')">Editar</button><a class="btn secondary" href="/api/scorm-library/'+p.id+'/export">Exportar ZIP</a><button class="btn secondary" onclick="toggleVisibility('+p.id+',\''+(p.visibility==="shared"?"private":"shared")+'\')">'+(p.visibility==="shared"?"Hacer privado":"Compartir")+'</button>';
+  return `<article class="item scorm"><div><strong>${esc(p.title)}</strong><div class="muted tiny">${esc(p.original_filename||"")} · ${esc(p.standard)} · revisión ${esc(p.revision_number||1)} · ${esc(p.visibility)}</div><p>${esc(p.description||"")}</p></div>
+  <div style="min-width:250px"><select id="pkg-module-${p.id}"><option value="">Asignar a módulo…</option>${moduleOptions}</select><div class="actions" style="margin-top:8px"><button class="btn secondary" onclick="attachPackage(${p.id})">Asignar</button>${ownershipActions}</div></div></article>`;
 }
 function renderLibrary(){document.querySelector("#libraryList").innerHTML=myLibrary.length?myLibrary.map(p=>packageCard(p,false)).join(""):'<div class="empty">Tu biblioteca está vacía.</div>'}
 function renderShared(){document.querySelector("#sharedList").innerHTML=sharedLibrary.length?sharedLibrary.map(p=>packageCard(p,true)).join(""):'<div class="empty">No hay SCORM compartidos por otros profesores.</div>'}
+function formatBytes(n){n=Number(n||0);if(n<1024)return n+" B";if(n<1048576)return(n/1024).toFixed(1)+" KB";if(n<1073741824)return(n/1048576).toFixed(1)+" MB";return(n/1073741824).toFixed(2)+" GB"}
+function renderMediaLibrary(){
+  const root=document.querySelector("#mediaLibraryList");
+  root.innerHTML=mediaLibrary.length?mediaLibrary.map(m=>`<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.media_type)} · ${esc(m.mime_type)} · ${formatBytes(m.size_bytes)} · ${esc(m.visibility)}</div><p>${esc(m.description||"")}</p><div class="actions"><a class="btn secondary" href="${esc(m.url)}" target="_blank" rel="noopener">Abrir</a></div></article>`).join(""):'<div class="empty">Tu biblioteca multimedia está vacía.</div>';
+}
 function refreshModuleSelects(){
   const sel=document.querySelector("#assignModuleForm select[name=module_id]");
   sel.innerHTML='<option value="">Selecciona…</option>'+modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
@@ -270,6 +303,10 @@ document.querySelector("#uploadScormForm").addEventListener("submit",async e=>{
   e.preventDefault();const fd=new FormData(e.currentTarget);
   try{await api("/api/scorm-library",{method:"POST",body:fd});e.currentTarget.reset();myLibrary=await api("/api/scorm-library?scope=mine");renderLibrary();flash("SCORM importado en tu biblioteca.")}catch(err){flash(err.message,"error")}
 });
+document.querySelector("#uploadMediaForm").addEventListener("submit",async e=>{
+  e.preventDefault();const fd=new FormData(e.currentTarget);
+  try{await api("/api/media-library",{method:"POST",body:fd});e.currentTarget.reset();mediaLibrary=await api("/api/media-library?scope=mine");renderMediaLibrary();flash("Recurso añadido a la biblioteca multimedia.")}catch(err){flash(err.message,"error")}
+});
 document.querySelector("#groupSettingsForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!activeGroup)return;
@@ -313,6 +350,20 @@ async function attachPackage(pid){
   try{await api("/api/modules/"+mid+"/scorm-packages/"+pid,json("POST",{position:0,required:true,weight:1,settings:{}}));flash("SCORM asignado al módulo.");await showModuleScorms(mid,modules.find(x=>x.id===mid)?.title||"Módulo")}catch(e){flash(e.message,"error")}
 }
 async function toggleVisibility(pid,visibility){try{await api("/api/scorm-library/"+pid,json("PATCH",{visibility}));[myLibrary,sharedLibrary]=await Promise.all([api("/api/scorm-library?scope=mine"),api("/api/scorm-library?scope=shared")]);renderLibrary();renderShared();flash(visibility==="shared"?"SCORM compartido.":"SCORM marcado como privado.")}catch(e){flash(e.message,"error")}}
+async function editScorm(pid){
+  try{
+    const d=await api("/api/scorm-library/"+pid+"/draft",{method:"POST"});
+    location.href="/scorm-editor.html?draft="+encodeURIComponent(d.draft_id);
+  }catch(e){flash(e.message,"error")}
+}
+async function forkScorm(pid){
+  try{
+    const copy=await api("/api/scorm-library/"+pid+"/fork",{method:"POST"});
+    myLibrary=await api("/api/scorm-library?scope=mine");renderLibrary();
+    const d=await api("/api/scorm-library/"+copy.id+"/draft",{method:"POST"});
+    location.href="/scorm-editor.html?draft="+encodeURIComponent(d.draft_id);
+  }catch(e){flash(e.message,"error")}
+}
 async function showModuleScorms(mid,title){
   try{const rows=await api("/api/modules/"+mid+"/scorm-packages");const root=document.querySelector("#module-scorm-"+mid);root.innerHTML='<div class="notice" style="margin-top:10px"><strong>'+esc(title)+'</strong><div class="tiny">'+(rows.length?rows.map(x=>esc(x.title)).join("<br>"):"Sin SCORM asignados")+'</div></div>'}catch(e){flash(e.message,"error")}
 }
