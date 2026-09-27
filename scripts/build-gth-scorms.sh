@@ -123,6 +123,24 @@ for unit, zip_name in names.items():
         runtime_text = runtime_path.read_text(encoding="utf-8")
         old_entry = """ const enter=$('#enterBtn');if(enter)enter.onclick=async()=>{$('#launchOverlay')?.classList.add('hidden');await requestFull();showScreen(state.last||'inicio')};"""
         new_entry = """ const enter=$('#enterBtn');if(enter)enter.onclick=async()=>{const overlay=$('#launchOverlay');if(overlay){overlay.classList.add('hidden');overlay.setAttribute('aria-hidden','true')}document.body.dataset.studyMode='active';const mode=$('#mode');if(mode)mode.textContent=connected?'Modo de estudio · SCORM 1.2':'Modo de estudio · local';const full=requestFull();showScreen(state.last||'inicio');await full};"""
+        # Repair three literal backslash-n sequences present in the frozen
+        # source commit. They are outside JS strings and make the whole runtime
+        # fail to parse in a real browser.
+        runtime_text = runtime_text.replace(
+            "let examQuestions=[];\\nlet examDeadline",
+            "let examQuestions=[];\nlet examDeadline",
+        )
+        runtime_text = runtime_text.replace(
+            "examPendingSync=false;\\nfunction examDraftKey",
+            "examPendingSync=false;\nfunction examDraftKey",
+        )
+        runtime_text = runtime_text.replace(
+            "return}\\n examActive=true",
+            "return}\n examActive=true",
+        )
+        if "\\n" in runtime_text:
+            errors.append(f"{unit}: quedan secuencias \\n literales sospechosas en scorm.js")
+
         if old_entry not in runtime_text:
             errors.append(f"{unit}: no se encontró el manejador estándar de modo estudio")
         else:
