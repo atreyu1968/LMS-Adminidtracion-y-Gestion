@@ -44,7 +44,40 @@ def me(session: dict = Depends(read_session), db: Session = Depends(get_db)) -> 
 
 @router.get("/modules")
 def modules(session: dict = Depends(read_session), db: Session = Depends(get_db)) -> list[dict]:
-    rows = db.scalars(select(Module).where(Module.active.is_(True)).order_by(Module.title)).all()
+    user_id = int(session["sub"])
+    role = session.get("role")
+    course_id = int(session.get("course_id") or 0) or None
+
+    if role in {"teacher", "admin"}:
+        permitted_ids = select(ModulePermission.module_id).where(
+            ModulePermission.user_id == user_id
+        )
+        assigned_ids = (
+            select(CourseModule.module_id).where(
+                CourseModule.course_id == course_id,
+                CourseModule.active.is_(True),
+            )
+            if course_id
+            else select(CourseModule.module_id).where(False)
+        )
+        stmt = select(Module).where(
+            Module.active.is_(True),
+            Module.id.in_(permitted_ids.union(assigned_ids)),
+        )
+    else:
+        if not course_id:
+            return []
+        stmt = (
+            select(Module)
+            .join(CourseModule, CourseModule.module_id == Module.id)
+            .where(
+                CourseModule.course_id == course_id,
+                CourseModule.active.is_(True),
+                Module.active.is_(True),
+            )
+        )
+
+    rows = list(db.scalars(stmt.order_by(Module.title)))
     return [
         {
             "id": row.id,
@@ -56,6 +89,36 @@ def modules(session: dict = Depends(read_session), db: Session = Depends(get_db)
             "version": row.version,
         }
         for row in rows
+    ]
+
+
+@router.get("/modules/mine")
+def my_modules(
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    user_id = int(session["sub"])
+    rows = db.execute(
+        select(Module, ModulePermission)
+        .join(ModulePermission, ModulePermission.module_id == Module.id)
+        .where(
+            ModulePermission.user_id == user_id,
+            Module.active.is_(True),
+        )
+        .order_by(Module.title)
+    ).all()
+    return [
+        {
+            "id": module.id,
+            "slug": module.slug,
+            "code": module.code,
+            "title": module.title,
+            "description": module.description,
+            "module_type": module.module_type,
+            "version": module.version,
+            "permission": permission.permission,
+        }
+        for module, permission in rows
     ]
 
 
