@@ -183,6 +183,8 @@ def join_group(
     db: Session = Depends(get_db),
 ) -> dict:
     user_id = int(session["sub"])
+    if not db.get(User, user_id):
+        raise HTTPException(status_code=401, detail="User not found")
     code = payload.code.strip().upper()
     group = db.scalar(
         select(Course).where(
