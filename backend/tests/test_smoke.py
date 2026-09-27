@@ -1354,7 +1354,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert master_state.status_code == 200, master_state.text
         master_payload = master_state.json()
         assert master_payload["teacher_only"] is True
-        assert master_payload["version"] == "2026.11"
+        assert master_payload["version"] == "2026.9"
         assert master_payload["learner"]["name"] == "Alumno NOMINASOL"
         assert master_payload["milestones"]["M02"]["active_workers"] == 0
         assert master_payload["milestones"]["M03"]["active_workers"] == 8
