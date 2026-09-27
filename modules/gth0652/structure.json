@@ -23,7 +23,8 @@
     "exam_fullscreen_required": true,
     "exam_incident_limit": 3,
     "exam_incident_policy": "submit",
-    "ra_weights_verified": false
+    "ra_weights_verified": false,
+    "recovery_items_per_ce": 2
   },
   "learning_results": [
     {
