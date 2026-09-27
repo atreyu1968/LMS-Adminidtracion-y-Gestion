@@ -31,6 +31,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           bash -n scripts/install-ubuntu.sh
+          bash -n scripts/bootstrap-ubuntu.sh
           bash -n scripts/verify-installation.sh
           bash -n scripts/backup.sh
           bash -n scripts/restore.sh
