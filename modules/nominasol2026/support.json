@@ -1,0 +1,521 @@
+{
+  "version": "2026.4",
+  "principle": "La ayuda orienta hacia la causa del problema sin resolver la actividad por el alumno. Se recomienda empezar siempre por el dato de origen y recalcular después.",
+  "common": [
+    {
+      "symptom": "Estoy en una pantalla distinta a la de la captura",
+      "diagnose": [
+        "Comprueba que la empresa activa es la correcta.",
+        "Comprueba que estás trabajando en el ejercicio 2026.",
+        "Lee el título de la ventana o pestaña actual antes de buscar botones.",
+        "La interfaz puede variar ligeramente por tamaño de pantalla; busca primero el nombre de la función, no la posición exacta."
+      ],
+      "fix": "Vuelve al área indicada en la ruta del SCORM y entra de nuevo en la operación. No cambies datos hasta estar seguro de que estás en la pantalla correcta."
+    },
+    {
+      "symptom": "He cometido un error y no sé si puedo deshacerlo",
+      "diagnose": [
+        "Identifica qué dato cambiaste y en qué ficha o proceso.",
+        "Si todavía no has recalculado nóminas posteriores, corrige el dato de origen.",
+        "Si el cambio afecta a varios meses o no recuerdas el estado anterior, localiza la última copia de seguridad estable."
+      ],
+      "fix": "No improvises una compensación en otro campo. Corrige el origen o restaura la última copia estable y repite desde ese punto."
+    },
+    {
+      "symptom": "Mi resultado se parece al de un compañero, pero la IA lo rechaza",
+      "diagnose": [
+        "Comprueba si tu hito tiene una variante individual.",
+        "Relee la bandeja de entrada de tu propio SCORM.",
+        "Mira trabajador, fechas e importe antes de comparar con otra persona."
+      ],
+      "fix": "Trabaja con los documentos asignados a tu expediente. En febrero, marzo y noviembre puede haber datos diferentes entre alumnos."
+    }
+  ],
+  "milestones": {
+    "M00": [
+      {
+        "symptom": "No sé si tengo la versión adecuada",
+        "diagnose": [
+          "Mira el nombre y versión que aparecen al iniciar NOMINASOL.",
+          "La actividad se ha preparado para TeamSystem NOMINASOL 2026 Educativa."
+        ],
+        "fix": "Si aparece otro ejercicio o una versión anterior, no crees todavía ninguna empresa. Consulta al profesor y actualiza la instalación."
+      },
+      {
+        "symptom": "No encuentro Trabajadores o Nóminas",
+        "diagnose": [
+          "Observa las pestañas o áreas principales de la aplicación.",
+          "Amplía la captura real del SCORM y compárala con tu ventana."
+        ],
+        "fix": "Recorre la interfaz sin crear datos. Localiza primero las áreas generales; no necesitas memorizar todos los botones."
+      }
+    ],
+    "M01": [
+      {
+        "symptom": "No puedo crear la empresa tutorial",
+        "diagnose": [
+          "Comprueba que has accedido con un usuario que permite crear empresas.",
+          "Revisa si el código elegido ya existe."
+        ],
+        "fix": "Usa un código libre y el nombre EMPRESA TUTORIAL. Si ya existe una tutorial anterior, puedes reutilizarla únicamente si está vacía y corresponde al ejercicio de práctica."
+      },
+      {
+        "symptom": "El trabajador no aparece al calcular",
+        "diagnose": [
+          "Abre su ficha y comprueba que está de alta en el periodo.",
+          "Comprueba centro, contrato y fechas.",
+          "Vuelve al listado y confirma que la ficha quedó guardada."
+        ],
+        "fix": "Corrige la ficha de origen y vuelve a lanzar el cálculo. No intentes crear una segunda ficha del mismo trabajador."
+      },
+      {
+        "symptom": "No sé dónde guardar la copia de seguridad",
+        "diagnose": [
+          "Elige una carpeta de trabajo que puedas localizar después.",
+          "Evita carpetas temporales o descargas que suelas borrar."
+        ],
+        "fix": "Crea una carpeta específica del proyecto y utiliza nombres que indiquen empresa, ejercicio y mes."
+      }
+    ],
+    "M02": [
+      {
+        "symptom": "La empresa definitiva se ha creado con un ejercicio incorrecto",
+        "diagnose": [
+          "Mira el ejercicio activo antes de seguir.",
+          "Comprueba si todavía no has introducido trabajadores ni movimientos."
+        ],
+        "fix": "Corrige la configuración o vuelve a crear la empresa correctamente antes de avanzar. No construyas el proyecto anual sobre un ejercicio equivocado."
+      },
+      {
+        "symptom": "No encuentro el convenio en la ficha",
+        "diagnose": [
+          "Comprueba que el convenio ha sido creado o cargado antes de asignarlo.",
+          "Revisa el código 99001355011983 en la documentación del caso."
+        ],
+        "fix": "Configura primero el convenio y después vuelve a la empresa o a la ficha del trabajador para vincularlo."
+      },
+      {
+        "symptom": "No sé qué datos bancarios introducir",
+        "diagnose": [
+          "Relee el aviso de la bandeja de entrada.",
+          "El proyecto no utiliza cuentas reales."
+        ],
+        "fix": "Usa solo los datos de práctica que haya parametrizado el profesor. Nunca introduzcas tu cuenta ni la de otra persona."
+      }
+    ],
+    "M03": [
+      {
+        "symptom": "Me faltan trabajadores en el listado",
+        "diagnose": [
+          "El estado esperado inicial es T01 a T08.",
+          "Compara el código de cada ficha con el expediente de empresa.",
+          "Comprueba si alguna ficha se guardó con un código distinto o quedó sin confirmar."
+        ],
+        "fix": "Completa solo las fichas que falten. No dupliques las que ya existen."
+      },
+      {
+        "symptom": "La jornada de T06 no cuadra",
+        "diagnose": [
+          "T06 trabaja a tiempo parcial.",
+          "Revisa que la jornada sea el 60 % y que el contrato sea coherente con esa jornada."
+        ],
+        "fix": "Corrige jornada y contrato antes de calcular enero; un error aquí se propagará a todas sus nóminas."
+      },
+      {
+        "symptom": "No sé qué categoría asignar",
+        "diagnose": [
+          "Lee puesto, área, grupo y nivel en la ficha de trabajador.",
+          "No elijas categoría para obtener un salario concreto."
+        ],
+        "fix": "Asigna la clasificación profesional definida en el supuesto y deja que los conceptos retributivos se construyan a partir de esa configuración."
+      }
+    ],
+    "M04": [
+      {
+        "symptom": "Falta una nómina de enero",
+        "diagnose": [
+          "Comprueba que la persona está activa en enero.",
+          "Revisa fecha de alta, contrato, centro y datos salariales.",
+          "Vuelve a ejecutar el cálculo para toda la plantilla."
+        ],
+        "fix": "Corrige la ficha que impide el cálculo y recalcula enero. No generes manualmente un recibo fuera del proceso."
+      },
+      {
+        "symptom": "El líquido parece raro",
+        "diagnose": [
+          "No empieces por el líquido.",
+          "Compara salario base y complementos, después bases, cotizaciones e IRPF.",
+          "Comprueba especialmente T06 y T01."
+        ],
+        "fix": "Localiza el primer bloque que no coincide con lo esperado y corrige su dato de origen."
+      },
+      {
+        "symptom": "He recalculado y el resultado cambió",
+        "diagnose": [
+          "Revisa qué dato modificaste desde el cálculo anterior.",
+          "Comprueba si el programa ha aplicado una actualización o regularización."
+        ],
+        "fix": "No sigas hasta poder explicar la diferencia. Usa la copia de seguridad si necesitas comparar con el estado anterior."
+      }
+    ],
+    "M05": [
+      {
+        "symptom": "La variable aparece también en marzo",
+        "diagnose": [
+          "Comprueba si la introdujiste como concepto fijo del trabajador.",
+          "La variable de febrero debe ser puntual."
+        ],
+        "fix": "Elimina la permanencia del concepto y regístralo como incidencia o variable del periodo correspondiente."
+      },
+      {
+        "symptom": "El kilometraje no aparece",
+        "diagnose": [
+          "Comprueba trabajador T08, periodo y concepto.",
+          "Revisa que la incidencia se haya guardado antes de recalcular."
+        ],
+        "fix": "Registra los 186 km en el mecanismo previsto para el mes y vuelve a calcular."
+      },
+      {
+        "symptom": "Mi importe no coincide con el de otro alumno",
+        "diagnose": [
+          "M05 tiene variantes individuales.",
+          "Consulta la comunicación de variable de tu bandeja de entrada."
+        ],
+        "fix": "Usa trabajador e importe de tu variante. La diferencia con otro compañero puede ser intencionada."
+      }
+    ],
+    "M06": [
+      {
+        "symptom": "La IT no cambia la nómina",
+        "diagnose": [
+          "Comprueba que la IT está asociada a T04.",
+          "Revisa contingencia y fechas de tu variante.",
+          "Confirma que recalculaste marzo después de guardar la incidencia."
+        ],
+        "fix": "Corrige la IT en su ficha y recalcula. No modifiques la nómina directamente."
+      },
+      {
+        "symptom": "La IT dura más días de los previstos",
+        "diagnose": [
+          "Comprueba la fecha de fin y la fecha de reincorporación.",
+          "Tu variante puede tener fechas distintas a las de otros alumnos."
+        ],
+        "fix": "Corrige la fecha de fin en la incidencia y vuelve a calcular marzo."
+      },
+      {
+        "symptom": "No sé si usar enfermedad común o accidente",
+        "diagnose": [
+          "Lee la comunicación de IT de tu bandeja.",
+          "El caso de marzo se define como enfermedad común."
+        ],
+        "fix": "Selecciona la contingencia indicada en el documento y evita deducirla por intuición."
+      }
+    ],
+    "M07": [
+      {
+        "symptom": "T09 aparece en meses anteriores a abril",
+        "diagnose": [
+          "Comprueba la fecha de alta en su ficha.",
+          "La incorporación es el 08/04/2026."
+        ],
+        "fix": "Corrige la fecha de alta y verifica que enero-marzo no incluyan a T09."
+      },
+      {
+        "symptom": "El modelo trimestral no coincide con mis nóminas",
+        "diagnose": [
+          "Revisa acumulados de enero, febrero y marzo.",
+          "Localiza qué trabajador o mes origina la diferencia."
+        ],
+        "fix": "Corrige la nómina o dato de origen y vuelve a generar acumulados. No ajustes el modelo trimestral a mano."
+      },
+      {
+        "symptom": "El programa ofrece presentar o enviar el modelo",
+        "diagnose": [
+          "Este proyecto es una simulación educativa."
+        ],
+        "fix": "Genera solo la documentación de práctica. No realices ninguna presentación telemática."
+      }
+    ],
+    "M08": [
+      {
+        "symptom": "Los atrasos salen a cero",
+        "diagnose": [
+          "Comprueba que primero has actualizado las tablas 2026 afectadas.",
+          "Verifica que el periodo de atrasos incluye enero-abril.",
+          "Comprueba que los trabajadores usan categorías vinculadas al convenio."
+        ],
+        "fix": "Corrige la tabla o vinculación y vuelve a calcular atrasos. No introduzcas una cantidad global manual."
+      },
+      {
+        "symptom": "Los atrasos son negativos",
+        "diagnose": [
+          "Compara cuantía anterior y nueva del nivel profesional.",
+          "Revisa si aplicaste una tabla equivocada o una cuantía mensual como si fuera anual."
+        ],
+        "fix": "Restaura o corrige la tabla y recalcula. Los niveles actualizados del caso no deben producir una reducción."
+      },
+      {
+        "symptom": "He cambiado las nóminas de enero a abril",
+        "diagnose": [
+          "El supuesto exige conservar las nóminas históricas.",
+          "La diferencia debe liquidarse mediante atrasos."
+        ],
+        "fix": "Vuelve a una copia anterior si es necesario, restaura las nóminas originales y genera una liquidación separada de atrasos."
+      },
+      {
+        "symptom": "No sé a quién regularizar IRPF",
+        "diagnose": [
+          "Primero identifica quién ha cambiado su previsión retributiva anual.",
+          "La regularización depende del estado del trabajador y del cálculo fiscal del programa."
+        ],
+        "fix": "Utiliza la función de regularización del IRPF; no inventes manualmente un porcentaje para conseguir un líquido concreto."
+      }
+    ],
+    "M09": [
+      {
+        "symptom": "El complemento de T03 aparece desde enero",
+        "diagnose": [
+          "El incremento adicional empieza el 01/06/2026.",
+          "Comprueba la fecha de vigencia del concepto."
+        ],
+        "fix": "Haz que el cambio nazca en junio y verifica que enero-mayo permanecen intactos."
+      },
+      {
+        "symptom": "El seguro médico aumenta el dinero a cobrar",
+        "diagnose": [
+          "Se trata de una retribución en especie.",
+          "Revisa la naturaleza del concepto y el ingreso a cuenta."
+        ],
+        "fix": "Configura el concepto como especie conforme al supuesto y vuelve a calcular."
+      }
+    ],
+    "M10": [
+      {
+        "symptom": "La paga extra no aparece",
+        "diagnose": [
+          "Comprueba la definición de pagas extraordinarias del convenio.",
+          "Revisa el periodo y que estás calculando la paga de julio, no solo la nómina ordinaria."
+        ],
+        "fix": "Corrige la configuración de la paga y ejecútala separadamente según el sistema del programa."
+      },
+      {
+        "symptom": "Todas las pagas extras son iguales",
+        "diagnose": [
+          "Compara T02, T06 y T09.",
+          "T06 tiene jornada parcial y T09 se incorporó en abril."
+        ],
+        "fix": "Revisa periodo de devengo y proporcionalidad. No fuerces importes iguales."
+      },
+      {
+        "symptom": "La paga extra se ha sumado a la nómina ordinaria de forma inesperada",
+        "diagnose": [
+          "Comprueba cómo está configurada la emisión de pagas en el convenio."
+        ],
+        "fix": "Sigue la configuración prevista en el supuesto y verifica que puedes identificar claramente nómina ordinaria y extraordinaria."
+      }
+    ],
+    "M11": [
+      {
+        "symptom": "Las vacaciones reducen el salario como una ausencia injustificada",
+        "diagnose": [
+          "Comprueba la causa con la que registraste la ausencia.",
+          "Vacaciones no equivalen a IT ni a ausencia injustificada."
+        ],
+        "fix": "Corrige el tipo de ausencia y recalcula agosto."
+      },
+      {
+        "symptom": "T10 sigue activo después del 14 de agosto",
+        "diagnose": [
+          "Revisa fechas del contrato de sustitución.",
+          "Comprueba la baja prevista."
+        ],
+        "fix": "Ajusta el periodo al 03/08/2026-14/08/2026 y comprueba que no se arrastre a septiembre."
+      },
+      {
+        "symptom": "No puedo demostrar vacaciones y sustitución en una sola captura",
+        "diagnose": [
+          "Este es un hito de revisión docente y puede necesitar más de una evidencia."
+        ],
+        "fix": "Sube primero una evidencia clara. Después aporta una segunda si el profesor la solicita; no sacrifiques legibilidad intentando meterlo todo en una sola imagen."
+      }
+    ],
+    "M12": [
+      {
+        "symptom": "T09 ha desaparecido por completo",
+        "diagnose": [
+          "Comprueba si eliminaste su ficha en vez de tramitar una baja.",
+          "El historial debe conservarse."
+        ],
+        "fix": "Recupera la copia anterior si fuera necesario, registra la baja y conserva el expediente del trabajador."
+      },
+      {
+        "symptom": "El finiquito está vacío o incompleto",
+        "diagnose": [
+          "Revisa último día trabajado, vacaciones y conceptos pendientes.",
+          "Comprueba que la baja se registró antes de liquidar."
+        ],
+        "fix": "Corrige la información del trabajador y vuelve a generar el finiquito desde el historial."
+      }
+    ],
+    "M13": [
+      {
+        "symptom": "T02 figura como baja definitiva",
+        "diagnose": [
+          "La situación de octubre es una suspensión temporal.",
+          "Comprueba el tipo de incidencia registrado."
+        ],
+        "fix": "Corrige la situación para conservar la relación laboral y las fechas 05/10/2026-01/11/2026."
+      },
+      {
+        "symptom": "La suspensión no termina en noviembre",
+        "diagnose": [
+          "Revisa fecha final y calendario del trabajador."
+        ],
+        "fix": "Acota la incidencia al periodo indicado y comprueba la reincorporación posterior."
+      }
+    ],
+    "M14": [
+      {
+        "symptom": "No encuentro la misma incidencia que tiene mi compañero",
+        "diagnose": [
+          "Noviembre está individualizado.",
+          "Tu variante puede ser anticipo, bonus o embargo simulado."
+        ],
+        "fix": "Lee tu documento de noviembre y aplica exclusivamente tu caso."
+      },
+      {
+        "symptom": "He cambiado el salario fijo para cuadrar el líquido",
+        "diagnose": [
+          "La incidencia de noviembre debe ser trazable como movimiento extraordinario."
+        ],
+        "fix": "Restaura el salario fijo y registra el concepto en el lugar que corresponda a tu variante."
+      }
+    ],
+    "M15": [
+      {
+        "symptom": "Los acumulados anuales no cuadran",
+        "diagnose": [
+          "No corrijas diciembre para compensar.",
+          "Compara trimestre a trimestre y después mes a mes.",
+          "Localiza el primer periodo donde aparece la diferencia."
+        ],
+        "fix": "Corrige el mes de origen, recalcula lo necesario y vuelve a revisar acumulados."
+      },
+      {
+        "symptom": "La paga extra de diciembre coincide exactamente con julio y no sé si está bien",
+        "diagnose": [
+          "Revisa cambios de plantilla y condiciones entre ambos semestres.",
+          "La coincidencia puede ser correcta solo si la historia laboral lo justifica."
+        ],
+        "fix": "Verifica devengo, altas, bajas y cambios de jornada antes de aceptar el resultado."
+      }
+    ],
+    "M16": [
+      {
+        "symptom": "No puedo volver a 2026 después de abrir 2027",
+        "diagnose": [
+          "La apertura debe crear un nuevo ejercicio sin destruir el anterior.",
+          "Comprueba el selector de ejercicio y la empresa activa."
+        ],
+        "fix": "No sigas trabajando en 2027 hasta confirmar que 2026 sigue disponible. Si fuera necesario, restaura la copia FINAL 2026."
+      },
+      {
+        "symptom": "Solo tengo los PDF finales",
+        "diagnose": [
+          "Los PDF no permiten restaurar la empresa completa.",
+          "El hito exige una copia de seguridad integral."
+        ],
+        "fix": "Genera una copia restaurable de NOMINASOL identificada como AGI_2026_FINAL."
+      },
+      {
+        "symptom": "El programa ofrece presentar el 190",
+        "diagnose": [
+          "El proyecto utiliza datos ficticios."
+        ],
+        "fix": "Genera y revisa el modelo de práctica, pero no realices ninguna presentación real."
+      }
+    ]
+  },
+  "glossary": [
+    {
+      "term": "Empresa activa",
+      "definition": "Empresa y ejercicio sobre los que NOMINASOL aplicará la operación que realices. Antes de modificar datos, comprueba siempre que sean los correctos."
+    },
+    {
+      "term": "Convenio colectivo",
+      "definition": "Norma colectiva que establece, entre otras materias, clasificación profesional, jornada y estructura salarial aplicables al caso."
+    },
+    {
+      "term": "Categoría / grupo / nivel",
+      "definition": "Clasificación profesional utilizada por el convenio. En el proyecto determina la tabla salarial de referencia de cada trabajador."
+    },
+    {
+      "term": "Grupo de cotización",
+      "definition": "Clasificación utilizada en Seguridad Social para determinadas reglas de cotización. No debe confundirse con el grupo profesional del convenio."
+    },
+    {
+      "term": "Devengos",
+      "definition": "Cantidades y conceptos que el trabajador genera en el periodo, dinerarios o en especie, antes de practicar deducciones."
+    },
+    {
+      "term": "Base de cotización",
+      "definition": "Magnitud sobre la que se aplican los tipos de cotización. No es necesariamente igual al líquido ni al total devengado."
+    },
+    {
+      "term": "IRPF",
+      "definition": "Retención a cuenta del impuesto sobre la renta. NOMINASOL utiliza los datos personales y retributivos para calcular o regularizar la retención mediante los mecanismos disponibles."
+    },
+    {
+      "term": "Regularización de IRPF",
+      "definition": "Revisión del porcentaje de retención cuando cambian circunstancias o previsiones durante el año."
+    },
+    {
+      "term": "IT",
+      "definition": "Incapacidad temporal. Debe registrarse como incidencia laboral con contingencia y fechas, y después repercute en la nómina."
+    },
+    {
+      "term": "Contingencia común",
+      "definition": "Situación protegida no derivada de accidente de trabajo o enfermedad profesional; en el caso de marzo se utiliza enfermedad común."
+    },
+    {
+      "term": "Paga extraordinaria",
+      "definition": "Retribución adicional definida por el convenio o contrato. En este proyecto se trabajan pagas en julio y diciembre."
+    },
+    {
+      "term": "Atrasos",
+      "definition": "Diferencias salariales correspondientes a periodos anteriores que se liquidan posteriormente, sin sustituir indebidamente las nóminas históricas."
+    },
+    {
+      "term": "Retribución en especie",
+      "definition": "Retribución que no se entrega como dinero pero tiene valoración económica y puede producir efectos fiscales y de cotización."
+    },
+    {
+      "term": "Acumulados",
+      "definition": "Totales que NOMINASOL va construyendo a partir de nóminas y movimientos y que después alimentan informes y modelos fiscales."
+    },
+    {
+      "term": "Finiquito",
+      "definition": "Liquidación de cantidades pendientes al finalizar una relación laboral. No equivale a borrar el trabajador de la aplicación."
+    },
+    {
+      "term": "Copia de seguridad",
+      "definition": "Archivo que permite restaurar el estado de la empresa. Es una evidencia esencial en varios hitos del proyecto."
+    },
+    {
+      "term": "CRA",
+      "definition": "Conceptos Retributivos Abonados. Información relacionada con los conceptos retributivos comunicados a Seguridad Social."
+    },
+    {
+      "term": "SILTRA",
+      "definition": "Aplicación y formato de intercambio utilizados en procesos del Sistema de Liquidación Directa. En el proyecto se trabaja de forma simulada."
+    },
+    {
+      "term": "Modelo 111",
+      "definition": "Autoliquidación periódica de retenciones e ingresos a cuenta. En el proyecto se genera únicamente con fines didácticos."
+    },
+    {
+      "term": "Modelo 190",
+      "definition": "Resumen anual de retenciones e ingresos a cuenta. En el proyecto se revisa como cierre, sin presentación real."
+    }
+  ]
+}
