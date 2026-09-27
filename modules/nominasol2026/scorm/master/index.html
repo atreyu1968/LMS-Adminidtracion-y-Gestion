@@ -63,6 +63,8 @@ textarea{min-height:92px;resize:vertical}
 .pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf2f7;font-size:.8rem;font-weight:700}
 .hidden{display:none!important}
 .small{font-size:.9rem;color:var(--muted)}
+.install-card{background:linear-gradient(135deg,#f4f9ff,#ffffff);border:1px solid #bfd5eb;border-radius:18px;padding:20px 22px;margin-bottom:18px;box-shadow:0 10px 26px rgba(34,55,85,.06)}
+.install-card h2{font-size:1.25rem;margin:0 0 .45rem}.install-card p{margin:.35rem 0;color:#34445a}.install-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}.install-actions a{text-decoration:none}.official-badge{display:inline-block;background:#e8f3ff;color:#174f82;border-radius:999px;padding:5px 9px;font-size:.78rem;font-weight:800}
 .inbox{display:grid;gap:12px;margin-top:16px}.doc{border:1px solid #d9e3ed;border-radius:14px;background:#fbfdff;overflow:hidden}.doc summary{cursor:pointer;padding:14px 16px;list-style:none}.doc summary::-webkit-details-marker{display:none}.doc summary strong{display:block;color:#20334c}.doc summary span{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}.doc-body{padding:0 16px 16px;border-top:1px solid #e7edf3}.doc-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}.doc-field{background:#f1f5f9;border-radius:9px;padding:9px 10px}.doc-field b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#62738a}.variant{background:#fff8df;border:1px solid #ead28a;border-radius:13px;padding:14px 16px;margin:14px 0}.dossier{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.dossier>div{background:#f6f9fc;border:1px solid #e1e8f0;border-radius:11px;padding:12px}.dossier b{display:block;color:#31465f;font-size:.8rem;text-transform:uppercase}
 @media(max-width:900px){
  .app{grid-template-columns:1fr}
@@ -88,6 +90,16 @@ textarea{min-height:92px;resize:vertical}
     <div id="milestones" style="margin-top:12px"></div>
   </aside>
   <main>
+    <section id="officialDownload" class="install-card">
+      <span class="official-badge">DESCARGA OFICIAL · TEAMSystem / Software DELSOL</span>
+      <h2>Antes de empezar: instala NOMINASOL 2026 Educativa</h2>
+      <p>Este proyecto está preparado para <strong>TeamSystem NOMINASOL 2026 · Versión Educativa para Windows</strong>. Si todavía no la tienes instalada, utiliza únicamente la página oficial para centros de formación y estudiantes.</p>
+      <div class="install-actions">
+        <a class="btn" href="https://www.sdelsol.com/universidades-y-cc-ff/" target="_blank" rel="noopener noreferrer">Descargar / solicitar NOMINASOL 2026 Educativa</a>
+        <span class="small">En la página oficial, selecciona <strong>TeamSystem Nominasol · 2026 · Windows</strong> y pulsa <strong>Solicitar gratis la Versión Educativa</strong>.</span>
+      </div>
+      <p class="small">Si ya la tienes instalada, continúa con el primer hito. No utilices una versión de otro ejercicio para este proyecto.</p>
+    </section>
     <div id="loading" class="card"><h2>Preparando tu proyecto…</h2><p class="story">Estamos recuperando tu punto exacto de trabajo para que puedas continuar donde lo dejaste.</p></div>
     <div id="content" class="hidden"></div>
     <div id="fatal" class="card hidden"></div>
