@@ -22,7 +22,8 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
 <main class="wrap">
   <div id="flash"></div>
   <nav class="tabs">
-    <button class="tab active" data-tab="groups">Mis grupos</button>
+    <button class="tab active" data-tab="home">Inicio</button>
+    <button class="tab" data-tab="groups">Mis grupos</button>
     <button class="tab" data-tab="modules">Mis módulos</button>
     <button class="tab" data-tab="catalog">Catálogo oficial</button>
     <button class="tab" data-tab="library">Mi biblioteca SCORM</button>
@@ -31,7 +32,24 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
     <button class="tab" data-tab="ai">Mi IA</button>
   </nav>
 
-  <section id="panel-groups" class="panel active">
+  <section id="panel-home" class="panel active">
+    <div class="card">
+      <div class="group-title">
+        <div>
+          <h2>Centro de actividad</h2>
+          <p class="muted">Trabajo docente pendiente en todos tus grupos y módulos.</p>
+        </div>
+        <button class="btn secondary" id="refreshDashboardBtn">Actualizar</button>
+      </div>
+      <div id="dashboardMetrics" class="grid" style="margin-top:14px"></div>
+      <div style="margin-top:18px">
+        <h3>Necesita tu atención</h3>
+        <div id="dashboardItems" class="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="panel-groups" class="panel">
     <div class="split">
       <div>
         <div class="card">
@@ -238,7 +256,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
 </main>
 
 <script>
-let me=null, groups=[], modules=[], catalogModules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null;
+let me=null, groups=[], modules=[], catalogModules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null, dashboard=null;
 
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
@@ -267,7 +285,8 @@ async function boot(){
   }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 async function refreshAll(){
-  [groups,modules,catalogModules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
+  [dashboard,groups,modules,catalogModules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
+    api("/api/dashboard/teacher"),
     api("/api/groups"),
     api("/api/modules/mine"),
     api("/api/catalog/modules"),
@@ -276,7 +295,30 @@ async function refreshAll(){
     api("/api/media-library?scope=mine"),
     api("/api/ai/settings")
   ]);
-  renderGroups();renderModules();renderCatalog();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
+  renderDashboard();renderGroups();renderModules();renderCatalog();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
+}
+function renderDashboard(){
+  const summary=dashboard?.summary||{};
+  const metrics=[
+    ["Grupos",summary.groups||0],
+    ["Alumnado",summary.students||0],
+    ["Por revisar",summary.pending_reviews||0],
+    ["Recuperaciones",summary.recoveries||0],
+    ["Pendientes CAMPUS",summary.campus_pending||0],
+    ["SCORM en curso",summary.scorm_in_progress||0]
+  ];
+  document.querySelector("#dashboardMetrics").innerHTML=metrics.map(([label,value])=>
+    '<div class="item"><div class="muted tiny">'+esc(label)+'</div><div class="metric">'+esc(value)+'</div></div>'
+  ).join("");
+  const root=document.querySelector("#dashboardItems");
+  const items=dashboard?.items||[];
+  root.innerHTML=items.length?items.map(item=>{
+    const badge=item.kind==="review"?"Revisión":item.kind==="recovery"?"Recuperación":item.kind==="campus"?"CAMPUS":"SCORM";
+    return '<article class="item"><div class="group-title"><div><strong>'+esc(item.title)+'</strong><div class="muted tiny">'+esc(item.group)+' · '+esc(item.module)+'</div></div><span class="badge">'+esc(badge)+'</span></div><div class="actions" style="margin-top:9px"><a class="btn secondary" href="'+esc(item.href)+'">Abrir</a></div></article>';
+  }).join(""):'<div class="notice ok">No hay tareas docentes pendientes en este momento.</div>';
+}
+async function refreshDashboard(){
+  try{dashboard=await api("/api/dashboard/teacher");renderDashboard();flash("Centro de actividad actualizado.")}catch(e){flash(e.message,"error")}
 }
 function renderGroups(){
   const root=document.querySelector("#groupsList");
@@ -577,6 +619,7 @@ document.querySelector("#closeGroupBtn").addEventListener("click",async()=>{
   try{await api("/api/groups/"+activeGroup.id,{method:"DELETE"});activeGroup=null;document.querySelector("#groupWorkspace").classList.add("hidden");groups=await api("/api/groups");renderGroups();flash("Grupo cerrado.")}catch(e){flash(e.message,"error")}
 });
 
+document.querySelector("#refreshDashboardBtn").addEventListener("click",refreshDashboard);
 document.querySelector("#activateGroupBtn").addEventListener("click",async()=>{
   if(!activeGroup)return;try{const r=await api("/api/groups/"+activeGroup.id+"/activate",{method:"POST"});document.querySelector("#currentContext").textContent="Contexto activo: "+r.title;flash("Grupo activado.")}catch(e){flash(e.message,"error")}
 });
