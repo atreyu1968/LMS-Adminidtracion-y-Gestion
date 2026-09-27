@@ -106,3 +106,14 @@ Además existe una ayuda común para errores de navegación, empresa/ejercicio e
 El SCORM incluye también un glosario de consulta inmediata con conceptos de trabajo como devengos, bases de cotización, grupo de cotización, regularización de IRPF, IT, atrasos, retribución en especie, CRA, SILTRA y modelos 111/190. Está pensado como apoyo en contexto, no como una lista para memorizar.
 
 Las capturas reales pueden ampliarse a pantalla grande con un clic. El objetivo es que el estudiante pueda mantener el SCORM abierto junto a NOMINASOL y comparar visualmente ambas pantallas sin perder legibilidad.
+
+
+## Portafolio de evolución del alumno
+
+La versión 2026.5 convierte el historial de evidencias en un portafolio visible para el propio alumno.
+
+Desde cualquier momento del proyecto puede abrir **Ver mi evolución** y consultar, hito por hito, el estado alcanzado, número de intentos, archivos entregados, devoluciones de la IA, pistas recibidas y comentarios del profesor. Las evidencias muestran también una huella SHA-256 abreviada para ayudar a identificar de forma inequívoca qué archivo formó parte de cada intento.
+
+El portafolio no oculta los errores previos. Si una evidencia fue devuelta y posteriormente corregida, aparecen ambas. Esto refuerza el objetivo del proyecto: valorar que el alumno llega correctamente al resultado y documentar cómo lo consigue.
+
+El alumno puede preparar un informe imprimible desde el navegador y guardarlo como PDF mediante la función de impresión del propio sistema. También puede guardar un registro JSON con progreso y metadatos de las evidencias. La copia final restaurable de NOMINASOL continúa siendo una evidencia independiente e imprescindible del cierre anual.
