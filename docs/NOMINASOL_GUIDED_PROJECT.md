@@ -93,3 +93,16 @@ Los hitos críticos marcados como `manual_validation` no pueden completarse auto
 Actualmente requieren validación docente obligatoria, entre otros, la configuración de la empresa, la plantilla inicial, la actualización de tablas y atrasos, vacaciones y sustitución, y la auditoría final del ejercicio.
 
 La Guía docente muestra el solucionario técnico únicamente al profesorado: operador de comprobación, valor esperado, gravedad y reglas específicas de cada variante.
+
+
+## Ayuda diagnóstica y glosario
+
+La versión 2026.4 añade `support.json`, una capa de ayuda visible diseñada específicamente para alumnado y profesorado que empiezan NOMINASOL desde cero.
+
+Cada hito dispone de problemas frecuentes formulados como situaciones reconocibles: “el trabajador no aparece al calcular”, “la IT no cambia la nómina”, “los atrasos salen a cero”, “la paga extra no aparece” o “no puedo volver a 2026 después de abrir 2027”. La ayuda no entrega la solución: propone una secuencia de comprobaciones y obliga a volver al dato de origen.
+
+Además existe una ayuda común para errores de navegación, empresa/ejercicio equivocado, restauración desde copias y diferencias entre variantes individuales.
+
+El SCORM incluye también un glosario de consulta inmediata con conceptos de trabajo como devengos, bases de cotización, grupo de cotización, regularización de IRPF, IT, atrasos, retribución en especie, CRA, SILTRA y modelos 111/190. Está pensado como apoyo en contexto, no como una lista para memorizar.
+
+Las capturas reales pueden ampliarse a pantalla grande con un clic. El objetivo es que el estudiante pueda mantener el SCORM abierto junto a NOMINASOL y comparar visualmente ambas pantallas sin perder legibilidad.
