@@ -154,9 +154,10 @@ function renderSidebar(){
 }
 function screenshotBlock(step){
   if(!step.screenshot) return "";
-  var src="assets/screenshots/"+encodeURIComponent(step.screenshot);
+  var src=/^https?:\/\//i.test(step.screenshot)?step.screenshot:("assets/screenshots/"+encodeURIComponent(step.screenshot));
   return '<div class="shot"><img src="'+src+'" alt="Captura real de NOMINASOL: '+esc(step.title)+'" '
    +'onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'block\\';">'
+   +'<div class="small" style="padding:8px 12px;border-top:1px solid #e2e8f0">Captura real de NOMINASOL · fuente oficial TeamSystem</div>'
    +'<div class="missing" style="display:none"><strong>Captura real todavía no incorporada</strong>'
    +'No la sustituimos por una imagen inventada. Sigue la ruta de menú y la explicación de la izquierda; '
    +'esta pantalla se completará únicamente con una captura real de NOMINASOL 2026.</div></div>';
