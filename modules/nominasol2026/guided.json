@@ -1,0 +1,835 @@
+{
+  "project_id": "nominasol-2026-anual",
+  "title": "Un año en Recursos Humanos con NOMINASOL 2026",
+  "subtitle": "Proyecto profesional guiado · ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+  "version": "2026.1",
+  "software": "TeamSystem NOMINASOL 2026 · Versión Educativa",
+  "approach": "Aprender haciendo y corrigiendo hasta conseguir el resultado",
+  "introduction": "Este curso no presupone que conozcas NOMINASOL. Tampoco espera que memorices botones. Durante todo el año el SCORM permanecerá a tu lado como un tutor de trabajo: primero te contará qué ocurre en la empresa, después te enseñará dónde actuar en la aplicación, te ayudará a comprobar el resultado y finalmente te pedirá una evidencia. Si te equivocas, el objetivo no es penalizar el error, sino localizarlo, corregirlo y continuar con una empresa coherente.",
+  "teacher_note": "El proyecto evalúa la consecución de hitos y la evolución del alumno. La IA puede realizar una primera comprobación de capturas reales; los hitos críticos o de baja confianza pasan a revisión docente.",
+  "screenshot_policy": {
+    "mode": "real-only",
+    "explanation": "Las imágenes didácticas deben ser capturas reales de NOMINASOL 2026. Si una captura todavía no está disponible, el SCORM muestra una explicación textual detallada y la ruta de menús, pero nunca una interfaz inventada.",
+    "asset_prefix": "assets/screenshots/"
+  },
+  "evidence_policy": {
+    "objective": "demostrar evolución y estado real de la empresa",
+    "retry_until_correct": true,
+    "preferred_types": [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+      "application/zip"
+    ],
+    "note": "Las capturas se revisan con IA cuando el profesor ha configurado su API; PDF y copias quedan archivados para trazabilidad y revisión."
+  },
+  "milestones": [
+    {
+      "key": "M00",
+      "title": "Antes de empezar: conoce NOMINASOL sin miedo",
+      "period": "Preparación",
+      "requires": null,
+      "story": "Hoy todavía no eres responsable de la empresa. Vas a entrar por primera vez en NOMINASOL y recorrerlo como quien visita un lugar de trabajo antes de incorporarse. No buscamos que memorices menús: queremos que sepas orientarte, volver atrás sin perder datos y reconocer las zonas que utilizarás durante el proyecto.",
+      "objective": "Abrir NOMINASOL 2026 Educativa, identificar su pantalla principal y comprender cómo se organiza la aplicación. Al terminar debes poder moverte por el programa sin tocar todavía la empresa definitiva.",
+      "expected_result": "El alumno reconoce la pantalla de acceso, el área de empresa activa, las pestañas principales y sabe regresar a la pantalla inicial.",
+      "guide_intro": "Lee primero la explicación y después reproduce cada acción en tu ordenador. Mantén el SCORM abierto en una ventana y NOMINASOL en otra. No avances deprisa: durante esta primera toma de contacto interesa que relaciones cada captura con lo que estás viendo en tu propia pantalla.",
+      "steps": [
+        {
+          "title": "Abre la aplicación y observa antes de pulsar",
+          "body": "Comprueba que estás utilizando la edición 2026. La pantalla de acceso puede mostrar un usuario Supervisor. No necesitas crear cuentas nuevas para el proyecto; lo importante es entrar y reconocer la versión con la que estás trabajando.",
+          "route": "Inicio de NOMINASOL",
+          "look_for": "La versión 2026 y el acceso de usuario deben ser visibles.",
+          "common_mistake": "Confundir una instalación antigua con la edición 2026. Si la versión no coincide, no continúes porque las tablas y pantallas pueden variar.",
+          "screenshot": "00-inicio-sesion.png"
+        },
+        {
+          "title": "Recorre la pantalla principal",
+          "body": "Una vez dentro, localiza la empresa activa, las pestañas de trabajo y las opciones generales. Piensa en ellas como las áreas de una asesoría: empresa, trabajadores, nóminas, Seguridad Social, impresos y utilidades.",
+          "route": "Pantalla principal",
+          "look_for": "Debes poder señalar dónde cambiar de empresa y dónde se encuentran las operaciones laborales principales.",
+          "common_mistake": "Intentar aprender de memoria todos los botones. Ahora solo necesitas orientarte.",
+          "screenshot": "01-pantalla-principal.png"
+        }
+      ],
+      "checklist": [
+        "He comprobado que trabajo con NOMINASOL 2026.",
+        "Sé identificar la empresa activa.",
+        "Sé localizar las áreas de trabajadores y nóminas.",
+        "Puedo volver a la pantalla principal sin cerrar el programa."
+      ],
+      "ai_checks": [
+        "La captura corresponde a NOMINASOL y muestra una sesión abierta.",
+        "La interfaz es compatible con la versión 2026 o educativa actual.",
+        "La imagen permite identificar la pantalla principal o de acceso."
+      ],
+      "evidence_prompt": "Sube una captura de la pantalla principal de NOMINASOL después de iniciar sesión. Debe verse suficiente interfaz para reconocer que has accedido correctamente; no recortes solo un botón.",
+      "evidence_help": "Si la IA no puede reconocer la versión o la pantalla, vuelve a capturar la ventana completa. No incluyas otras aplicaciones personales.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M01",
+      "title": "Empresa de entrenamiento: aprende a equivocarte sin riesgo",
+      "period": "Preparación",
+      "requires": "M00",
+      "story": "Antes de crear la empresa del proyecto vas a trabajar con una empresa de entrenamiento. Es tu zona segura: aquí puedes crear un trabajador, calcular una nómina, borrar y volver a empezar. El objetivo es que las operaciones mecánicas básicas dejen de imponerte respeto antes de entrar en la empresa que sí conservaremos todo el año.",
+      "objective": "Crear una empresa de prueba, dar de alta un trabajador ficticio sencillo, calcular una nómina, emitirla y realizar una copia de seguridad.",
+      "expected_result": "Existe una empresa llamada EMPRESA TUTORIAL con al menos un trabajador y una nómina calculada; el alumno ha realizado una copia de seguridad.",
+      "guide_intro": "No te preocupes si algunos datos no son perfectos desde el punto de vista laboral: esta empresa no se evaluará por su contenido. Aquí aprendemos la mecánica del programa. Cada vez que el SCORM te diga 'observa', detente y mira qué ha cambiado en NOMINASOL.",
+      "steps": [
+        {
+          "title": "Crea la empresa de prueba",
+          "body": "Usa la opción de nueva empresa. El código debe ser sencillo de reconocer y el nombre EMPRESA TUTORIAL. Observa que NOMINASOL crea una base de trabajo separada para el ejercicio.",
+          "route": "Archivo / Nueva empresa",
+          "look_for": "Al guardar, la empresa tutorial queda seleccionada como empresa activa.",
+          "common_mistake": "Crear directamente la empresa definitiva. Todavía no: esta práctica se podrá eliminar después.",
+          "screenshot": "02-nueva-empresa.png"
+        },
+        {
+          "title": "Crea un trabajador de prueba",
+          "body": "Accede al fichero de trabajadores y da de alta una persona ficticia. Recorre las pestañas sin obsesionarte con completarlas todas. Fíjate especialmente en datos personales, situación laboral, contrato y conceptos retributivos.",
+          "route": "Empresa / Trabajadores / Nuevo",
+          "look_for": "La ficha del trabajador puede abrirse de nuevo desde el listado.",
+          "common_mistake": "Introducir datos reales de compañeros o familiares. Todos los datos de este proyecto son ficticios.",
+          "screenshot": "07-trabajador-general.png"
+        },
+        {
+          "title": "Calcula y visualiza una nómina",
+          "body": "Busca el proceso de cálculo, selecciona el periodo indicado y genera la nómina. Luego abre el recibo para reconocer su estructura. No memorices cifras: identifica devengos, deducciones, bases y líquido.",
+          "route": "Procesos mensuales / Nóminas / Cálculo",
+          "look_for": "Existe una nómina calculada y puedes visualizarla.",
+          "common_mistake": "Confundir calcular con emitir. Primero se calcula; después se imprime o genera el documento.",
+          "screenshot": "09-calculo-nomina.png"
+        },
+        {
+          "title": "Haz una copia de seguridad",
+          "body": "Antes de abandonar la empresa tutorial, crea una copia de seguridad. Esta operación será tu red de seguridad durante todo el proyecto anual.",
+          "route": "Archivo / Copias de seguridad",
+          "look_for": "Dispones de un archivo de copia que podrías restaurar.",
+          "common_mistake": "Guardar la copia dentro de una carpeta que luego vas a borrar o no recordar.",
+          "screenshot": "17-copia-seguridad.png"
+        }
+      ],
+      "checklist": [
+        "La empresa tutorial existe.",
+        "He creado un trabajador ficticio.",
+        "He calculado y visualizado una nómina.",
+        "He generado una copia de seguridad."
+      ],
+      "ai_checks": [
+        "La evidencia muestra una operación real en NOMINASOL de la empresa tutorial.",
+        "Se aprecia el trabajador o la nómina de prueba según la captura aportada.",
+        "No parece una imagen de ejemplo ajena al alumno."
+      ],
+      "evidence_prompt": "Sube una captura del listado de trabajadores de EMPRESA TUTORIAL o de la nómina de prueba abierta. La finalidad es comprobar que ya sabes crear y recuperar información básica.",
+      "evidence_help": "No necesitas que la nómina de entrenamiento sea laboralmente perfecta; sí debe haberse generado dentro de NOMINASOL.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M02",
+      "title": "Nace ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+      "period": "Configuración inicial",
+      "requires": "M01",
+      "story": "A partir de este momento comienza el expediente que conservarás durante todo el curso. Eres la persona responsable de administración de personal de ATLÁNTICO GESTIÓN INTEGRAL, S.L., una empresa canaria de servicios de gestión. Lo que introduzcas ahora afectará a contratos, nóminas, cotizaciones y declaraciones posteriores, así que vamos a trabajar despacio y entendiendo cada dato.",
+      "objective": "Crear la empresa definitiva para el ejercicio 2026 y completar la configuración esencial antes de incorporar trabajadores.",
+      "expected_result": "La empresa ATLÁNTICO GESTIÓN INTEGRAL, S.L. existe en el ejercicio 2026 y contiene correctamente los datos generales, laborales, centro de trabajo, banco, calendario y convenio previstos en el caso.",
+      "guide_intro": "No copies campos sin saber qué significan. En cada pantalla el SCORM te explicará para qué sirve el dato y qué consecuencias tendrá más adelante. Si un campo no aparece exactamente en el mismo lugar que en la captura, busca primero el nombre del grupo de opciones: pequeñas variaciones visuales no cambian el sentido de la operación.",
+      "steps": [
+        {
+          "title": "Crea la empresa definitiva",
+          "body": "Crea una empresa nueva y selecciona el ejercicio 2026. Introduce la razón social exactamente como aparece en el supuesto. Comprueba dos veces el código de empresa: será la referencia interna de todo el proyecto.",
+          "route": "Archivo / Nueva empresa",
+          "look_for": "El encabezado de NOMINASOL muestra ATLÁNTICO GESTIÓN INTEGRAL, S.L. como empresa activa.",
+          "common_mistake": "Seguir trabajando por accidente dentro de EMPRESA TUTORIAL.",
+          "screenshot": "02-nueva-empresa.png"
+        },
+        {
+          "title": "Completa los datos generales",
+          "body": "Introduce los datos fiscales y de contacto ficticios proporcionados. Estos datos aparecerán después en documentos, por lo que un error aquí se arrastra durante meses.",
+          "route": "Empresa / Datos generales",
+          "look_for": "La ficha identifica sin ambigüedad la empresa del proyecto y el ejercicio.",
+          "common_mistake": "Inventar datos distintos a los del caso o dejar campos necesarios sin completar.",
+          "screenshot": "03-datos-generales-empresa.png"
+        },
+        {
+          "title": "Configura el centro de trabajo",
+          "body": "Da de alta el centro canario definido en el supuesto y revisa su información de cotización. Piensa que el centro conecta a la empresa con muchas operaciones de Seguridad Social.",
+          "route": "Empresa / Centros de trabajo",
+          "look_for": "El centro queda disponible para asignarlo a trabajadores.",
+          "common_mistake": "Crear varios centros cuando el supuesto inicial solo requiere uno.",
+          "screenshot": "04-centro-trabajo.png"
+        },
+        {
+          "title": "Prepara convenio, calendario y banco",
+          "body": "Carga o configura el convenio indicado, revisa el calendario laboral de 2026 y crea la cuenta bancaria ficticia desde la que se ordenarán pagos. No calcularemos nóminas hasta que estos tres elementos estén revisados.",
+          "route": "Empresa / Convenios · Calendarios · Bancos",
+          "look_for": "Convenio, calendario y banco pueden seleccionarse desde las fichas de empresa o trabajador.",
+          "common_mistake": "Dejar valores por defecto sin comprobar que correspondan al ejercicio y al supuesto.",
+          "screenshot": "05-convenio.png"
+        }
+      ],
+      "checklist": [
+        "La empresa activa es ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+        "El ejercicio es 2026.",
+        "Existe el centro de trabajo previsto.",
+        "El convenio está configurado.",
+        "El calendario y el banco están preparados."
+      ],
+      "ai_checks": [
+        "La razón social visible coincide con ATLÁNTICO GESTIÓN INTEGRAL, S.L.",
+        "La captura corresponde al ejercicio 2026.",
+        "Se aprecia una pantalla de configuración real de la empresa."
+      ],
+      "evidence_prompt": "Sube una captura de los datos generales de la empresa definitiva donde puedan identificarse claramente la razón social y el ejercicio. Esta es la primera evidencia crítica del proyecto.",
+      "evidence_help": "Antes de capturar, cierra cualquier ventana que contenga información personal ajena al proyecto.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M03",
+      "title": "Construye la plantilla y entiende a quién estás gestionando",
+      "period": "Configuración inicial",
+      "requires": "M02",
+      "story": "Una nómina no empieza en la nómina. Empieza en la ficha de la persona: contrato, jornada, categoría, grupo de cotización, salario y situación fiscal. Durante este hito crearás la plantilla inicial de la empresa y aprenderás a leer cada trabajador como un conjunto de decisiones laborales conectadas.",
+      "objective": "Dar de alta la plantilla inicial y sus contratos, vinculando correctamente convenio, categoría, grupo, jornada, salario y datos de IRPF.",
+      "expected_result": "Todos los trabajadores iniciales están creados, con contrato y datos laborales coherentes con la ficha maestra del supuesto.",
+      "guide_intro": "Trabaja trabajador por trabajador. Cuando termines uno, vuelve al listado y comprueba que aparece antes de empezar el siguiente. El SCORM te mostrará qué datos cambian entre personas para que no caigas en la tentación de copiar todo sin pensar.",
+      "steps": [
+        {
+          "title": "Crea cada ficha personal",
+          "body": "Introduce únicamente identidades ficticias del supuesto. Revisa nombre, NIF ficticio, fecha de nacimiento y datos de contacto. Son datos de trabajo simulados y no deben sustituirse por datos reales.",
+          "route": "Empresa / Trabajadores / Nuevo",
+          "look_for": "Cada persona aparece en el listado y puede abrirse de nuevo.",
+          "common_mistake": "Usar datos personales reales para que 'parezca más auténtico'. No es necesario ni adecuado.",
+          "screenshot": "07-trabajador-general.png"
+        },
+        {
+          "title": "Asigna situación laboral y categoría",
+          "body": "Relaciona centro de trabajo, convenio, categoría y grupo de cotización. Antes de guardar pregúntate por qué esa persona pertenece a esa categoría; después compara con la ficha del caso.",
+          "route": "Ficha de trabajador / Situación laboral",
+          "look_for": "Categoría, grupo y centro coinciden con la ficha maestra.",
+          "common_mistake": "Elegir una categoría solo porque produce el salario esperado.",
+          "screenshot": "07-trabajador-general.png"
+        },
+        {
+          "title": "Crea el contrato",
+          "body": "Selecciona la modalidad contractual indicada y completa fechas y jornada. En contratos a tiempo parcial, revisa con especial atención la distribución de jornada.",
+          "route": "Ficha de trabajador / Contrato",
+          "look_for": "La modalidad, fecha de inicio y jornada son coherentes con el supuesto.",
+          "common_mistake": "Guardar el trabajador y olvidar crear o asociar su contrato.",
+          "screenshot": "08-trabajador-contrato.png"
+        },
+        {
+          "title": "Revisa conceptos retributivos e IRPF",
+          "body": "Comprueba qué conceptos proceden del convenio y cuáles son complementos de empresa. Introduce la situación personal necesaria para el cálculo fiscal cuando corresponda.",
+          "route": "Ficha de trabajador / Retribuciones e IRPF",
+          "look_for": "La ficha contiene los conceptos y datos fiscales previstos antes de calcular enero.",
+          "common_mistake": "Modificar una cifra para forzar el líquido de la nómina. Primero debe ser correcta la configuración.",
+          "screenshot": "07-trabajador-general.png"
+        }
+      ],
+      "checklist": [
+        "Todos los trabajadores iniciales aparecen en el listado.",
+        "Cada trabajador tiene centro, convenio y categoría.",
+        "Todos tienen la modalidad contractual prevista.",
+        "Las jornadas parciales están identificadas.",
+        "Los conceptos salariales e IRPF están revisados."
+      ],
+      "ai_checks": [
+        "El listado o ficha pertenece a la empresa del proyecto.",
+        "Se observan trabajadores ficticios del supuesto.",
+        "La evidencia permite comprobar al menos parte de la configuración laboral solicitada."
+      ],
+      "evidence_prompt": "Sube una captura del listado completo de trabajadores de la plantilla inicial. Si no caben todos en una sola vista, usa una captura suficientemente amplia y añade en observaciones cualquier detalle que no sea visible.",
+      "evidence_help": "Este hito puede pasar a revisión docente si la IA no puede verificar toda la plantilla en una sola captura.",
+      "ai_can_complete": false
+    },
+    {
+      "key": "M04",
+      "title": "Enero: realiza tu primer cierre mensual real",
+      "period": "Enero",
+      "requires": "M03",
+      "story": "La empresa ya existe y la plantilla está preparada. Ahora llega el primer cierre de nóminas. Enero es deliberadamente tranquilo: queremos que aprendas el circuito completo sin incidencias complejas. Tu misión es calcular, revisar, corregir si hace falta, emitir los recibos y dejar una copia de seguridad del mes.",
+      "objective": "Calcular y comprobar las nóminas ordinarias de enero de 2026 para toda la plantilla.",
+      "expected_result": "Todas las nóminas de enero están calculadas con trabajador, periodo, devengos, bases, deducciones y líquido coherentes con el estado inicial de la empresa.",
+      "guide_intro": "No pulses 'calcular' y des por terminado el mes. El trabajo profesional empieza justo después: abre varias nóminas, compara bases, comprueba jornadas parciales y busca cualquier trabajador que no haya entrado en el proceso.",
+      "steps": [
+        {
+          "title": "Calcula enero",
+          "body": "Selecciona el periodo de enero de 2026 y la plantilla correspondiente. Antes de aceptar, comprueba que no estás recalculando otro mes ni otra empresa.",
+          "route": "Procesos mensuales / Nóminas / Cálculo",
+          "look_for": "El proceso termina sin dejar trabajadores esperados fuera.",
+          "common_mistake": "Calcular solo la nómina del trabajador que tienes abierto.",
+          "screenshot": "09-calculo-nomina.png"
+        },
+        {
+          "title": "Aprende a leer el recibo",
+          "body": "Abre una nómina y recórrela de arriba abajo. Identifica devengos, prorratas si existen, bases, aportaciones del trabajador, IRPF y líquido. Hazlo primero con ayuda y después con otra nómina sin mirar el SCORM.",
+          "route": "Nóminas / Emisión o visualización",
+          "look_for": "Puedes explicar de dónde sale cada gran bloque del recibo.",
+          "common_mistake": "Comprobar únicamente el líquido. Una nómina puede dar un líquido plausible y estar mal calculada.",
+          "screenshot": "10-nomina-pdf.png"
+        },
+        {
+          "title": "Cierra el mes con seguridad",
+          "body": "Emite los documentos pedidos y realiza la copia de seguridad de enero. Esta copia será el punto al que volveremos si una corrección posterior daña la empresa.",
+          "route": "Archivo / Copias de seguridad",
+          "look_for": "Existe una copia identificada como cierre de enero.",
+          "common_mistake": "Sobrescribir la única copia de seguridad que tienes.",
+          "screenshot": "17-copia-seguridad.png"
+        }
+      ],
+      "checklist": [
+        "Todas las nóminas de enero están calculadas.",
+        "He revisado al menos una nómina completa.",
+        "He comprobado un trabajador a tiempo parcial.",
+        "He guardado la copia de seguridad de enero."
+      ],
+      "ai_checks": [
+        "La evidencia corresponde a enero de 2026.",
+        "Se identifica un recibo de salarios generado por NOMINASOL.",
+        "La empresa o trabajador es coherente con el supuesto.",
+        "Las principales bases y deducciones están visibles para permitir revisión."
+      ],
+      "evidence_prompt": "Sube el PDF de una nómina de enero y, como evidencia principal para IA, una captura donde se vea completa la zona de devengos, bases y deducciones. Si subes primero la captura, la IA podrá orientarte antes de entregar el documento definitivo.",
+      "evidence_help": "La IA analizará capturas. Los PDF quedan archivados y pueden ser revisados por el profesor.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M05",
+      "title": "Febrero: incorpora variables sin perder el control",
+      "period": "Febrero",
+      "requires": "M04",
+      "story": "En febrero la empresa deja de ser estática. Aparecen un desplazamiento, kilometraje y una retribución variable. Ahora debes distinguir qué conceptos forman parte de la retribución ordinaria, cuáles responden a una incidencia del mes y qué tratamiento tienen en cotización e IRPF.",
+      "objective": "Registrar las variables de febrero y recalcular correctamente las nóminas afectadas sin alterar a quienes no tienen incidencia.",
+      "expected_result": "Las nóminas de febrero reflejan exclusivamente las variables asignadas y mantienen coherencia con enero en el resto de trabajadores.",
+      "guide_intro": "Antes de introducir una variable, lee el documento que la origina. Pregúntate siempre: ¿a quién afecta?, ¿en qué fecha?, ¿es salarial o extrasalarial?, ¿cotiza?, ¿tributa? El programa automatiza cálculos, pero la decisión de configurar el concepto sigue siendo tuya.",
+      "steps": [
+        {
+          "title": "Registra la incidencia variable",
+          "body": "Introduce la cantidad mensual o concepto variable en el trabajador indicado, respetando el periodo de devengo.",
+          "route": "Retribuciones mensuales / Incidencias",
+          "look_for": "La variable aparece asociada solo al trabajador y mes correctos.",
+          "common_mistake": "Modificar el salario fijo para incluir una cantidad que solo corresponde a febrero.",
+          "screenshot": "09-calculo-nomina.png"
+        },
+        {
+          "title": "Comprueba kilometraje o dieta",
+          "body": "Revisa la configuración del concepto y su tratamiento. No des por sentado que todo importe se trata igual en cotización y fiscalidad.",
+          "route": "Retribuciones / Conceptos",
+          "look_for": "El concepto está identificado y la nómina refleja el tratamiento previsto.",
+          "common_mistake": "Crear un concepto nuevo duplicando otro sin revisar sus indicadores.",
+          "screenshot": "10-nomina-pdf.png"
+        }
+      ],
+      "checklist": [
+        "He registrado las variables solo en febrero.",
+        "No he modificado el salario fijo por error.",
+        "He revisado el tratamiento del kilometraje o dieta.",
+        "La nómina afectada ha sido recalculada."
+      ],
+      "ai_checks": [
+        "La evidencia corresponde a febrero.",
+        "Se aprecia el concepto variable o su efecto en nómina.",
+        "No hay indicios de que se haya modificado el salario fijo para simular la incidencia."
+      ],
+      "evidence_prompt": "Sube una captura de la nómina del trabajador afectado por la variable de febrero, mostrando el concepto añadido y el resultado.",
+      "evidence_help": "Si el concepto no aparece en la captura, la IA no podrá verificarlo aunque el líquido final sea correcto.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M06",
+      "title": "Marzo: gestiona una incapacidad temporal",
+      "period": "Marzo",
+      "requires": "M05",
+      "story": "Una trabajadora comunica una baja médica por enfermedad común. Por primera vez el mes no se resuelve introduciendo una cantidad: debes registrar una situación que afecta al calendario, al salario y a las bases. El objetivo es aprender a seguir la incidencia desde el documento de origen hasta su efecto final en nómina.",
+      "objective": "Registrar la IT indicada, recalcular marzo y comprobar que la prestación y las bases responden a la situación.",
+      "expected_result": "La incidencia de IT está registrada con fechas y contingencia correctas y la nómina de marzo refleja sus efectos.",
+      "guide_intro": "No empieces por la nómina. Empieza por la incapacidad. Si la incidencia no está bien registrada, cualquier corrección manual posterior del recibo ocultará el problema y afectará a los meses siguientes.",
+      "steps": [
+        {
+          "title": "Registra la baja",
+          "body": "Abre la gestión de incapacidades del trabajador y crea el proceso con la contingencia y fechas del supuesto.",
+          "route": "Trabajador / Incapacidades temporales",
+          "look_for": "La IT queda visible en la ficha o calendario del trabajador.",
+          "common_mistake": "Introducir la ausencia como un simple día no trabajado.",
+          "screenshot": "11-incapacidad-temporal.png"
+        },
+        {
+          "title": "Recalcula marzo y compara",
+          "body": "Calcula de nuevo la nómina y observa qué bloques han cambiado respecto de febrero. La comparación es parte del aprendizaje: no basta con aceptar el resultado.",
+          "route": "Procesos mensuales / Nóminas",
+          "look_for": "La nómina recoge la incidencia y sus bases resultan coherentes.",
+          "common_mistake": "Editar importes de la nómina para hacerlos coincidir sin corregir la IT de origen.",
+          "screenshot": "10-nomina-pdf.png"
+        }
+      ],
+      "checklist": [
+        "La contingencia de IT es la indicada.",
+        "Las fechas de inicio y fin coinciden con el supuesto.",
+        "He recalculado marzo después de registrar la IT.",
+        "He comparado la nómina con el mes anterior."
+      ],
+      "ai_checks": [
+        "Se identifican las fechas de la incapacidad o su efecto en la nómina.",
+        "La contingencia visible es coherente con enfermedad común cuando así lo exige el supuesto.",
+        "La captura corresponde a marzo de 2026."
+      ],
+      "evidence_prompt": "Sube una captura de la pantalla de incapacidad temporal donde se vean trabajador, contingencia y fechas. Después podrás aportar también la nómina de marzo como evidencia complementaria.",
+      "evidence_help": "Una captura de la nómina por sí sola puede no demostrar que la IT está bien registrada; prioriza la pantalla de la incidencia.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M07",
+      "title": "Abril: cierra el primer trimestre y atiende una nueva contratación",
+      "period": "Abril",
+      "requires": "M06",
+      "story": "Abril combina dos trabajos distintos: mirar hacia atrás para cerrar el primer trimestre y mirar hacia delante porque se incorpora una nueva persona. Es un buen momento para entender que Recursos Humanos no funciona por compartimentos aislados: el alta del trabajador alimentará meses posteriores, mientras que el modelo trimestral resume lo que ya ocurrió.",
+      "objective": "Incorporar al nuevo trabajador del supuesto y preparar la información del primer trimestre, verificando acumulados y retenciones.",
+      "expected_result": "El alta laboral está completa y los acumulados del primer trimestre son coherentes con las nóminas ya cerradas.",
+      "guide_intro": "Primero termina el alta; después revisa el trimestre. No envíes nada a organismos reales: trabajamos en simulación educativa y generamos únicamente documentación o ficheros de práctica.",
+      "steps": [
+        {
+          "title": "Incorpora al nuevo trabajador",
+          "body": "Crea la ficha y contrato con la fecha indicada. Revisa que el alta no aparezca retroactivamente en meses anteriores.",
+          "route": "Trabajadores / Nuevo / Contrato",
+          "look_for": "El trabajador entra en abril y no figura en nóminas previas.",
+          "common_mistake": "Usar como fecha de alta el 1 de enero por copiar una ficha anterior.",
+          "screenshot": "08-trabajador-contrato.png"
+        },
+        {
+          "title": "Revisa acumulados del trimestre",
+          "body": "Consulta las retenciones y bases acumuladas de enero a marzo antes de generar el modelo trimestral. Si algo no cuadra, vuelve al mes de origen.",
+          "route": "Acumulados / Retenciones",
+          "look_for": "Los importes pueden explicarse a partir de las nóminas cerradas.",
+          "common_mistake": "Corregir directamente el total trimestral sin localizar la nómina que origina la diferencia.",
+          "screenshot": "14-modelo-111.png"
+        }
+      ],
+      "checklist": [
+        "El nuevo trabajador tiene fecha de alta correcta.",
+        "Su contrato y jornada coinciden con el caso.",
+        "He revisado acumulados antes del modelo trimestral.",
+        "No he realizado ninguna presentación real."
+      ],
+      "ai_checks": [
+        "La evidencia muestra la fecha de alta o el resumen del primer trimestre.",
+        "Los datos pertenecen al ejercicio 2026.",
+        "No se aprecia una operación de envío real a un organismo externo."
+      ],
+      "evidence_prompt": "Sube una captura de la ficha contractual del nuevo trabajador o del resumen del modelo 111 de práctica. Elige la que mejor demuestre el trabajo realizado.",
+      "evidence_help": "En las observaciones indica qué parte del hito demuestra tu captura; esto ayuda a la IA y al profesor a interpretarla.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M08",
+      "title": "Mayo: actualiza tablas y regulariza atrasos",
+      "period": "Mayo",
+      "requires": "M07",
+      "story": "En mayo recibes una comunicación importante: las tablas salariales aplicables al ejercicio se han actualizado con efectos anteriores. Esto reproduce una situación profesional real: no basta con cambiar el salario a partir de hoy; debes respetar lo pagado, calcular diferencias, generar atrasos y revisar el efecto fiscal.",
+      "objective": "Actualizar las retribuciones conforme al supuesto y generar correctamente la liquidación de atrasos del periodo indicado.",
+      "expected_result": "Las nuevas cuantías quedan vigentes, existe una nómina o proceso de atrasos correctamente calculado y no se han reescrito indebidamente las nóminas históricas.",
+      "guide_intro": "Este hito es uno de los más importantes del curso. Trabaja con una copia de seguridad previa. La idea es comprender la diferencia entre modificar el salario futuro y liquidar diferencias de meses ya cerrados.",
+      "steps": [
+        {
+          "title": "Haz copia antes de tocar salarios",
+          "body": "Guarda el estado anterior a la actualización. Esta copia permite recuperar la empresa si aplicas una tabla equivocada.",
+          "route": "Archivo / Copias de seguridad",
+          "look_for": "Existe una copia previa a la actualización de mayo.",
+          "common_mistake": "Actualizar primero y pensar en la copia después.",
+          "screenshot": "17-copia-seguridad.png"
+        },
+        {
+          "title": "Actualiza las cuantías",
+          "body": "Introduce o actualiza las tablas/conceptos según la documentación del supuesto. Comprueba varios niveles profesionales.",
+          "route": "Convenio / Categorías / Conceptos",
+          "look_for": "Las nuevas cuantías quedan disponibles para el cálculo futuro.",
+          "common_mistake": "Modificar trabajador por trabajador cuando el cambio procede del convenio y debe mantenerse de forma coherente.",
+          "screenshot": "05-convenio.png"
+        },
+        {
+          "title": "Calcula atrasos",
+          "body": "Genera el proceso de atrasos para el periodo afectado. Revisa el detalle antes de aceptar y comprueba que no duplica meses ni trabajadores.",
+          "route": "Procesos / Atrasos",
+          "look_for": "Existe una liquidación de atrasos separada y trazable.",
+          "common_mistake": "Reabrir y sustituir las nóminas antiguas en lugar de liquidar diferencias.",
+          "screenshot": "13-atrasos.png"
+        },
+        {
+          "title": "Regulariza el IRPF cuando proceda",
+          "body": "Después del cambio retributivo, revisa el cálculo fiscal de quienes hayan visto modificada su previsión anual.",
+          "route": "Trabajador / IRPF / Regularización",
+          "look_for": "La retención futura refleja la nueva previsión cuando corresponda.",
+          "common_mistake": "Cambiar manualmente el porcentaje sin usar la lógica de regularización.",
+          "screenshot": "13-atrasos.png"
+        }
+      ],
+      "checklist": [
+        "He creado una copia previa.",
+        "Las nuevas tablas están aplicadas.",
+        "Existe una liquidación de atrasos separada.",
+        "No he sustituido las nóminas históricas.",
+        "He revisado la regularización fiscal."
+      ],
+      "ai_checks": [
+        "La evidencia muestra una liquidación o proceso de atrasos.",
+        "El periodo de atrasos se refiere a meses anteriores de 2026.",
+        "La captura permite distinguir atrasos de una nómina ordinaria."
+      ],
+      "evidence_prompt": "Sube una captura del proceso o recibo de atrasos donde se identifique el periodo liquidado. Este hito no se considera acreditado con una simple captura del nuevo salario mensual.",
+      "evidence_help": "Si no se ve claramente que se trata de atrasos, amplía la zona de encabezado y periodo.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M09",
+      "title": "Junio: promoción, retribución en especie y cierre semestral",
+      "period": "Junio",
+      "requires": "M08",
+      "story": "A mitad de año una persona cambia de condiciones y otra empieza a recibir una retribución en especie. El reto consiste en introducir los cambios desde su fecha efectiva sin alterar el pasado, y entender que una retribución no dineraria puede afectar a cotización y fiscalidad aunque no aumente el dinero que llega a la cuenta bancaria.",
+      "objective": "Aplicar una modificación salarial/promoción y una retribución en especie, manteniendo la trazabilidad temporal.",
+      "expected_result": "Las condiciones nuevas se aplican desde junio y la nómina refleja correctamente el concepto en especie y sus efectos.",
+      "guide_intro": "Antes de guardar cada cambio, anota mentalmente desde qué fecha debe existir. Las modificaciones laborales deben tener historia: enero no puede 'recordar' algo que empezó en junio.",
+      "steps": [
+        {
+          "title": "Aplica la promoción desde la fecha correcta",
+          "body": "Modifica categoría o retribución según el caso y comprueba que el cambio tiene efecto desde junio.",
+          "route": "Trabajador / Situación laboral o conceptos",
+          "look_for": "Junio refleja la nueva situación sin alterar meses cerrados.",
+          "common_mistake": "Sobrescribir un concepto sin controlar la fecha de vigencia.",
+          "screenshot": "07-trabajador-general.png"
+        },
+        {
+          "title": "Configura la retribución en especie",
+          "body": "Revisa los indicadores del concepto y cómo se practica el ingreso a cuenta según el supuesto.",
+          "route": "Conceptos retributivos / En especie",
+          "look_for": "La nómina identifica el concepto y su efecto fiscal/cotizable.",
+          "common_mistake": "Tratar la especie como si fuera un simple plus dinerario.",
+          "screenshot": "10-nomina-pdf.png"
+        }
+      ],
+      "checklist": [
+        "La promoción entra en vigor en junio.",
+        "Los meses anteriores permanecen intactos.",
+        "La retribución en especie está identificada como tal.",
+        "He revisado cotización e IRPF del concepto."
+      ],
+      "ai_checks": [
+        "La captura muestra la retribución en especie o la nueva situación salarial.",
+        "El periodo visible es junio o posterior.",
+        "El concepto puede distinguirse de una retribución dineraria ordinaria."
+      ],
+      "evidence_prompt": "Sube una captura de la nómina de junio en la que pueda identificarse la retribución en especie o el cambio retributivo.",
+      "evidence_help": "Si necesitas demostrar dos cambios distintos, puedes aportar una segunda evidencia después de la primera.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M10",
+      "title": "Julio: primera paga extraordinaria",
+      "period": "Julio",
+      "requires": "M09",
+      "story": "Llega julio y con él una de las operaciones que más dudas genera al comenzar: la paga extraordinaria. No la trates como un premio aislado; forma parte de la estructura retributiva prevista y debe calcularse con los conceptos, periodos de devengo y situaciones de cada trabajador.",
+      "objective": "Calcular y revisar la paga extraordinaria de verano junto con la nómina ordinaria de julio.",
+      "expected_result": "La paga extraordinaria aparece correctamente calculada para quienes tienen derecho y se mantiene separada de la nómina ordinaria cuando así está configurado.",
+      "guide_intro": "Empieza comprobando cómo está definida la paga en el convenio. Después calcula. Si una cuantía sorprende, no la corrijas a mano: revisa el periodo de devengo, los conceptos incluidos y las incidencias del trabajador.",
+      "steps": [
+        {
+          "title": "Revisa la definición de la paga",
+          "body": "Antes del cálculo, mira qué conceptos integran la extraordinaria y su periodo de devengo.",
+          "route": "Convenio / Pagas extraordinarias",
+          "look_for": "La configuración coincide con el supuesto.",
+          "common_mistake": "Calcular sin comprobar qué conceptos entran en la paga.",
+          "screenshot": "12-paga-extra.png"
+        },
+        {
+          "title": "Calcula y compara",
+          "body": "Genera la paga y compárala entre trabajadores con situaciones diferentes. Una jornada parcial o una incorporación reciente puede explicar diferencias.",
+          "route": "Procesos / Pagas extraordinarias",
+          "look_for": "Las diferencias entre trabajadores pueden justificarse.",
+          "common_mistake": "Forzar todas las pagas para que sean iguales.",
+          "screenshot": "12-paga-extra.png"
+        }
+      ],
+      "checklist": [
+        "He revisado la definición de la paga.",
+        "He calculado la paga extraordinaria de julio.",
+        "He comprobado trabajadores con situaciones diferentes.",
+        "La nómina ordinaria de julio también está cerrada."
+      ],
+      "ai_checks": [
+        "La evidencia identifica una paga extraordinaria de julio.",
+        "Se ve el trabajador y el periodo.",
+        "Los conceptos principales de la paga son visibles."
+      ],
+      "evidence_prompt": "Sube una captura de una paga extraordinaria de julio completa. La IA comprobará primero que realmente sea una paga extra y no la nómina ordinaria.",
+      "evidence_help": "Incluye encabezado y detalle suficiente; un recorte del líquido no es una evidencia válida.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M11",
+      "title": "Agosto: vacaciones, jornada especial y sustitución",
+      "period": "Agosto",
+      "requires": "M10",
+      "story": "Agosto mezcla planificación y nómina. Parte de la plantilla disfruta vacaciones, la organización trabaja con una jornada especial y aparece una sustitución temporal. Tu trabajo es mantener el calendario laboral claro y evitar que una incidencia de ausencia se confunda con una baja o con una reducción salarial que no corresponde.",
+      "objective": "Registrar vacaciones y la contratación de sustitución indicada, cerrando agosto sin perder coherencia de jornada y calendario.",
+      "expected_result": "Las vacaciones constan correctamente y la persona sustituta solo figura durante el periodo previsto.",
+      "guide_intro": "Las vacaciones no son una incapacidad temporal. Antes de registrar cualquier ausencia, identifica la causa y el efecto que debe tener. Usa el calendario del trabajador como herramienta para comprobar visualmente el mes.",
+      "steps": [
+        {
+          "title": "Registra vacaciones",
+          "body": "Introduce el periodo de vacaciones del trabajador indicado y comprueba cómo aparece en su calendario.",
+          "route": "Calendario / Ausencias",
+          "look_for": "Los días están marcados con la causa correcta.",
+          "common_mistake": "Registrar vacaciones como enfermedad o ausencia injustificada.",
+          "screenshot": "11-incapacidad-temporal.png"
+        },
+        {
+          "title": "Gestiona la sustitución",
+          "body": "Crea el trabajador o contrato de sustitución según el supuesto, con fecha de inicio y fin coherentes.",
+          "route": "Trabajadores / Contrato",
+          "look_for": "La sustitución no se extiende fuera del periodo indicado.",
+          "common_mistake": "Copiar un contrato indefinido y olvidar modificar la causa y fechas.",
+          "screenshot": "08-trabajador-contrato.png"
+        }
+      ],
+      "checklist": [
+        "Las vacaciones están registradas con la causa correcta.",
+        "La sustitución tiene fechas correctas.",
+        "Agosto se ha recalculado después de introducir incidencias.",
+        "He revisado la jornada especial del periodo."
+      ],
+      "ai_checks": [
+        "La captura permite identificar vacaciones o contrato de sustitución.",
+        "Las fechas son visibles.",
+        "La causa de ausencia no parece una IT cuando se espera vacaciones."
+      ],
+      "evidence_prompt": "Sube una captura del calendario de ausencias o del contrato de sustitución. En observaciones explica qué parte del hito estás acreditando.",
+      "evidence_help": "Si la primera evidencia solo acredita vacaciones, el profesor puede solicitar una segunda para la sustitución.",
+      "ai_can_complete": false
+    },
+    {
+      "key": "M12",
+      "title": "Septiembre: termina un contrato y liquida correctamente",
+      "period": "Septiembre",
+      "requires": "M11",
+      "story": "Una relación laboral llega a su fin. El proceso no consiste en borrar a la persona de la empresa: debes conservar su historia, registrar la baja, calcular el finiquito y generar la documentación de salida. Esta es una de las situaciones en las que más se nota la diferencia entre una base de datos bien mantenida y una improvisada.",
+      "objective": "Tramitar la finalización del contrato prevista, calculando la liquidación y dejando la ficha histórica del trabajador correctamente cerrada.",
+      "expected_result": "La baja tiene fecha y causa correctas y existe un finiquito coherente con los conceptos pendientes.",
+      "guide_intro": "Antes de pulsar cualquier opción de baja, revisa el último día trabajado y la causa. Después calcula el finiquito desde la información acumulada; no elimines al trabajador del fichero.",
+      "steps": [
+        {
+          "title": "Registra la baja",
+          "body": "Introduce fecha y causa según el supuesto. Comprueba que el trabajador queda inactivo a partir de ese momento pero sigue consultable.",
+          "route": "Trabajador / Baja",
+          "look_for": "La ficha conserva su historial y muestra la fecha de baja.",
+          "common_mistake": "Borrar al trabajador del listado para que deje de aparecer.",
+          "screenshot": "15-finiquito.png"
+        },
+        {
+          "title": "Calcula el finiquito",
+          "body": "Revisa salarios pendientes, vacaciones y otros conceptos que correspondan. Genera la liquidación desde NOMINASOL.",
+          "route": "Finiquitos / Cálculo",
+          "look_for": "Existe un documento de liquidación vinculado al trabajador.",
+          "common_mistake": "Escribir un importe manual sin partir del historial del trabajador.",
+          "screenshot": "15-finiquito.png"
+        }
+      ],
+      "checklist": [
+        "La fecha de baja es correcta.",
+        "La causa coincide con el supuesto.",
+        "El trabajador sigue disponible en el histórico.",
+        "El finiquito se ha calculado y revisado."
+      ],
+      "ai_checks": [
+        "La evidencia muestra un finiquito o una baja de trabajador.",
+        "La fecha visible coincide con septiembre de 2026 según el supuesto.",
+        "El trabajador no ha sido simplemente eliminado."
+      ],
+      "evidence_prompt": "Sube una captura del finiquito o de la pantalla de baja donde se vean fecha y trabajador.",
+      "evidence_help": "No es necesario mostrar datos bancarios completos en una captura; recorta esa zona si apareciera.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M13",
+      "title": "Octubre: una suspensión cambia temporalmente la relación laboral",
+      "period": "Octubre",
+      "requires": "M12",
+      "story": "En octubre una persona entra en una situación de suspensión por nacimiento y cuidado del menor u otra causa prevista en el supuesto. La relación laboral continúa, pero cambia temporalmente la forma en que se gestiona. Debes diferenciar una suspensión de una extinción y comprobar su impacto mensual.",
+      "objective": "Registrar la suspensión indicada y cerrar octubre respetando fechas y efectos.",
+      "expected_result": "La situación temporal está registrada sin dar de baja definitivamente al trabajador y la nómina refleja el tratamiento previsto.",
+      "guide_intro": "Lee la comunicación del trabajador y fíjate en las fechas. Una suspensión tiene principio y final; no debe convertirse en una baja definitiva por error.",
+      "steps": [
+        {
+          "title": "Registra la situación temporal",
+          "body": "Usa la opción adecuada de incidencias/suspensiones y completa las fechas.",
+          "route": "Trabajador / Incidencias",
+          "look_for": "La situación queda acotada temporalmente.",
+          "common_mistake": "Utilizar la opción de baja definitiva.",
+          "screenshot": "11-incapacidad-temporal.png"
+        },
+        {
+          "title": "Comprueba octubre",
+          "body": "Recalcula y observa cómo cambia el recibo o la ausencia de recibo según el caso planteado.",
+          "route": "Nóminas / Octubre",
+          "look_for": "El resultado es coherente con la suspensión registrada.",
+          "common_mistake": "Corregir manualmente el recibo sin revisar la incidencia.",
+          "screenshot": "10-nomina-pdf.png"
+        }
+      ],
+      "checklist": [
+        "La suspensión tiene inicio y fin.",
+        "El trabajador no ha sido extinguido.",
+        "Octubre está recalculado.",
+        "He comprobado el efecto de la situación."
+      ],
+      "ai_checks": [
+        "La captura muestra una incidencia o suspensión temporal.",
+        "Las fechas son visibles.",
+        "No parece una baja definitiva cuando no corresponde."
+      ],
+      "evidence_prompt": "Sube una captura de la incidencia temporal con sus fechas. Si el programa muestra un calendario, procura que la causa sea legible.",
+      "evidence_help": "La IA debe poder distinguir la naturaleza temporal de la situación.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M14",
+      "title": "Noviembre: embargo, anticipo o bonus y regularización",
+      "period": "Noviembre",
+      "requires": "M13",
+      "story": "Noviembre introduce una incidencia económica que obliga a leer la nómina con mucha atención. Puede tratarse de un embargo, un anticipo o un bonus según la variante asignada a tu empresa. El objetivo es aprender que no todos los movimientos extraordinarios se comportan igual y que su reflejo debe ser trazable.",
+      "objective": "Registrar la incidencia económica individualizada del alumno y comprobar su efecto en la nómina y, cuando corresponda, en la retención.",
+      "expected_result": "La nómina de noviembre incorpora el movimiento asignado con el tratamiento correcto y sin modificar indebidamente conceptos estructurales.",
+      "guide_intro": "Consulta primero tu documento de incidencia. No copies la solución de otra persona: en este hito los datos pueden estar individualizados. La IA comparará la evidencia con el escenario asignado en el proyecto.",
+      "steps": [
+        {
+          "title": "Identifica la naturaleza del movimiento",
+          "body": "Decide si el documento representa una deducción, un anticipo, una retribución variable u otro tratamiento previsto.",
+          "route": "Documento de incidencia / Ficha del trabajador",
+          "look_for": "Sabes explicar por qué se registra en una zona concreta.",
+          "common_mistake": "Copiar el procedimiento de otro alumno con una incidencia distinta.",
+          "screenshot": "10-nomina-pdf.png"
+        },
+        {
+          "title": "Registra y recalcula",
+          "body": "Introduce el movimiento, recalcula noviembre y revisa el líquido junto con las bases e IRPF.",
+          "route": "Nóminas / Noviembre",
+          "look_for": "El efecto aparece únicamente en el trabajador y periodo asignados.",
+          "common_mistake": "Cambiar el salario fijo para obtener el líquido deseado.",
+          "screenshot": "09-calculo-nomina.png"
+        }
+      ],
+      "checklist": [
+        "He identificado correctamente mi incidencia individual.",
+        "Solo afecta al trabajador indicado.",
+        "He recalculado noviembre.",
+        "He revisado bases, IRPF y líquido."
+      ],
+      "ai_checks": [
+        "La evidencia corresponde a noviembre.",
+        "Se identifica el concepto extraordinario asignado.",
+        "La captura contiene suficiente detalle para distinguirlo del salario fijo."
+      ],
+      "evidence_prompt": "Sube una captura de la nómina de noviembre donde aparezca claramente el concepto extraordinario.",
+      "evidence_help": "No recortes el nombre del concepto: es imprescindible para que la IA pueda comprobar qué tratamiento has aplicado.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M15",
+      "title": "Diciembre: paga extra y último cierre mensual",
+      "period": "Diciembre",
+      "requires": "M14",
+      "story": "Llegas al último mes del ejercicio. Diciembre combina el cierre ordinario, la paga extraordinaria y las últimas regularizaciones. Este mes debe quedar especialmente limpio porque sus acumulados alimentarán las comprobaciones anuales.",
+      "objective": "Calcular diciembre y su paga extraordinaria, revisar regularizaciones y dejar el ejercicio mensual completamente cerrado.",
+      "expected_result": "Las nóminas ordinarias y extraordinarias de diciembre están calculadas y los acumulados anuales no presentan incoherencias evidentes.",
+      "guide_intro": "Trabaja en dos tiempos: primero diciembre, después la paga extraordinaria y por último los acumulados. Si detectas un error anual, no lo tapes en diciembre: localiza el mes en el que se originó.",
+      "steps": [
+        {
+          "title": "Calcula diciembre",
+          "body": "Cierra las nóminas ordinarias incorporando las incidencias del mes.",
+          "route": "Procesos mensuales / Diciembre",
+          "look_for": "Toda la plantilla activa tiene el resultado esperado.",
+          "common_mistake": "Usar diciembre como mes de ajuste manual de errores anteriores.",
+          "screenshot": "09-calculo-nomina.png"
+        },
+        {
+          "title": "Calcula la paga extraordinaria",
+          "body": "Genera la segunda paga extra y revisa diferencias debidas a altas, bajas o cambios de jornada.",
+          "route": "Pagas extraordinarias",
+          "look_for": "La paga responde al periodo de devengo y a la historia laboral.",
+          "common_mistake": "Suponer que debe coincidir exactamente con julio para todos.",
+          "screenshot": "12-paga-extra.png"
+        },
+        {
+          "title": "Revisa acumulados",
+          "body": "Consulta acumulados antes del cierre anual. Identifica cualquier valor que no puedas explicar.",
+          "route": "Acumulados",
+          "look_for": "Los totales se corresponden con el historial del ejercicio.",
+          "common_mistake": "Aceptar un total simplemente porque el programa no muestra avisos.",
+          "screenshot": "16-modelo-190.png"
+        }
+      ],
+      "checklist": [
+        "Diciembre está calculado.",
+        "La paga extraordinaria está calculada.",
+        "He revisado acumulados.",
+        "No quedan incidencias pendientes del ejercicio."
+      ],
+      "ai_checks": [
+        "La evidencia muestra diciembre o la paga extraordinaria de diciembre.",
+        "El ejercicio es 2026.",
+        "Los datos permiten identificar trabajador y periodo."
+      ],
+      "evidence_prompt": "Sube una captura de la paga extraordinaria de diciembre o del resumen de acumulados anuales.",
+      "evidence_help": "Este hito prepara el cierre; cualquier discrepancia debe resolverse antes de continuar.",
+      "ai_can_complete": true
+    },
+    {
+      "key": "M16",
+      "title": "Cierre anual: demuestra que la empresa llega bien a 2027",
+      "period": "Cierre",
+      "requires": "M15",
+      "story": "Has gestionado un año completo. El último trabajo no consiste en obtener una nota, sino en demostrar que la empresa puede continuar funcionando. Revisarás acumulados, prepararás el modelo anual de práctica, guardarás la copia definitiva y abrirás 2027 sin destruir el ejercicio anterior.",
+      "objective": "Cerrar académicamente 2026, conservar una copia integral verificable y abrir el ejercicio 2027 manteniendo la continuidad de la empresa.",
+      "expected_result": "El ejercicio 2026 queda conservado, existe una copia final, los acumulados anuales están revisados y 2027 puede abrirse con la plantilla que corresponda.",
+      "guide_intro": "Este hito es la auditoría del proyecto. No borres ni sobrescribas nada. La copia de seguridad final debe permitir al profesor restaurar tu empresa y recorrer todo el historial desde enero.",
+      "steps": [
+        {
+          "title": "Revisa el modelo anual y certificados",
+          "body": "Genera la documentación anual de práctica y compárala con los acumulados. No se realiza ninguna presentación real.",
+          "route": "Impresos oficiales / Modelo 190 y certificados",
+          "look_for": "Los totales pueden justificarse a partir de las nóminas del ejercicio.",
+          "common_mistake": "Presentar realmente un modelo con datos ficticios.",
+          "screenshot": "16-modelo-190.png"
+        },
+        {
+          "title": "Crea la copia definitiva",
+          "body": "Genera una copia de seguridad identificada como FINAL 2026. No sustituyas las copias mensuales.",
+          "route": "Archivo / Copias de seguridad",
+          "look_for": "Existe un archivo final restaurable.",
+          "common_mistake": "Guardar únicamente PDF y olvidar la base completa de NOMINASOL.",
+          "screenshot": "17-copia-seguridad.png"
+        },
+        {
+          "title": "Abre 2027",
+          "body": "Utiliza el proceso de apertura del nuevo ejercicio y comprueba qué datos se trasladan. 2026 debe seguir disponible para consulta.",
+          "route": "Archivo / Apertura de ejercicio",
+          "look_for": "Puedes entrar en 2027 y volver a 2026 sin pérdida.",
+          "common_mistake": "Crear una empresa nueva distinta en vez de abrir el nuevo ejercicio de la existente.",
+          "screenshot": "18-apertura-ejercicio.png"
+        }
+      ],
+      "checklist": [
+        "He revisado acumulados anuales.",
+        "He generado la documentación anual de práctica.",
+        "Existe una copia final 2026.",
+        "He abierto 2027 sin perder 2026.",
+        "Puedo volver a consultar el ejercicio anterior."
+      ],
+      "ai_checks": [
+        "La evidencia demuestra apertura de 2027 o copia final de 2026.",
+        "Se identifica la misma empresa del proyecto.",
+        "No hay indicios de que 2026 haya sido sustituido o eliminado."
+      ],
+      "evidence_prompt": "Sube una captura donde se vea la empresa en el ejercicio 2027 y, como archivo complementario, entrega la copia de seguridad FINAL 2026. La validación definitiva de la copia puede requerir revisión docente.",
+      "evidence_help": "La captura acredita la continuidad; la copia de seguridad acredita que el trabajo anual es restaurable.",
+      "ai_can_complete": false
+    }
+  ]
+}
