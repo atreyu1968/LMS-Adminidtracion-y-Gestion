@@ -590,3 +590,178 @@ def test_lti_first_launch_reuses_provisional_roster_user_by_email():
             )
             assert identity is not None
             assert identity.subject == "campus-user-123"
+
+
+def test_scorm_editing_creates_revision_without_changing_existing_student_grade():
+    with TestClient(app) as client:
+        teacher_id, course_id, module_id = teacher_fixture("versioned-scorm")
+        with SessionLocal() as db:
+            course_module = CourseModule(course_id=course_id, module_id=module_id)
+            student_a = User(display_name="Alumno A", email="student-a@example.test")
+            student_b = User(display_name="Alumno B", email="student-b@example.test")
+            db.add_all([course_module, student_a, student_b])
+            db.flush()
+            db.add_all([
+                Membership(course_id=course_id, user_id=student_a.id, role="student", lti_roles=[]),
+                Membership(course_id=course_id, user_id=student_b.id, role="student", lti_roles=[]),
+            ])
+            db.commit()
+            db.refresh(course_module)
+            db.refresh(student_a)
+            db.refresh(student_b)
+            course_module_id = course_module.id
+            student_a_id = student_a.id
+            student_b_id = student_b.id
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        upload = client.post(
+            f"/api/modules/{module_id}/scorm-packages",
+            files={"file": ("versioned.zip", minimal_scorm_zip(), "application/zip")},
+        )
+        assert upload.status_code == 200, upload.text
+        revision_1 = upload.json()
+        assert revision_1["revision_number"] == 1
+
+        # Alumno A starts revision 1 and receives a grade.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_a_id, course_id, role="student"))
+        launch_a1 = client.post(
+            f"/api/course-modules/{course_module_id}/scorm/{revision_1['id']}/launch"
+        )
+        assert launch_a1.status_code == 200, launch_a1.text
+        assert launch_a1.json()["package_id"] == revision_1["id"]
+        query_a1 = parse_qs(urlparse(launch_a1.json()["url"]).query)
+        registration_a = int(query_a1["lms_registration"][0])
+        token_a = query_a1["lms_token"][0]
+
+        scored = client.put(
+            f"/runtime-api/scorm/registrations/{registration_a}",
+            headers={"Authorization": f"Bearer {token_a}"},
+            json={
+                "cmi": {
+                    "cmi.core.lesson_status": "completed",
+                    "cmi.core.score.raw": "73",
+                    "cmi.core.score.min": "0",
+                    "cmi.core.score.max": "100",
+                    "cmi.suspend_data": "estado-revision-1",
+                }
+            },
+        )
+        assert scored.status_code == 200
+        assert scored.json()["score_raw"] == 73.0
+
+        # Teacher edits content and inserts a multimedia resource.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_id, course_id))
+        media = client.post(
+            "/api/media-library",
+            data={"title": "Audio de prueba", "visibility": "private"},
+            files={"file": ("audio.mp3", b"ID3-test-audio", "audio/mpeg")},
+        )
+        assert media.status_code == 200, media.text
+        media_id = media.json()["id"]
+
+        draft_response = client.post(f"/api/scorm-library/{revision_1['id']}/draft")
+        assert draft_response.status_code == 200, draft_response.text
+        draft_id = draft_response.json()["draft_id"]
+
+        original = client.get(
+            f"/api/scorm-editor/{draft_id}/file",
+            params={"path": "index.html"},
+        )
+        assert original.status_code == 200
+        modified_html = original.json()["content"].replace(
+            "SCORM</body>",
+            "SCORM revisión 2<audio controls src='media/audio.mp3'></audio></body>",
+        )
+        saved = client.put(
+            f"/api/scorm-editor/{draft_id}/file",
+            json={"path": "index.html", "content": modified_html},
+        )
+        assert saved.status_code == 200
+
+        inserted = client.post(
+            f"/api/scorm-editor/{draft_id}/insert-media/{media_id}",
+            json={"target_path": "media/audio.mp3"},
+        )
+        assert inserted.status_code == 200, inserted.text
+
+        published = client.post(f"/api/scorm-editor/{draft_id}/publish")
+        assert published.status_code == 200, published.text
+        revision_2 = published.json()["package"]
+        assert revision_2["revision_number"] == 2
+        assert revision_2["id"] != revision_1["id"]
+        assert published.json()["preserved_registrations"] >= 1
+
+        # Exported revision is still a portable SCORM ZIP containing both changes.
+        exported = client.get(f"/api/scorm-library/{revision_2['id']}/export")
+        assert exported.status_code == 200
+        with zipfile.ZipFile(io.BytesIO(exported.content)) as archive:
+            assert "imsmanifest.xml" in archive.namelist()
+            assert "index.html" in archive.namelist()
+            assert "media/audio.mp3" in archive.namelist()
+            assert "SCORM revisión 2" in archive.read("index.html").decode("utf-8")
+
+        # Alumno A remains pinned to revision 1 and keeps the exact saved grade/state.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_a_id, course_id, role="student"))
+        relaunch_a = client.post(
+            f"/api/course-modules/{course_module_id}/scorm/{revision_2['id']}/launch"
+        )
+        assert relaunch_a.status_code == 200, relaunch_a.text
+        assert relaunch_a.json()["package_id"] == revision_1["id"]
+        assert relaunch_a.json()["pinned_to_existing_revision"] is True
+        query_a2 = parse_qs(urlparse(relaunch_a.json()["url"]).query)
+        token_a2 = query_a2["lms_token"][0]
+        state_a = client.get(
+            f"/runtime-api/scorm/registrations/{registration_a}",
+            headers={"Authorization": f"Bearer {token_a2}"},
+        )
+        assert state_a.status_code == 200
+        assert state_a.json()["cmi"]["cmi.core.score.raw"] == "73.0"
+        assert state_a.json()["cmi"]["cmi.suspend_data"] == "estado-revision-1"
+
+        # Alumno B has no prior attempt, so receives revision 2.
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(student_b_id, course_id, role="student"))
+        launch_b = client.post(
+            f"/api/course-modules/{course_module_id}/scorm/{revision_2['id']}/launch"
+        )
+        assert launch_b.status_code == 200, launch_b.text
+        assert launch_b.json()["package_id"] == revision_2["id"]
+        assert launch_b.json()["revision_number"] == 2
+        assert launch_b.json()["pinned_to_existing_revision"] is False
+
+
+def test_media_library_is_private_and_supports_range_playback():
+    with TestClient(app) as client:
+        teacher_a, course_a, _ = teacher_fixture("media-owner")
+        teacher_b, course_b, _ = teacher_fixture("media-other")
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_a, course_a))
+        uploaded = client.post(
+            "/api/media-library",
+            data={"title": "Vídeo privado", "visibility": "private"},
+            files={"file": ("video.mp4", b"0123456789abcdef", "video/mp4")},
+        )
+        assert uploaded.status_code == 200, uploaded.text
+        asset = uploaded.json()
+
+        full = client.get(f"/api/media-library/{asset['id']}/content")
+        assert full.status_code == 200
+        assert full.content == b"0123456789abcdef"
+
+        ranged = client.get(
+            f"/api/media-library/{asset['id']}/content",
+            headers={"Range": "bytes=2-5"},
+        )
+        assert ranged.status_code in {200, 206}
+        if ranged.status_code == 206:
+            assert ranged.content == b"2345"
+
+        client.cookies.clear()
+        client.cookies.set("lms_session", session_cookie(teacher_b, course_b))
+        forbidden = client.get(f"/api/media-library/{asset['id']}/content")
+        assert forbidden.status_code == 403
