@@ -1831,7 +1831,10 @@ def test_exam_combines_40_60_and_creates_recovery_without_exposing_answers():
         assert event.json()["force_submit"] is False
 
         question = exam_payload["questions"][0]
-        wrong_answer = 0
+        # Tras barajar opciones, cualquier índice válido podría ser el correcto.
+        # Usamos un índice fuera del rango para garantizar una respuesta incorrecta
+        # sin conocer ni exponer la clave privada.
+        wrong_answer = len(question["options"])
         saved = client.put(
             f"/api/evaluation/exam-sessions/{exam_payload['exam_session_id']}/draft",
             json={"answers": {str(question["id"]): wrong_answer}},
