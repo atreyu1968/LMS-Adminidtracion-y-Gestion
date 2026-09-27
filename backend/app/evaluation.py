@@ -1308,6 +1308,43 @@ def evaluation_structure(
                     )
                     if exception:
                         max_attempts += int(exception.extra_attempts or 0)
+                latest_attempt = None
+                attempts_used = 0
+                if is_student:
+                    attempts_used = db.scalar(
+                        select(func.count(AssessmentAttempt.id)).where(
+                            AssessmentAttempt.course_module_id == course_module_id,
+                            AssessmentAttempt.user_id == user_id,
+                            AssessmentAttempt.item_id == item.id,
+                        )
+                    ) or 0
+                    latest_attempt = db.scalar(
+                        select(AssessmentAttempt)
+                        .where(
+                            AssessmentAttempt.course_module_id == course_module_id,
+                            AssessmentAttempt.user_id == user_id,
+                            AssessmentAttempt.item_id == item.id,
+                        )
+                        .order_by(
+                            AssessmentAttempt.attempt_no.desc(),
+                            AssessmentAttempt.id.desc(),
+                        )
+                    )
+                available = bool(lr_access.get("available")) and bool(item_access.get("available"))
+                if item_exempt or criterion_exempt:
+                    progress_state = "exempt"
+                elif not available:
+                    progress_state = "locked"
+                elif latest_attempt and latest_attempt.status == "submitted":
+                    progress_state = (
+                        "pending_review"
+                        if latest_attempt.pending_review
+                        else "completed"
+                    )
+                elif latest_attempt:
+                    progress_state = "in_progress"
+                else:
+                    progress_state = "not_started"
                 item_rows.append(
                     {
                         "id": item.id,
@@ -1319,7 +1356,14 @@ def evaluation_structure(
                         "pairs": (item.metadata_json or {}).get("pairs") or [],
                         "evaluable": item.evaluable,
                         "max_attempts": max_attempts,
-                        "available": bool(lr_access.get("available")) and bool(item_access.get("available")),
+                        "attempts_used": int(attempts_used),
+                        "progress_state": progress_state,
+                        "latest_score": (
+                            latest_attempt.score
+                            if latest_attempt and latest_attempt.score is not None
+                            else None
+                        ),
+                        "available": available,
                         "access_reason": (
                             lr_access.get("reason")
                             if not lr_access.get("available")
