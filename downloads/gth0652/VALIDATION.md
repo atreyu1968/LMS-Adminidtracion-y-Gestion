@@ -7,10 +7,14 @@
 - Integridad ZIP/CRC: OK
 - Recursos declarados en manifiesto: OK
 - Recursos locales assets/ referenciados desde HTML: OK
+- Entrada en modo estudio: OK
+- Reanudación del último punto: OK
+- Fallback sin pantalla completa: OK
+- Aislamiento respecto al modo examen: OK
 
 | Unidad | Paquete | Ficheros | SHA-256 |
 |---|---|---:|---|
-| UT1 | GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip | 21 | 159a782ef488e27ea6a3d1567030c7c906979c57798c17683f00865f4453dd7f |
-| UT2 | GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip | 19 | 0783f746eb8911247401d1aa992e9c874d8bab0c623840745d45d04ecd808eb3 |
-| UT3 | GTH_RA3_Seguridad_Social_SCORM_1.2.zip | 19 | baa1824e009bb6b91afb5440d9961fa7a31cb300f3d8d8ec43a710a7af2e89f8 |
-| UT4 | GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip | 19 | 2e5fe6546ab475b93a9418c7780b3505fecf13c104b1615fbbf92ddc9bb0c993 |
+| UT1 | GTH_RA1_Gestion_de_la_contratacion_laboral_SCORM_1.2.zip | 21 | 2001e257d557e615eaecf3fc8b53324d57f3a0b0d10c46757544269bf2896974 |
+| UT2 | GTH_RA2_Modificacion_suspension_y_extincion_SCORM_1.2.zip | 19 | 35e162152593b20d8cec74a78f4aec71aab6f97d9c7d2126f131e66f8dbde846 |
+| UT3 | GTH_RA3_Seguridad_Social_SCORM_1.2.zip | 19 | 986d098480276bb8bf957d3861d599d9c53676a667af23743d76b1dc9e2f2d94 |
+| UT4 | GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip | 19 | 2be221fcd2024f4b983595bdeba27ad76d2081f77cace1a87b37341fb0508fd5 |
