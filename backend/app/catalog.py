@@ -16,10 +16,13 @@ from .db import get_db
 from .models import (
     AssessmentCriterion,
     AssessmentItem,
+    AssessmentKey,
     CourseModule,
     LearningResult,
     Module,
     ModulePermission,
+    ModuleScormPackage,
+    ScormPackage,
 )
 from .scorm import ScormAttachIn, _attach_package, _store_scorm
 from .security import require_admin, require_teacher
@@ -263,6 +266,217 @@ def list_catalog_modules(
             }
         )
     return result
+
+
+def _unique_fork_slug(db: Session, source_slug: str, user_id: int) -> str:
+    base = f"{source_slug}-u{user_id}"
+    candidates = [base] + [f"{base}-{number}" for number in range(2, 100)]
+    for candidate in candidates:
+        if not db.scalar(select(Module.id).where(Module.slug == candidate)):
+            return candidate
+    raise HTTPException(
+        status_code=409,
+        detail="No se pudo generar un identificador único para la copia",
+    )
+
+
+@router.post("/catalog/modules/{module_id}/fork")
+def fork_catalog_module(
+    module_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    source = db.get(Module, module_id)
+    if (
+        not source
+        or not source.active
+        or not (source.metadata_json or {}).get("catalog_shared")
+    ):
+        raise HTTPException(status_code=404, detail="Módulo de catálogo no encontrado")
+
+    clone = Module(
+        slug=_unique_fork_slug(db, source.slug, user_id),
+        code=source.code,
+        title=f"{source.title} · copia personal",
+        description=source.description,
+        module_type=source.module_type,
+        version=source.version,
+        metadata_json={
+            **(source.metadata_json or {}),
+            "catalog_shared": False,
+            "derived_from_module_id": source.id,
+            "derived_from_slug": source.slug,
+            "personal_copy": True,
+        },
+        active=True,
+    )
+    db.add(clone)
+    db.flush()
+    db.add(
+        ModulePermission(
+            module_id=clone.id,
+            user_id=user_id,
+            permission="owner",
+        )
+    )
+
+    lr_map: dict[int, LearningResult] = {}
+    criterion_map: dict[int, AssessmentCriterion] = {}
+    item_map: dict[int, AssessmentItem] = {}
+
+    source_lrs = list(
+        db.scalars(
+            select(LearningResult)
+            .where(LearningResult.module_id == source.id)
+            .order_by(LearningResult.position, LearningResult.id)
+        )
+    )
+    for old_lr in source_lrs:
+        new_lr = LearningResult(
+            module_id=clone.id,
+            code=old_lr.code,
+            title=old_lr.title,
+            description=old_lr.description,
+            position=old_lr.position,
+            weight=old_lr.weight,
+            metadata_json=dict(old_lr.metadata_json or {}),
+            active=old_lr.active,
+        )
+        db.add(new_lr)
+        db.flush()
+        lr_map[old_lr.id] = new_lr
+
+        source_criteria = list(
+            db.scalars(
+                select(AssessmentCriterion)
+                .where(AssessmentCriterion.learning_result_id == old_lr.id)
+                .order_by(AssessmentCriterion.position, AssessmentCriterion.id)
+            )
+        )
+        for old_criterion in source_criteria:
+            new_criterion = AssessmentCriterion(
+                learning_result_id=new_lr.id,
+                code=old_criterion.code,
+                title=old_criterion.title,
+                description=old_criterion.description,
+                position=old_criterion.position,
+                pass_score=old_criterion.pass_score,
+                weight=old_criterion.weight,
+                metadata_json=dict(old_criterion.metadata_json or {}),
+                active=old_criterion.active,
+            )
+            db.add(new_criterion)
+            db.flush()
+            criterion_map[old_criterion.id] = new_criterion
+
+            source_items = list(
+                db.scalars(
+                    select(AssessmentItem)
+                    .where(AssessmentItem.criterion_id == old_criterion.id)
+                    .order_by(AssessmentItem.instrument, AssessmentItem.position, AssessmentItem.id)
+                )
+            )
+            for old_item in source_items:
+                new_item = AssessmentItem(
+                    criterion_id=new_criterion.id,
+                    instrument=old_item.instrument,
+                    item_key=old_item.item_key,
+                    item_type=old_item.item_type,
+                    prompt=old_item.prompt,
+                    options_json=list(old_item.options_json or []),
+                    public_hash=old_item.public_hash,
+                    evaluable=old_item.evaluable,
+                    max_attempts=old_item.max_attempts,
+                    position=old_item.position,
+                    metadata_json=dict(old_item.metadata_json or {}),
+                    active=old_item.active,
+                )
+                db.add(new_item)
+                db.flush()
+                item_map[old_item.id] = new_item
+
+                old_key = db.scalar(
+                    select(AssessmentKey).where(
+                        AssessmentKey.item_id == old_item.id,
+                        AssessmentKey.active.is_(True),
+                    )
+                )
+                if old_key:
+                    db.add(
+                        AssessmentKey(
+                            item_id=new_item.id,
+                            answer_json=dict(old_key.answer_json or {}),
+                            feedback=old_key.feedback,
+                            public_hash=old_key.public_hash,
+                            source=f"fork:{source.slug}",
+                            active=True,
+                        )
+                    )
+
+    package_copies = 0
+    source_links = db.execute(
+        select(ModuleScormPackage, ScormPackage)
+        .join(ScormPackage, ScormPackage.id == ModuleScormPackage.package_id)
+        .where(
+            ModuleScormPackage.module_id == source.id,
+            ModuleScormPackage.active.is_(True),
+            ScormPackage.active.is_(True),
+        )
+        .order_by(ModuleScormPackage.position, ModuleScormPackage.id)
+    ).all()
+
+    for old_link, old_package in source_links:
+        package_copy = ScormPackage(
+            module_id=clone.id,
+            owner_user_id=user_id,
+            title=old_package.title,
+            description=old_package.description,
+            original_filename=old_package.original_filename,
+            version=old_package.version,
+            standard=old_package.standard,
+            entrypoint=old_package.entrypoint,
+            storage_path=old_package.storage_path,
+            sha256=old_package.sha256,
+            manifest_json={
+                **(old_package.manifest_json or {}),
+                "derived_from_package_id": old_package.id,
+            },
+            visibility="private",
+            revision_number=1,
+            is_current=True,
+            lifecycle_status="published",
+            active=True,
+        )
+        db.add(package_copy)
+        db.flush()
+        package_copy.lineage_root_id = package_copy.id
+        db.add(
+            ModuleScormPackage(
+                module_id=clone.id,
+                package_id=package_copy.id,
+                position=old_link.position,
+                required=old_link.required,
+                weight=old_link.weight,
+                settings_json=dict(old_link.settings_json or {}),
+                active=True,
+            )
+        )
+        package_copies += 1
+
+    db.commit()
+    db.refresh(clone)
+    return {
+        "module_id": clone.id,
+        "slug": clone.slug,
+        "title": clone.title,
+        "permission": "owner",
+        "derived_from_module_id": source.id,
+        "learning_results": len(lr_map),
+        "criteria": len(criterion_map),
+        "items": len(item_map),
+        "scorm_packages": package_copies,
+    }
 
 
 @router.post("/catalog/modules/{module_id}/install")
