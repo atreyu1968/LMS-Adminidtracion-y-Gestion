@@ -82,13 +82,27 @@ textarea{min-height:92px;resize:vertical}
     <strong>Tu recorrido</strong>
     <div class="progress"><div id="bar"></div></div>
     <div id="summary" class="summary">Cargando progreso…</div>
-    <div id="milestones"></div>
+    <button id="glossaryBtn" class="btn secondary glossary-btn" type="button">Consultar glosario</button>
+    <div id="milestones" style="margin-top:12px"></div>
   </aside>
   <main>
     <div id="loading" class="card"><h2>Preparando tu proyecto…</h2><p class="story">Estamos recuperando tu punto exacto de trabajo para que puedas continuar donde lo dejaste.</p></div>
     <div id="content" class="hidden"></div>
     <div id="fatal" class="card hidden"></div>
   </main>
+</div>
+<div id="imageModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Captura ampliada">
+  <div class="modal-box">
+    <div class="modal-head"><strong id="imageModalTitle">Captura real de NOMINASOL</strong><button id="imageModalClose" class="modal-close">Cerrar</button></div>
+    <img id="imageModalImg" alt="">
+  </div>
+</div>
+<div id="glossaryModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Glosario">
+  <div class="modal-box">
+    <div class="modal-head"><strong>Glosario de trabajo</strong><button id="glossaryModalClose" class="modal-close">Cerrar</button></div>
+    <p class="small">Consulta un concepto cuando lo necesites. No es necesario memorizarlo antes de empezar a trabajar.</p>
+    <div id="glossaryList" class="glossary-list"></div>
+  </div>
 </div>
 <script>
 (function(){
@@ -194,6 +208,34 @@ function renderDossier(){
     +'<div><b>Localidad</b>'+esc(c.city||"")+'</div>'
     +'</div></section>';
 }
+function renderSupport(m){
+  var projectCommon=(data&&data.project&&data.project.common_support)||[];
+  var local=m.support||[];
+  var items=projectCommon.concat(local);
+  if(!items.length)return "";
+  return '<section class="card"><div class="eyebrow">Ayuda cuando algo no coincide</div><h3>No adivines: localiza la causa</h3>'
+    +'<p>Abre solo el problema que se parezca a lo que estás viendo. Sigue las comprobaciones en orden y vuelve a NOMINASOL antes de pedir la solución a otra persona.</p>'
+    +'<div class="help-list">'+items.map(function(item){
+      return '<details class="help-item"><summary>'+esc(item.symptom||"Necesito ayuda")+'</summary><div class="help-body">'
+        +'<ol>'+((item.diagnose||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join(""))+'</ol>'
+        +'<div class="help-fix"><strong>Qué hacer después</strong><br>'+esc(item.fix||"")+'</div></div></details>';
+    }).join("")+'</div></section>';
+}
+function openImageModal(src,title){
+  var modal=document.getElementById("imageModal");
+  document.getElementById("imageModalImg").src=src;
+  document.getElementById("imageModalImg").alt=title||"Captura ampliada";
+  document.getElementById("imageModalTitle").textContent=title||"Captura real de NOMINASOL";
+  modal.classList.remove("hidden");
+}
+function openGlossary(){
+  var terms=(data&&data.project&&data.project.glossary)||[];
+  var root=document.getElementById("glossaryList");
+  root.innerHTML=terms.length?terms.map(function(x){
+    return '<div class="glossary-term"><strong>'+esc(x.term||"")+'</strong><span>'+esc(x.definition||"")+'</span></div>';
+  }).join(""):'<p class="small">El glosario todavía no está disponible.</p>';
+  document.getElementById("glossaryModal").classList.remove("hidden");
+}
 function renderFeedback(st){
   var ai=st.ai||{};
   var html="";
@@ -246,6 +288,7 @@ function openMilestone(key){
     +(key==="M02"||key==="M03"?renderDossier():"")
     +renderDocuments(m)
     +'<section class="card"><h3>Trabaja conmigo paso a paso</h3>'+steps+'</section>'
+    +renderSupport(m)
     +'<section class="card"><h3>Antes de entregar, comprueba tu trabajo</h3><div class="checks">'+checks+'</div></section>'
     +'<section class="card"><h3>Demuestra el hito</h3><p>'+esc(m.evidence_prompt||"")+'</p>'
     +'<p class="small">'+esc(m.evidence_help||"")+'</p>'+evHistory
@@ -257,6 +300,7 @@ function openMilestone(key){
   var root=document.getElementById("content");
   root.innerHTML=html;
   Array.prototype.forEach.call(root.querySelectorAll("img[data-real-shot]"),function(img){
+    img.addEventListener("click",function(){openImageModal(img.src,img.alt);});
     img.addEventListener("error",function(){
       img.style.display="none";
       var source=img.parentNode.querySelector(".shot-source");
@@ -311,6 +355,12 @@ async function reload(preferred){
   openMilestone(currentKey);
 }
 async function boot(){
+  document.getElementById("glossaryBtn").addEventListener("click",openGlossary);
+  document.getElementById("imageModalClose").addEventListener("click",function(){document.getElementById("imageModal").classList.add("hidden");});
+  document.getElementById("glossaryModalClose").addEventListener("click",function(){document.getElementById("glossaryModal").classList.add("hidden");});
+  document.getElementById("imageModal").addEventListener("click",function(e){if(e.target===this)this.classList.add("hidden");});
+  document.getElementById("glossaryModal").addEventListener("click",function(e){if(e.target===this)this.classList.add("hidden");});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){document.getElementById("imageModal").classList.add("hidden");document.getElementById("glossaryModal").classList.add("hidden");}});
   runtime=findRuntime();
   api12=findScorm();
   if(api12){try{api12.LMSInitialize("");}catch(e){}}

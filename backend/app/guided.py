@@ -118,6 +118,18 @@ def _load_audit_rules(package: ScormPackage) -> dict:
         raise HTTPException(status_code=500, detail="audit-rules.json no es JSON válido") from exc
 
 
+def _load_support(package: ScormPackage) -> dict:
+    folder = _project_folder(package)
+    root = Path(settings.modules_root).resolve()
+    path = (root / folder / "support.json").resolve()
+    if root not in path.parents or not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="support.json no es JSON válido") from exc
+
+
 def _variant_for(project_id: str, user_id: int, milestone_key: str, variants: list[dict]) -> dict | None:
     if not variants:
         return None
@@ -140,6 +152,7 @@ def _merge_document(base: dict, patch: dict) -> dict:
 def _personalized_project(package: ScormPackage, user: User) -> tuple[dict, dict]:
     project = _load_project(package)
     scenario = _load_scenario(package)
+    support = _load_support(package)
     documents_by_milestone = scenario.get("milestone_documents") or {}
     variants_by_milestone = scenario.get("variants") or {}
     personalized = deepcopy(project)
@@ -168,6 +181,7 @@ def _personalized_project(package: ScormPackage, user: User) -> tuple[dict, dict
                 "overrides": variant.get("overrides") or {},
             }
         milestone["documents"] = documents
+        milestone["support"] = deepcopy((support.get("milestones") or {}).get(key) or [])
 
     scenario_public = {
         "scenario_id": scenario.get("scenario_id"),
@@ -180,6 +194,9 @@ def _personalized_project(package: ScormPackage, user: User) -> tuple[dict, dict
         "sources": scenario.get("sources") or [],
     }
     personalized["scenario"] = scenario_public
+    personalized["common_support"] = deepcopy(support.get("common") or [])
+    personalized["glossary"] = deepcopy(support.get("glossary") or [])
+    personalized["support_version"] = support.get("version")
     return personalized, scenario_public
 
 

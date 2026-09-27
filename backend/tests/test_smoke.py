@@ -1218,13 +1218,17 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert project.status_code == 200, project.text
         payload = project.json()
         assert payload["project"]["project_id"] == "nominasol-2026-anual"
-        assert payload["project"]["version"] == "2026.3"
+        assert payload["project"]["version"] == "2026.4"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
         m06 = next(m for m in payload["project"]["milestones"] if m["key"] == "M06")
         m14 = next(m for m in payload["project"]["milestones"] if m["key"] == "M14")
         assert m05["documents"]
+        assert m05["support"]
+        assert payload["project"]["common_support"]
+        assert len(payload["project"]["glossary"]) >= 15
+        assert payload["project"]["support_version"] == "2026.4"
         assert m05["variant"]["key"] in {"F02-A", "F02-B", "F02-C"}
         assert m06["variant"]["key"] in {"IT-A", "IT-B", "IT-C"}
         assert m14["variant"]["key"] in {"NOV-A", "NOV-B", "NOV-C"}
