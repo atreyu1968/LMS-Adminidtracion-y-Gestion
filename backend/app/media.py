@@ -6,6 +6,7 @@ import mimetypes
 import re
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -60,7 +61,7 @@ def _asset_dict(asset: MediaAsset) -> dict:
         "sha256": asset.sha256,
         "visibility": asset.visibility,
         "uploaded_at": asset.uploaded_at,
-        "url": f"{settings.base_url}/media-content/{asset.storage_path}",
+        "url": f"{settings.base_url}/api/media-library/{asset.id}/content",
     }
 
 
@@ -177,6 +178,39 @@ def list_media(
 
     rows = list(db.scalars(stmt.order_by(MediaAsset.uploaded_at.desc(), MediaAsset.id.desc())))
     return [_asset_dict(row) for row in rows]
+
+
+
+
+@router.get("/{asset_id}/content")
+def media_content(
+    asset_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+):
+    user_id = int(session["sub"])
+    asset = db.get(MediaAsset, asset_id)
+    if not asset or not asset.active:
+        raise HTTPException(status_code=404, detail="Recurso multimedia no encontrado")
+    if asset.owner_user_id != user_id and asset.visibility != "shared":
+        raise HTTPException(status_code=403, detail="No tienes acceso a este recurso multimedia")
+
+    root = (Path(settings.storage_root) / "media").resolve()
+    target = (root / asset.storage_path).resolve()
+    if root not in target.parents or not target.is_file():
+        raise HTTPException(status_code=404, detail="Fichero multimedia no disponible")
+
+    return FileResponse(
+        target,
+        media_type=asset.mime_type,
+        filename=asset.original_filename,
+        content_disposition_type="inline",
+        headers={
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+            "Accept-Ranges": "bytes",
+        },
+    )
 
 
 @router.patch("/{asset_id}")
