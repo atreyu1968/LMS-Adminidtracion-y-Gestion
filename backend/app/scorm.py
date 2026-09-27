@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from urllib.parse import quote, urlencode, urlsplit
 import hashlib
-import shutil
 import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
-from pydantic import BaseModel
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
+from pydantic import BaseModel, Field
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .db import get_db
@@ -20,6 +19,7 @@ from .models import (
     Membership,
     Module,
     ModulePermission,
+    ModuleScormPackage,
     ScormPackage,
     ScormRegistration,
     User,
@@ -36,13 +36,30 @@ class ScormCommitIn(BaseModel):
     cmi: dict[str, object]
 
 
-def _module_editor(db: Session, module_id: int, user_id: int) -> None:
-    permission = db.scalar(
+class ScormMetadataIn(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    description: str | None = None
+    visibility: str | None = Field(default=None, pattern=r"^(private|shared)$")
+
+
+class ScormAttachIn(BaseModel):
+    position: int = Field(default=0, ge=0)
+    required: bool = True
+    weight: float = Field(default=1.0, ge=0)
+    settings: dict = {}
+
+
+def _module_permission(db: Session, module_id: int, user_id: int) -> ModulePermission | None:
+    return db.scalar(
         select(ModulePermission).where(
             ModulePermission.module_id == module_id,
             ModulePermission.user_id == user_id,
         )
     )
+
+
+def _module_editor(db: Session, module_id: int, user_id: int) -> None:
+    permission = _module_permission(db, module_id, user_id)
     if not permission or permission.permission not in {"owner", "editor"}:
         raise HTTPException(status_code=403, detail="Module edit permission required")
 
@@ -56,8 +73,42 @@ def _membership(db: Session, course_id: int, user_id: int) -> Membership:
         )
     )
     if not row:
-        raise HTTPException(status_code=403, detail="Not enrolled in this course")
+        raise HTTPException(status_code=403, detail="Not enrolled in this group")
     return row
+
+
+def _can_read_module(db: Session, module_id: int, user_id: int, course_id: int | None) -> bool:
+    if _module_permission(db, module_id, user_id):
+        return True
+    if not course_id:
+        return False
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.course_id == course_id,
+            Membership.user_id == user_id,
+            Membership.active.is_(True),
+        )
+    )
+    if not membership:
+        return False
+    assignment = db.scalar(
+        select(CourseModule).where(
+            CourseModule.course_id == course_id,
+            CourseModule.module_id == module_id,
+            CourseModule.active.is_(True),
+        )
+    )
+    return bool(assignment)
+
+
+def _can_use_package(db: Session, package: ScormPackage, user_id: int) -> bool:
+    if package.owner_user_id == user_id:
+        return True
+    if package.visibility == "shared":
+        return True
+    if package.module_id and _module_permission(db, package.module_id, user_id):
+        return True
+    return False
 
 
 def _safe_member(name: str) -> PurePosixPath:
@@ -109,45 +160,25 @@ def _manifest_info(data: bytes) -> tuple[str, str, dict]:
     return title, href, manifest
 
 
-def _inject_bridge(entry: Path) -> None:
-    if entry.suffix.lower() not in {".html", ".htm"}:
-        return
-    raw = entry.read_bytes()
-    try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        text = raw.decode("latin-1")
-    marker = "/runtime/scorm-bridge.js"
-    if marker in text:
-        return
-    script = '<script src="/runtime/scorm-bridge.js"></script>'
-    lower = text.lower()
-    index = lower.find("</head>")
-    if index >= 0:
-        text = text[:index] + script + text[index:]
-    else:
-        text = script + text
-    entry.write_text(text, encoding="utf-8")
-
-
-@router.post("/api/modules/{module_id}/scorm-packages")
-async def upload_scorm(
-    module_id: int,
-    file: UploadFile = File(...),
-    session: dict = Depends(require_teacher),
-    db: Session = Depends(get_db),
-) -> dict:
-    user_id = int(session["sub"])
-    module = db.get(Module, module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
-    _module_editor(db, module_id, user_id)
+async def _store_scorm(
+    *,
+    file: UploadFile,
+    owner_user_id: int,
+    db: Session,
+    title_override: str | None = None,
+    description: str = "",
+    visibility: str = "private",
+    legacy_module_id: int | None = None,
+) -> tuple[ScormPackage, bool]:
+    if visibility not in {"private", "shared"}:
+        raise HTTPException(status_code=400, detail="Invalid SCORM visibility")
 
     max_bytes = settings.max_scorm_upload_mb * 1024 * 1024
     digest = hashlib.sha256()
     total = 0
     tmp = tempfile.NamedTemporaryFile(prefix="lms-scorm-", suffix=".zip", delete=False)
     tmp_path = Path(tmp.name)
+
     try:
         while True:
             chunk = await file.read(1024 * 1024)
@@ -159,6 +190,24 @@ async def upload_scorm(
             digest.update(chunk)
             tmp.write(chunk)
         tmp.close()
+
+        sha = digest.hexdigest()
+        existing = db.scalar(
+            select(ScormPackage).where(
+                ScormPackage.owner_user_id == owner_user_id,
+                ScormPackage.sha256 == sha,
+            )
+        )
+        if existing:
+            existing.active = True
+            if title_override:
+                existing.title = title_override
+            if description:
+                existing.description = description
+            existing.visibility = visibility
+            db.commit()
+            db.refresh(existing)
+            return existing, True
 
         with zipfile.ZipFile(tmp_path) as archive:
             infos = archive.infolist()
@@ -177,54 +226,36 @@ async def upload_scorm(
             manifest_info = names.get("imsmanifest.xml")
             if not manifest_info:
                 raise HTTPException(status_code=400, detail="imsmanifest.xml must be at the ZIP root")
-            title, entrypoint, manifest = _manifest_info(archive.read(manifest_info))
+            manifest_title, entrypoint, manifest = _manifest_info(archive.read(manifest_info))
             entry_path = _safe_member(urlsplit(entrypoint).path).as_posix()
             if entry_path not in names:
                 raise HTTPException(status_code=400, detail="SCORM entrypoint does not exist in the package")
 
-            sha = digest.hexdigest()
-            relative_dir = Path(module.slug) / sha
+            relative_dir = Path(f"user-{owner_user_id}") / sha
             final_dir = Path(settings.storage_root) / "scorm" / relative_dir
             if not final_dir.exists():
                 final_dir.mkdir(parents=True, exist_ok=True)
                 archive.extractall(final_dir)
-                _inject_bridge(final_dir / entry_path)
-
-        existing = db.scalar(
-            select(ScormPackage).where(
-                ScormPackage.module_id == module_id,
-                ScormPackage.sha256 == sha,
-            )
-        )
-        if existing:
-            return {
-                "id": existing.id,
-                "title": existing.title,
-                "sha256": existing.sha256,
-                "entrypoint": existing.entrypoint,
-                "deduplicated": True,
-            }
 
         package = ScormPackage(
-            module_id=module_id,
-            title=title or file.filename or "Paquete SCORM",
+            module_id=legacy_module_id,
+            owner_user_id=owner_user_id,
+            title=title_override or manifest_title or file.filename or "Paquete SCORM",
+            description=description,
+            original_filename=file.filename,
             version=sha[:12],
             standard="SCORM_1.2",
             entrypoint=entrypoint,
             storage_path=relative_dir.as_posix(),
             sha256=sha,
             manifest_json=manifest,
+            visibility=visibility,
+            active=True,
         )
         db.add(package)
         db.commit()
         db.refresh(package)
-        return {
-            "id": package.id,
-            "title": package.title,
-            "sha256": package.sha256,
-            "entrypoint": package.entrypoint,
-            "deduplicated": False,
-        }
+        return package, False
     except zipfile.BadZipFile as exc:
         raise HTTPException(status_code=400, detail="Invalid ZIP file") from exc
     finally:
@@ -235,27 +266,253 @@ async def upload_scorm(
         tmp_path.unlink(missing_ok=True)
 
 
+def _attach_package(
+    db: Session,
+    module_id: int,
+    package_id: int,
+    payload: ScormAttachIn | None = None,
+) -> ModuleScormPackage:
+    data = payload or ScormAttachIn()
+    row = db.scalar(
+        select(ModuleScormPackage).where(
+            ModuleScormPackage.module_id == module_id,
+            ModuleScormPackage.package_id == package_id,
+        )
+    )
+    if row:
+        row.active = True
+        row.position = data.position
+        row.required = data.required
+        row.weight = data.weight
+        row.settings_json = data.settings
+    else:
+        row = ModuleScormPackage(
+            module_id=module_id,
+            package_id=package_id,
+            position=data.position,
+            required=data.required,
+            weight=data.weight,
+            settings_json=data.settings,
+            active=True,
+        )
+        db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.post("/api/scorm-library")
+async def upload_to_library(
+    file: UploadFile = File(...),
+    title: str | None = Form(default=None),
+    description: str = Form(default=""),
+    visibility: str = Form(default="private"),
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    package, deduplicated = await _store_scorm(
+        file=file,
+        owner_user_id=user_id,
+        db=db,
+        title_override=(title or "").strip() or None,
+        description=description,
+        visibility=visibility,
+    )
+    return _package_dict(package, deduplicated=deduplicated)
+
+
+@router.get("/api/scorm-library")
+def scorm_library(
+    scope: str = "mine",
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    user_id = int(session["sub"])
+    stmt = select(ScormPackage).where(ScormPackage.active.is_(True))
+    if scope == "mine":
+        stmt = stmt.where(ScormPackage.owner_user_id == user_id)
+    elif scope == "shared":
+        stmt = stmt.where(
+            ScormPackage.visibility == "shared",
+            ScormPackage.owner_user_id != user_id,
+        )
+    elif scope == "all":
+        stmt = stmt.where(
+            or_(
+                ScormPackage.owner_user_id == user_id,
+                ScormPackage.visibility == "shared",
+            )
+        )
+    else:
+        raise HTTPException(status_code=400, detail="scope must be mine, shared or all")
+    rows = list(db.scalars(stmt.order_by(ScormPackage.uploaded_at.desc(), ScormPackage.id.desc())))
+    return [_package_dict(row) for row in rows]
+
+
+@router.patch("/api/scorm-library/{package_id}")
+def update_library_item(
+    package_id: int,
+    payload: ScormMetadataIn,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    package = db.get(ScormPackage, package_id)
+    if not package or not package.active:
+        raise HTTPException(status_code=404, detail="SCORM package not found")
+    if package.owner_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the owner can edit this SCORM")
+    changes = payload.model_dump(exclude_unset=True)
+    if "title" in changes:
+        package.title = changes["title"]
+    if "description" in changes:
+        package.description = changes["description"] or ""
+    if "visibility" in changes:
+        package.visibility = changes["visibility"]
+    db.commit()
+    return _package_dict(package)
+
+
+@router.delete("/api/scorm-library/{package_id}")
+def delete_library_item(
+    package_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    package = db.get(ScormPackage, package_id)
+    if not package or not package.active:
+        raise HTTPException(status_code=404, detail="SCORM package not found")
+    if package.owner_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the owner can delete this SCORM")
+    attached = db.scalar(
+        select(ModuleScormPackage.id).where(
+            ModuleScormPackage.package_id == package_id,
+            ModuleScormPackage.active.is_(True),
+        )
+    )
+    if attached:
+        raise HTTPException(
+            status_code=409,
+            detail="Detach this SCORM from all modules before deleting it",
+        )
+    package.active = False
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/api/modules/{module_id}/scorm-packages")
+async def upload_scorm(
+    module_id: int,
+    file: UploadFile = File(...),
+    title: str | None = Form(default=None),
+    description: str = Form(default=""),
+    visibility: str = Form(default="private"),
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    module = db.get(Module, module_id)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    _module_editor(db, module_id, user_id)
+
+    package, deduplicated = await _store_scorm(
+        file=file,
+        owner_user_id=user_id,
+        db=db,
+        title_override=(title or "").strip() or None,
+        description=description,
+        visibility=visibility,
+        legacy_module_id=module_id,
+    )
+    association = _attach_package(db, module_id, package.id)
+    result = _package_dict(package, deduplicated=deduplicated)
+    result["module_scorm_id"] = association.id
+    return result
+
+
+@router.post("/api/modules/{module_id}/scorm-packages/{package_id}")
+def attach_library_scorm(
+    module_id: int,
+    package_id: int,
+    payload: ScormAttachIn,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    _module_editor(db, module_id, user_id)
+    package = db.get(ScormPackage, package_id)
+    if not package or not package.active:
+        raise HTTPException(status_code=404, detail="SCORM package not found")
+    if not _can_use_package(db, package, user_id):
+        raise HTTPException(status_code=403, detail="This SCORM is private to another teacher")
+    row = _attach_package(db, module_id, package_id, payload)
+    return {
+        "id": row.id,
+        "module_id": row.module_id,
+        "package_id": row.package_id,
+        "position": row.position,
+        "required": row.required,
+        "weight": row.weight,
+    }
+
+
+@router.delete("/api/modules/{module_id}/scorm-packages/{package_id}")
+def detach_scorm(
+    module_id: int,
+    package_id: int,
+    session: dict = Depends(require_teacher),
+    db: Session = Depends(get_db),
+) -> dict:
+    user_id = int(session["sub"])
+    _module_editor(db, module_id, user_id)
+    row = db.scalar(
+        select(ModuleScormPackage).where(
+            ModuleScormPackage.module_id == module_id,
+            ModuleScormPackage.package_id == package_id,
+            ModuleScormPackage.active.is_(True),
+        )
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="SCORM is not attached to this module")
+    row.active = False
+    db.commit()
+    return {"ok": True}
+
+
 @router.get("/api/modules/{module_id}/scorm-packages")
 def list_scorm(
     module_id: int,
     session: dict = Depends(read_session),
     db: Session = Depends(get_db),
 ) -> list[dict]:
-    rows = db.scalars(
-        select(ScormPackage)
-        .where(ScormPackage.module_id == module_id, ScormPackage.active.is_(True))
-        .order_by(ScormPackage.id)
+    user_id = int(session["sub"])
+    course_id = int(session.get("course_id") or 0) or None
+    if not _can_read_module(db, module_id, user_id, course_id):
+        raise HTTPException(status_code=403, detail="Module access required")
+
+    rows = db.execute(
+        select(ModuleScormPackage, ScormPackage)
+        .join(ScormPackage, ScormPackage.id == ModuleScormPackage.package_id)
+        .where(
+            ModuleScormPackage.module_id == module_id,
+            ModuleScormPackage.active.is_(True),
+            ScormPackage.active.is_(True),
+        )
+        .order_by(ModuleScormPackage.position, ModuleScormPackage.id)
     ).all()
     return [
         {
-            "id": row.id,
-            "title": row.title,
-            "version": row.version,
-            "standard": row.standard,
-            "entrypoint": row.entrypoint,
-            "sha256": row.sha256,
+            **_package_dict(package),
+            "module_scorm_id": association.id,
+            "position": association.position,
+            "required": association.required,
+            "weight": association.weight,
+            "settings": association.settings_json or {},
         }
-        for row in rows
+        for association, package in rows
     ]
 
 
@@ -269,13 +526,22 @@ def launch_scorm(
     user_id = int(session["sub"])
     course_module = db.get(CourseModule, course_module_id)
     package = db.get(ScormPackage, package_id)
-    if not course_module or not package:
-        raise HTTPException(status_code=404, detail="Course module or SCORM package not found")
-    if package.module_id != course_module.module_id:
-        raise HTTPException(status_code=400, detail="SCORM package does not belong to this module")
+    if not course_module or not package or not package.active:
+        raise HTTPException(status_code=404, detail="Group module or SCORM package not found")
     if int(session.get("course_id") or 0) != course_module.course_id:
-        raise HTTPException(status_code=403, detail="Course context mismatch")
+        raise HTTPException(status_code=403, detail="Group context mismatch")
     _membership(db, course_module.course_id, user_id)
+
+    attached = db.scalar(
+        select(ModuleScormPackage).where(
+            ModuleScormPackage.module_id == course_module.module_id,
+            ModuleScormPackage.package_id == package.id,
+            ModuleScormPackage.active.is_(True),
+        )
+    )
+    legacy_match = package.module_id == course_module.module_id
+    if not attached and not legacy_match:
+        raise HTTPException(status_code=400, detail="SCORM package is not assigned to this module")
 
     registration = db.scalar(
         select(ScormRegistration).where(
@@ -395,3 +661,22 @@ def runtime_commit(
         "lesson_status": registration.lesson_status,
         "score_raw": registration.score_raw,
     }
+
+
+def _package_dict(package: ScormPackage, deduplicated: bool | None = None) -> dict:
+    result = {
+        "id": package.id,
+        "owner_user_id": package.owner_user_id,
+        "title": package.title,
+        "description": package.description,
+        "original_filename": package.original_filename,
+        "version": package.version,
+        "standard": package.standard,
+        "entrypoint": package.entrypoint,
+        "sha256": package.sha256,
+        "visibility": package.visibility,
+        "uploaded_at": package.uploaded_at,
+    }
+    if deduplicated is not None:
+        result["deduplicated"] = deduplicated
+    return result
