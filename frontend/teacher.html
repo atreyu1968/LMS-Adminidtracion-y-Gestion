@@ -27,6 +27,7 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
     <button class="tab" data-tab="library">Mi biblioteca SCORM</button>
     <button class="tab" data-tab="shared">SCORM compartidos</button>
     <button class="tab" data-tab="media">Biblioteca multimedia</button>
+    <button class="tab" data-tab="ai">Mi IA</button>
   </nav>
 
   <section id="panel-groups" class="panel active">
@@ -179,10 +180,54 @@ form{display:grid;gap:10px}label{font-size:.88rem;font-weight:700}input,textarea
       </aside>
     </div>
   </section>
+  <section id="panel-ai" class="panel">
+    <div class="split">
+      <div class="card">
+        <h2>Mi API de inteligencia artificial</h2>
+        <p class="muted">Esta configuración es exclusivamente tuya. Otros profesores no pueden consultar ni utilizar tu clave API.</p>
+        <div id="aiStatus" class="notice">IA no configurada.</div>
+        <form id="aiSettingsForm">
+          <label><input style="width:auto" type="checkbox" name="enabled"> Activar mi configuración de IA</label>
+          <label>Proveedor
+            <select name="provider">
+              <option value="openai-compatible">API compatible con OpenAI</option>
+              <option value="openai">OpenAI</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="custom">Otro proveedor compatible</option>
+            </select>
+          </label>
+          <label>URL base de la API<input name="base_url" placeholder="https://api.openai.com/v1"></label>
+          <label>Modelo<input name="model" placeholder="Modelo configurado en tu proveedor"></label>
+          <label>Clave API<input name="api_key" type="password" autocomplete="new-password" placeholder="Déjalo vacío para conservar la clave guardada"></label>
+          <div class="row">
+            <label>Confianza mínima<input name="confidence_threshold" type="number" min="0" max="1" step="0.01" value="0.75"></label>
+            <div>
+              <label>Tipos que pueden usar corrección IA</label>
+              <label><input style="width:auto" type="checkbox" name="kind_free" value="free"> Respuesta libre</label>
+              <label><input style="width:auto" type="checkbox" name="kind_text" value="text"> Texto</label>
+              <label><input style="width:auto" type="checkbox" name="kind_case" value="case"> Caso práctico</label>
+              <label><input style="width:auto" type="checkbox" name="kind_calculation" value="calculation"> Cálculo</label>
+            </div>
+          </div>
+          <label>Rúbrica general opcional<textarea name="default_rubric" placeholder="Criterios generales que deberá respetar la IA al proponer una corrección."></textarea></label>
+          <div class="actions">
+            <button class="btn">Guardar mi configuración</button>
+            <button class="btn secondary" type="button" id="testAiBtn">Probar conexión</button>
+            <button class="btn danger" type="button" id="deleteAiBtn">Eliminar mi configuración</button>
+          </div>
+        </form>
+      </div>
+      <aside class="card">
+        <h3>Cómo se usa</h3>
+        <p>Guardar una API <strong>no activa la corrección automática</strong>. Después debes vincular tu IA al módulo concreto dentro de un grupo.</p>
+        <p class="muted">Si otro profesor comparte ese grupo, deberá configurar su propia API si quiere usar IA. La credencial nunca se hereda ni se comparte.</p>
+      </aside>
+    </div>
+  </section>
 </main>
 
 <script>
-let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[];
+let me=null, groups=[], modules=[], activeGroup=null, myLibrary=[], sharedLibrary=[], mediaLibrary=[], aiSettings=null;
 
 function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function flash(message,type="ok"){const box=document.querySelector("#flash");box.innerHTML='<div class="notice '+type+'">'+esc(message)+'</div>';setTimeout(()=>box.innerHTML="",4500)}
@@ -211,14 +256,15 @@ async function boot(){
   }catch(e){document.querySelector(".wrap").innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}
 }
 async function refreshAll(){
-  [groups,modules,myLibrary,sharedLibrary,mediaLibrary]=await Promise.all([
+  [groups,modules,myLibrary,sharedLibrary,mediaLibrary,aiSettings]=await Promise.all([
     api("/api/groups"),
     api("/api/modules/mine"),
     api("/api/scorm-library?scope=mine"),
     api("/api/scorm-library?scope=shared"),
-    api("/api/media-library?scope=mine")
+    api("/api/media-library?scope=mine"),
+    api("/api/ai/settings")
   ]);
-  renderGroups();renderModules();renderLibrary();renderShared();renderMediaLibrary();refreshModuleSelects();
+  renderGroups();renderModules();renderLibrary();renderShared();renderMediaLibrary();renderAiSettings();refreshModuleSelects();
 }
 function renderGroups(){
   const root=document.querySelector("#groupsList");
@@ -248,6 +294,22 @@ function renderMediaLibrary(){
   const root=document.querySelector("#mediaLibraryList");
   root.innerHTML=mediaLibrary.length?mediaLibrary.map(m=>`<article class="item"><strong>${esc(m.title)}</strong><div class="muted tiny">${esc(m.media_type)} · ${esc(m.mime_type)} · ${formatBytes(m.size_bytes)} · ${esc(m.visibility)}</div><p>${esc(m.description||"")}</p><div class="actions"><a class="btn secondary" href="${esc(m.url)}" target="_blank" rel="noopener">Abrir</a></div></article>`).join(""):'<div class="empty">Tu biblioteca multimedia está vacía.</div>';
 }
+function renderAiSettings(){
+  const f=document.querySelector("#aiSettingsForm");if(!f||!aiSettings)return;
+  f.elements.enabled.checked=!!aiSettings.enabled;
+  f.elements.provider.value=aiSettings.provider||"openai-compatible";
+  f.elements.base_url.value=aiSettings.base_url||"";
+  f.elements.model.value=aiSettings.model||"";
+  f.elements.api_key.value="";
+  f.elements.confidence_threshold.value=Number(aiSettings.confidence_threshold??0.75);
+  f.elements.default_rubric.value=aiSettings.default_rubric||"";
+  ["free","text","case","calculation"].forEach(k=>f.elements["kind_"+k].checked=(aiSettings.auto_kinds||[]).includes(k));
+  const status=document.querySelector("#aiStatus");
+  status.className="notice "+(aiSettings.enabled&&aiSettings.api_key_configured?"ok":"");
+  status.textContent=aiSettings.api_key_configured
+    ? (aiSettings.enabled?"Tu API está configurada y activada.":"Hay una clave guardada, pero tu IA está desactivada.")
+    : "No hay ninguna clave API guardada.";
+}
 function refreshModuleSelects(){
   const sel=document.querySelector("#assignModuleForm select[name=module_id]");
   sel.innerHTML='<option value="">Selecciona…</option>'+modules.map(m=>'<option value="'+m.id+'">'+esc(m.title)+'</option>').join("");
@@ -275,7 +337,17 @@ async function openGroup(id){
     document.querySelector("#rotateJoinCodeBtn").classList.toggle("hidden",!activeGroup.owned||activeGroup.source_type!=="local");
     document.querySelector("#closeGroupBtn").classList.toggle("hidden",!activeGroup.owned||activeGroup.source_type!=="local");
     document.querySelector("#membersList").innerHTML=members.map(m=>`<div class="item member"><div><strong>${esc(m.display_name)}</strong><small>${esc(m.email||"")} · ${esc(m.role)}</small></div>${m.user_id===me.user.id?"":'<button class="btn danger" onclick="removeMember('+id+','+m.user_id+')">Quitar</button>'}</div>`).join("")||'<div class="empty">Sin miembros.</div>';
-    document.querySelector("#groupModules").innerHTML=gmods.map(m=>`<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")}</small><div class="actions" style="margin-top:8px"><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`).join("")||'<div class="empty">Sin módulos asignados.</div>';
+    const aiBindings=await Promise.all(gmods.map(async m=>{
+      try{return await api("/api/ai/course-modules/"+m.course_module_id)}catch(e){return{enabled:false,is_mine:false,teacher_user_id:null,allowed_kinds:[]}}
+    }));
+    document.querySelector("#groupModules").innerHTML=gmods.map((m,i)=>{
+      const a=aiBindings[i]||{};
+      const aiLabel=!a.enabled?"IA desactivada":(a.is_mine?"IA: usando tu API":"IA: configurada por otro profesor");
+      const aiActions=a.enabled&&a.is_mine
+        ? '<button class="btn secondary" onclick="disableModuleAi('+m.course_module_id+')">Desactivar mi IA</button>'
+        : (!a.enabled?'<button class="btn secondary" onclick="enableModuleAi('+m.course_module_id+')">Usar mi IA</button>':'');
+      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
+    }).join("")||'<div class="empty">Sin módulos asignados.</div>';
     document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){flash(e.message,"error")}
 }
@@ -307,6 +379,40 @@ document.querySelector("#uploadMediaForm").addEventListener("submit",async e=>{
   e.preventDefault();const fd=new FormData(e.currentTarget);
   try{await api("/api/media-library",{method:"POST",body:fd});e.currentTarget.reset();mediaLibrary=await api("/api/media-library?scope=mine");renderMediaLibrary();flash("Recurso añadido a la biblioteca multimedia.")}catch(err){flash(err.message,"error")}
 });
+document.querySelector("#aiSettingsForm").addEventListener("submit",async e=>{
+  e.preventDefault();const f=e.currentTarget;
+  const kinds=["free","text","case","calculation"].filter(k=>f.elements["kind_"+k].checked);
+  try{
+    aiSettings=await api("/api/ai/settings",json("PUT",{
+      enabled:f.elements.enabled.checked,
+      provider:f.elements.provider.value,
+      base_url:f.elements.base_url.value,
+      model:f.elements.model.value,
+      api_key:f.elements.api_key.value||null,
+      confidence_threshold:Number(f.elements.confidence_threshold.value||0.75),
+      auto_kinds:kinds,
+      default_rubric:f.elements.default_rubric.value||""
+    }));
+    renderAiSettings();flash("Tu configuración personal de IA se ha guardado.");
+  }catch(err){flash(err.message,"error")}
+});
+document.querySelector("#testAiBtn").addEventListener("click",async()=>{
+  try{const r=await api("/api/ai/test",{method:"POST"});flash("Conexión correcta con "+r.model+". Respuesta: "+r.response)}catch(e){flash(e.message,"error")}
+});
+document.querySelector("#deleteAiBtn").addEventListener("click",async()=>{
+  if(!confirm("¿Eliminar tu clave y configuración personal de IA?"))return;
+  try{await api("/api/ai/settings",{method:"DELETE"});aiSettings=await api("/api/ai/settings");renderAiSettings();flash("Configuración de IA eliminada.")}catch(e){flash(e.message,"error")}
+});
+async function enableModuleAi(courseModuleId){
+  try{
+    await api("/api/ai/course-modules/"+courseModuleId,json("PUT",{enabled:true,auto_review:true,allowed_kinds:aiSettings?.auto_kinds||["free","text","case"]}));
+    if(activeGroup)await openGroup(activeGroup.id);flash("Este módulo usará tu API personal de IA.");
+  }catch(e){flash(e.message,"error")}
+}
+async function disableModuleAi(courseModuleId){
+  try{await api("/api/ai/course-modules/"+courseModuleId,{method:"DELETE"});if(activeGroup)await openGroup(activeGroup.id);flash("IA desactivada para este módulo.")}catch(e){flash(e.message,"error")}
+}
+
 document.querySelector("#groupSettingsForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!activeGroup)return;
