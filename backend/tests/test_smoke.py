@@ -3403,20 +3403,21 @@ def test_sequential_release_rules_can_enforce_ra_and_activity_order():
         assert ra2_still_blocked.json()["available"] is False
 
         with SessionLocal() as db:
-            db.add(
-                EvaluationResult(
-                    course_module_id=cmid,
-                    user_id=sid,
-                    learning_result_id=ra1id,
-                    portfolio_score=100,
-                    exam_score=None,
-                    final_score=100,
-                    criteria_passed=1,
-                    criteria_total=1,
-                    passed=True,
-                    details_json={"status": "passed"},
+            existing = db.scalar(
+                __import__("sqlalchemy").select(EvaluationResult).where(
+                    EvaluationResult.course_module_id == cmid,
+                    EvaluationResult.user_id == sid,
+                    EvaluationResult.learning_result_id == ra1id,
                 )
             )
+            assert existing is not None
+            existing.portfolio_score = 100
+            existing.exam_score = None
+            existing.final_score = 100
+            existing.criteria_passed = 1
+            existing.criteria_total = 1
+            existing.passed = True
+            existing.details_json = {"status": "passed"}
             db.commit()
 
         ra2_available = client.get(
