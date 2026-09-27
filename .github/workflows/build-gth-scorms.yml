@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build-gth-scorms.sh"
+      - "scripts/test-gth-study-mode-browser.py"
       - ".github/workflows/build-gth-scorms.yml"
   workflow_dispatch:
 
@@ -39,6 +40,9 @@ jobs:
           unzip -t downloads/gth0652/GTH_RA3_Seguridad_Social_SCORM_1.2.zip
           unzip -t downloads/gth0652/GTH_RA4_Retribucion_nominas_cotizacion_IRPF_SCORM_1.2.zip
           unzip -t downloads/gth0652/GTH_SCORM_4_UNIDADES_COMPLETO.zip
+
+      - name: Browser smoke test for study mode
+        run: python3 scripts/test-gth-study-mode-browser.py downloads/gth0652
 
       - name: Commit generated packages
         run: |
