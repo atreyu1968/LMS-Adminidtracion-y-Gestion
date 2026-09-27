@@ -1855,6 +1855,10 @@ def submit_exam(
     exam.score = score
     exam.status = "submitted"
     exam.submitted_at = now
+    # Persistir el estado del examen antes de recalcular el RA. La sesión usa
+    # autoflush desactivado, por lo que sin este flush la consulta interna que
+    # busca el último examen entregado todavía lo ve como "started".
+    db.flush()
 
     progress = recompute_learning_result(
         db,
