@@ -143,3 +143,22 @@ Noviembre dispone además de imagen dinámica por variante: el alumno con antici
 La fuente concreta del artículo oficial de TeamSystem se muestra debajo de cada captura cuando está disponible. Esto facilita mantener el material si TeamSystem modifica la interfaz o publica documentación más reciente.
 
 También se ha ajustado el procedimiento de nacimiento y cuidado del menor a la operativa documentada por TeamSystem en 2026: dentro de NOMINASOL se registra mediante un parte de incapacidad temporal con la contingencia de descanso por maternidad/paternidad, sin confundirlo con una extinción de la relación laboral.
+
+
+## Expediente documental operativo
+
+La versión 2026.8 convierte la bandeja de RRHH en un expediente de trabajo utilizable fuera de la propia pantalla del SCORM.
+
+Cada comunicación puede abrirse como documento independiente y dispone de acciones para **imprimir / guardar como PDF** o conservar una copia HTML. La versión imprimible incluye el tipo de documento, origen, cuerpo, campos de trabajo, variante individual cuando exista y un aviso visible de que se trata de una simulación educativa.
+
+El alumno puede guardar además un **expediente anual completo** desde el SCORM. Ese expediente reúne todos los documentos que le han sido asignados, incluidas sus variantes personales.
+
+El profesor dispone en Seguimiento de hitos de un botón **Expediente ZIP** para cada alumno. El ZIP se genera en el servidor a partir de la revisión exacta que ese alumno tiene fijada y contiene:
+
+- índice general;
+- datos públicos del supuesto y de la empresa;
+- un HTML independiente por cada documento, organizado por hito;
+- identificación de las variantes asignadas;
+- un archivo LEEME con las limitaciones de uso educativo.
+
+El ZIP no contiene reglas de auditoría, claves de corrección ni el solucionario técnico oculto. Así puede entregarse al alumno sin exponer la lógica privada de evaluación.
