@@ -1028,8 +1028,9 @@ def _load_private_keys(
     db: Session,
     module_id: int,
     payload: PrivateKeysIn,
+    learning_result_id: int | None = None,
 ) -> dict:
-    module_items = db.execute(
+    stmt = (
         select(AssessmentItem, AssessmentCriterion)
         .join(
             AssessmentCriterion,
@@ -1041,10 +1042,14 @@ def _load_private_keys(
         )
         .where(
             LearningResult.module_id == module_id,
+            AssessmentItem.instrument == "portfolio",
             AssessmentItem.active.is_(True),
             AssessmentItem.evaluable.is_(True),
         )
-    ).all()
+    )
+    if learning_result_id is not None:
+        stmt = stmt.where(LearningResult.id == learning_result_id)
+    module_items = db.execute(stmt).all()
     by_key = {item.item_key: (item, criterion) for item, criterion in module_items}
     supplied = {entry.id for entry in payload.items}
     expected = set(by_key)
@@ -1900,6 +1905,7 @@ def _import_private_documents(
                     strict=True,
                     source="private-bundle",
                 ),
+                learning_result_id=lr.id,
             )
             imported["portfolio"] += int(result["items"])
         elif kind == "exam":
