@@ -261,3 +261,21 @@ class LTIDeepLinkRequest(Base):
     accepts: Mapped[list] = mapped_column(JSON, default=list)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="")
+    original_filename: Mapped[str] = mapped_column(String(500))
+    media_type: Mapped[str] = mapped_column(String(40), index=True)
+    mime_type: Mapped[str] = mapped_column(String(160))
+    storage_path: Mapped[str] = mapped_column(String(1000))
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    visibility: Mapped[str] = mapped_column(String(30), default="private", index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
