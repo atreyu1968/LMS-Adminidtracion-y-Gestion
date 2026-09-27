@@ -52,7 +52,7 @@ CAMPUS / Moodle
 2. **Multi-profesor**: cada curso puede tener uno o varios docentes.
 3. **Multi-centro**: preparado para varias organizaciones/centros si se necesitara.
 4. **CAMPUS-first**: en producción, la identidad del alumno procede del lanzamiento LTI.
-5. **SCORM genérico**: subida, versionado y ejecución de paquetes SCORM, inicialmente SCORM 1.2.
+5. **SCORM genérico**: subida, versionado y ejecución de paquetes SCORM 1.2 y SCORM 2004.
 6. **Evaluación trazable**: intentos, evidencias, correcciones, ajustes y notas quedan auditados.
 7. **Sin secretos en Git**: claves LTI, API de IA, bancos privados y datos personales quedan fuera del repositorio.
 8. **GTH se migra sin romperlo**: `CFGSAF` continúa siendo la versión estable de origen mientras se valida la migración.
@@ -96,17 +96,17 @@ Para aprovisionar el módulo oficial después de desplegar:
 - [x] Importación de alumnado por CSV y profesores colaboradores.
 - [x] Panel docente para grupos, módulos y biblioteca SCORM.
 - [x] Migración funcional pública de GTH: 4 RA, 33 CE, 198 actividades, SCORM y motor de evaluación.
-- [ ] Carga operativa de bancos privados reales de GTH y piloto de regresión.
+- [ ] Carga de bancos privados reales de GTH desde almacenamiento seguro (dependencia externa al repositorio).
 - [x] Reproductor SCORM 1.2 y SCORM 2004 con subida, registro y persistencia.
 - [x] Editor SCORM versionado: los intentos iniciados quedan fijados a su revisión.
 - [x] Exportación individual, de borradores y de toda la biblioteca SCORM.
 - [x] Biblioteca multimedia para vídeo, audio, imágenes y PDF con streaming HTTP Range.
-- [ ] Panel docente completo (la API multi-profesor y permisos ya está implementada).
+- [x] Panel docente completo: actividad global, grupos, módulos, catálogo, SCORM, multimedia, IA, evaluación, progreso y disponibilidad.
 - [x] Proyecto guiado NOMINASOL 2026 con hitos, evidencias, IA y capturas reales oficiales.
 - [x] AGS implementado para retorno de notas; pendiente validación contra Moodle/CAMPUS.
 - [x] NRPS implementado con paginación; pendiente validación contra Moodle/CAMPUS.
 - [x] Deep Linking implementado y cubierto por pruebas locales.
-- [ ] Instalador Ubuntu + Cloudflare Tunnel.
+- [x] Instalador Ubuntu + Docker Compose + Cloudflare Tunnel opcional + autodiagnóstico.
 - [ ] Piloto real en CAMPUS.
 
 ## Arranque local
@@ -164,3 +164,40 @@ El funcionamiento del editor, el versionado no destructivo, la biblioteca multim
 ## Migración de GTH
 
 El estado, las reglas conservadas, el aprovisionamiento del catálogo y la carga separada de bancos privados se documentan en `docs/GTH_MIGRATION.md`.
+
+
+## Release candidata 1.0.0-rc1
+
+La versión actual es **1.0.0-rc1**.
+
+El software bajo control del repositorio se encuentra operativo y cubierto por CI. La documentación de instalación, autodiagnóstico, copia de seguridad y criterios para promover la release a 1.0.0 definitiva está en:
+
+`docs/RELEASE_1.0.0-RC1.md`
+
+Instalación Ubuntu:
+
+```bash
+sudo bash scripts/install-ubuntu.sh --url https://lms.tudominio.es
+```
+
+Verificación:
+
+```bash
+bash scripts/verify-installation.sh
+```
+
+Copia de seguridad:
+
+```bash
+bash scripts/backup.sh
+```
+
+### Lo que aún depende de terceros
+
+El código no puede completar por sí solo:
+
+- el registro LTI de la herramienta en CAMPUS del Gobierno de Canarias;
+- la validación contra una instancia Moodle/CAMPUS real con credenciales concedidas;
+- la carga de bancos privados de GTH que deliberadamente no se publican en Git.
+
+Estos elementos se mantienen separados del estado de calidad interna del LMS.
