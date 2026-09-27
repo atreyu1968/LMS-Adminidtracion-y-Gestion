@@ -92,7 +92,7 @@
 <section id="panel-availability" class="panel card">
   <div class="actions" style="justify-content:space-between;align-items:flex-start">
     <div><h2>Disponibilidad y excepciones</h2><p class="muted">Controla fechas, prerrequisitos, secuencia y ajustes individuales sin modificar la configuración general.</p></div>
-    <button class="btn secondary" id="sequenceRaBtn">Aplicar secuencia RA</button>
+    <div class="actions"><button class="btn secondary" id="sequenceRaBtn">Secuenciar RA</button><button class="btn secondary" id="sequenceActivitiesBtn">Secuenciar actividades</button></div>
   </div>
   <div class="grid">
     <div>
@@ -335,6 +335,19 @@ document.querySelector("#exceptionForm").addEventListener("submit",async e=>{
 document.querySelector("#exemptionForm").addEventListener("submit",async e=>{
  e.preventDefault();const f=e.currentTarget,target=parseTarget(f.elements.target.value),student=Number(f.elements.student_id.value);
  try{await api("/api/learning/course-modules/"+cmid+"/students/"+student+"/exemptions/"+target.type+"/"+target.key,json("PUT",{reason:f.elements.reason.value||""}));await reloadAdaptive();await reloadDynamic();flash("Exención registrada sin penalización.")}catch(err){flash(err.message,"error")}
+});
+document.querySelector("#sequenceActivitiesBtn").addEventListener("click",async()=>{
+ try{
+   let rulesCreated=0;
+   for(const ra of structure.learning_results||[]){
+     const items=(ra.criteria||[]).flatMap(ce=>(ce.items||[]).filter(item=>item.instrument==="portfolio"));
+     for(let i=1;i<items.length;i++){
+       await api("/api/learning/course-modules/"+cmid+"/rules/item/"+items[i].id,json("PUT",{requirements:[{type:"item",key:String(items[i-1].id),completion:true}],audience:{}}));
+       rulesCreated++;
+     }
+   }
+   await reloadAdaptive();flash("Secuencia obligatoria aplicada a "+rulesCreated+" actividades.");
+ }catch(e){flash(e.message,"error")}
 });
 document.querySelector("#sequenceRaBtn").addEventListener("click",async()=>{
  const ras=structure.learning_results||[];if(ras.length<2)return;
