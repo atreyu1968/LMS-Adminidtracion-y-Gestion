@@ -383,7 +383,7 @@ async function openGroup(id){
       const aiActions=a.enabled&&a.is_mine
         ? '<button class="btn secondary" onclick="disableModuleAi('+m.course_module_id+')">Desactivar mi IA</button>'
         : (!a.enabled?'<button class="btn secondary" onclick="enableModuleAi('+m.course_module_id+')">Usar mi IA</button>':'');
-      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<button class="btn secondary" onclick="openGuidedProgress(${m.course_module_id})">Seguimiento de hitos</button><button class="btn secondary" onclick="openGuidedTeacherGuide(${m.course_module_id})">Guía docente</button><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
+      return `<div class="item"><strong>${esc(m.title)}</strong><small class="muted">${esc(m.code||"")} · ${esc(aiLabel)}</small><div class="actions" style="margin-top:8px">${aiActions}<a class="btn secondary" href="/evaluation-teacher.html?course_module=${m.course_module_id}">Evaluación</a><button class="btn secondary" onclick="openGuidedProgress(${m.course_module_id})">Seguimiento de hitos</button><button class="btn secondary" onclick="openGuidedTeacherGuide(${m.course_module_id})">Guía docente</button><button class="btn danger" onclick="unassignModule(${id},${m.module_id})">Quitar</button></div></div>`;
     }).join("")||'<div class="empty">Sin módulos asignados.</div>';
     document.querySelector("#groupWorkspace").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){flash(e.message,"error")}
