@@ -36,6 +36,7 @@ jobs:
           bash -n scripts/backup.sh
           bash -n scripts/restore.sh
           bash -n scripts/update-ubuntu.sh
+          bash -n scripts/create-admin.sh
           cp .env.example .env
           docker compose config >/dev/null
       - name: Validate frontends
