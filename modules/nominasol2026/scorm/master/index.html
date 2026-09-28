@@ -63,6 +63,8 @@ textarea{min-height:92px;resize:vertical}
 .pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#edf2f7;font-size:.8rem;font-weight:700}
 .hidden{display:none!important}
 .small{font-size:.9rem;color:var(--muted)}
+.local-banner{background:#eef8f3;border:1px solid #b9dfcc;border-radius:14px;padding:14px 16px;margin-bottom:18px;color:#214f3d}
+.local-banner strong{display:block;margin-bottom:4px}
 .install-card{background:linear-gradient(135deg,#f4f9ff,#ffffff);border:1px solid #bfd5eb;border-radius:18px;padding:20px 22px;margin-bottom:18px;box-shadow:0 10px 26px rgba(34,55,85,.06)}
 .install-card h2{font-size:1.25rem;margin:0 0 .45rem}.install-card p{margin:.35rem 0;color:#34445a}.install-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}.install-actions a{text-decoration:none}.official-badge{display:inline-block;background:#e8f3ff;color:#174f82;border-radius:999px;padding:5px 9px;font-size:.78rem;font-weight:800}
 .inbox{display:grid;gap:12px;margin-top:16px}.doc{border:1px solid #d9e3ed;border-radius:14px;background:#fbfdff;overflow:hidden}.doc summary{cursor:pointer;padding:14px 16px;list-style:none}.doc summary::-webkit-details-marker{display:none}.doc summary strong{display:block;color:#20334c}.doc summary span{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}.doc-body{padding:0 16px 16px;border-top:1px solid #e7edf3}.doc-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}.doc-field{background:#f1f5f9;border-radius:9px;padding:9px 10px}.doc-field b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:#62738a}.variant{background:#fff8df;border:1px solid #ead28a;border-radius:13px;padding:14px 16px;margin:14px 0}.dossier{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.dossier>div{background:#f6f9fc;border:1px solid #e1e8f0;border-radius:11px;padding:12px}.dossier b{display:block;color:#31465f;font-size:.8rem;text-transform:uppercase}
@@ -127,6 +129,7 @@ textarea{min-height:92px;resize:vertical}
     <div id="portfolioList" class="portfolio-list"></div>
   </div>
 </div>
+<script src="standalone-data.js"></script>
 <script>
 (function(){
 "use strict";
@@ -142,6 +145,74 @@ function findRuntime(){
     if(window.parent && window.parent.LMSGuided) return window.parent.LMSGuided;
   }catch(e){}
   return null;
+}
+function cloneJson(value){
+  return JSON.parse(JSON.stringify(value));
+}
+function makeLocalRuntime(){
+  if(!window.NOMINASOL_STANDALONE_DATA) return null;
+  var storageKey="nominasol-2026-standalone-progress-v2026.13";
+  var memoryProgress={};
+  function readProgress(){
+    try{
+      var raw=window.localStorage&&window.localStorage.getItem(storageKey);
+      return raw?JSON.parse(raw):{};
+    }catch(e){return cloneJson(memoryProgress);}
+  }
+  function writeProgress(progress){
+    memoryProgress=cloneJson(progress||{});
+    try{
+      if(window.localStorage)window.localStorage.setItem(storageKey,JSON.stringify(progress||{}));
+    }catch(e){}
+  }
+  function snapshot(){
+    var payload=cloneJson(window.NOMINASOL_STANDALONE_DATA);
+    var progress=readProgress();
+    payload.progress=progress;
+    payload.evidence={};
+    var milestones=(payload.project&&payload.project.milestones)||[];
+    var completed=milestones.filter(function(m){
+      return progress[m.key]&&progress[m.key].status==="completed";
+    }).length;
+    payload.summary={
+      completed:completed,
+      total:milestones.length,
+      percentage:milestones.length?Math.round(completed/milestones.length*1000)/10:0
+    };
+    return payload;
+  }
+  return {
+    mode:"local",
+    project:async function(){return snapshot();},
+    start:async function(key){
+      var progress=readProgress();
+      if(!progress[key]||progress[key].status!=="completed"){
+        progress[key]={status:"in_progress",attempts:0,ai:{}};
+        writeProgress(progress);
+      }
+      return progress[key];
+    },
+    complete:async function(key){
+      var progress=readProgress();
+      progress[key]={status:"completed",attempts:0,ai:{}};
+      writeProgress(progress);
+      return progress[key];
+    },
+    submitEvidence:async function(){
+      throw new Error("La subida de evidencias y la revisión con IA solo están disponibles cuando este SCORM se ejecuta dentro del LMS Administración y Gestión.");
+    }
+  };
+}
+function showLocalModeBanner(){
+  var main=document.querySelector("main");
+  if(!main||document.getElementById("localModeBanner"))return;
+  var box=document.createElement("div");
+  box.id="localModeBanner";
+  box.className="local-banner";
+  box.innerHTML="<strong>Modo local / LMS estándar</strong>La formación completa está disponible. Puedes recorrer todos los hitos, consultar documentos, capturas y ayudas, y guardar tu progreso en este navegador. La subida de evidencias, la IA y la revisión docente se activan únicamente en el LMS Administración y Gestión.";
+  var download=document.getElementById("officialDownload");
+  if(download&&download.nextSibling)main.insertBefore(box,download.nextSibling);
+  else main.insertBefore(box,main.firstChild);
 }
 function findScorm(){
   try{
@@ -410,7 +481,8 @@ function openMilestone(key){
   scormSet("cmi.core.lesson_location",key);
   renderSidebar();
   var st=stateFor(key);
-  var priorOk=!m.requires || stateFor(m.requires).status==="completed";
+  var isLocal=runtime&&runtime.mode==="local";
+  var priorOk=isLocal || !m.requires || stateFor(m.requires).status==="completed";
   var steps=(m.steps||[]).map(function(s,i){
     return '<section class="step"><div class="step-grid"><div>'
       +'<div class="eyebrow">Paso '+(i+1)+'</div><h3>'+esc(s.title)+'</h3>'
@@ -426,6 +498,17 @@ function openMilestone(key){
   var ev=(data.evidence&&data.evidence[key])||[];
   var evHistory=ev.length?'<p class="small">Evidencias enviadas: '+ev.length+'. Último estado: '+esc(ev[0].status)+'.</p>':"";
   var locked=!priorOk;
+  var evidenceBody=isLocal
+    ? '<p>Estás usando la formación en modo local. Revisa la lista anterior y, cuando hayas comprobado el trabajo en NOMINASOL, puedes marcar este hito como revisado en este dispositivo.</p>'
+      +'<div class="feedback review"><strong>Funciones no disponibles en local</strong><p>No se envían archivos, no interviene la IA y el profesor no recibe evidencias. Para esas funciones abre el mismo SCORM desde el LMS Administración y Gestión.</p></div>'
+    : '<p>'+esc(m.evidence_prompt||"")+'</p>'
+      +'<p class="small">'+esc(m.evidence_help||"")+'</p>'+evHistory
+      +'<div class="evidence"><label><span>Archivo de evidencia</span><input id="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,application/zip,text/plain"></label>'
+      +'<label><span>Observaciones para la comprobación</span><textarea id="evidenceNotes" placeholder="Explica brevemente qué demuestra tu captura o documento."></textarea></label></div>';
+  var actionButtons=isLocal
+    ? '<p><button id="startBtn" class="btn secondary">Estoy trabajando en este hito</button> <button id="submitBtn" class="btn">Marcar hito como revisado</button></p>'
+    : '<p><button id="startBtn" class="btn secondary" '+(locked?"disabled":"")+'>Estoy trabajando en este hito</button> '
+      +'<button id="submitBtn" class="btn" '+(locked?"disabled":"")+'>Subir evidencia y comprobar</button></p>';
   var html='<section class="card"><div class="eyebrow">'+esc(m.period)+'</div><h2>'+esc(m.title)+'</h2>'
     +'<p class="story">'+esc(m.story)+'</p>'
     +'<div class="callout"><strong>Qué vas a conseguir</strong><br>'+esc(m.objective)+'</div>'
@@ -440,12 +523,8 @@ function openMilestone(key){
     +'<section class="card"><h3>Trabaja conmigo paso a paso</h3>'+steps+'</section>'
     +renderSupport(m)
     +'<section class="card"><h3>Antes de entregar, comprueba tu trabajo</h3><div class="checks">'+checks+'</div></section>'
-    +'<section class="card"><h3>Demuestra el hito</h3><p>'+esc(m.evidence_prompt||"")+'</p>'
-    +'<p class="small">'+esc(m.evidence_help||"")+'</p>'+evHistory
-    +'<div class="evidence"><label><span>Archivo de evidencia</span><input id="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,application/zip,text/plain"></label>'
-    +'<label><span>Observaciones para la comprobación</span><textarea id="evidenceNotes" placeholder="Explica brevemente qué demuestra tu captura o documento."></textarea></label></div>'
-    +'<p><button id="startBtn" class="btn secondary" '+(locked?"disabled":"")+'>Estoy trabajando en este hito</button> '
-    +'<button id="submitBtn" class="btn" '+(locked?"disabled":"")+'>Subir evidencia y comprobar</button></p>'
+    +'<section class="card"><h3>'+(isLocal?'Cierra el hito en modo local':'Demuestra el hito')+'</h3>'
+    +evidenceBody+actionButtons
     +'<div id="sendStatus"></div>'+renderFeedback(st)+'</section>';
   var root=document.getElementById("content");
   root.innerHTML=html;
@@ -470,7 +549,17 @@ function openMilestone(key){
   document.getElementById("submitBtn").addEventListener("click",async function(){
     var checks=Array.prototype.slice.call(document.querySelectorAll(".selfcheck"));
     if(checks.length && checks.some(function(x){return !x.checked;})){
-      showInline("Antes de entregar, completa tu lista de comprobación. No es un trámite: sirve para que revises el trabajo tú mismo antes de pedir a la IA o al profesor que lo audite.","retry");
+      showInline(isLocal
+        ?"Antes de marcar el hito como revisado, completa la lista de comprobación."
+        :"Antes de entregar, completa tu lista de comprobación. No es un trámite: sirve para que revises el trabajo tú mismo antes de pedir a la IA o al profesor que lo audite.","retry");
+      return;
+    }
+    if(isLocal){
+      try{
+        await runtime.complete(key);
+        await reload(key);
+        showInline("Hito marcado como revisado en este navegador.","pass");
+      }catch(e){showInline(e.message,"retry");}
       return;
     }
     var file=document.getElementById("evidenceFile").files[0];
@@ -521,10 +610,14 @@ async function boot(){
   api12=findScorm();
   if(api12){try{api12.LMSInitialize("");}catch(e){}}
   if(!runtime){
+    runtime=makeLocalRuntime();
+    if(runtime)showLocalModeBanner();
+  }
+  if(!runtime){
     document.getElementById("loading").classList.add("hidden");
     var fatal=document.getElementById("fatal");
     fatal.classList.remove("hidden");
-    fatal.innerHTML="<h2>Este proyecto necesita el LMS de Administración y Gestión</h2><p class='story'>El paquete puede abrirse como SCORM estándar, pero la subida de evidencias, la revisión con IA y el desbloqueo de hitos necesitan ejecutarse desde el LMS del centro.</p>";
+    fatal.innerHTML="<h2>No se han podido cargar los datos de la formación</h2><p class='story'>Vuelve a descargar el paquete SCORM completo. Debe incluir <code>standalone-data.js</code> junto a <code>index.html</code> e <code>imsmanifest.xml</code>.</p>";
     return;
   }
   try{await reload(null);}
