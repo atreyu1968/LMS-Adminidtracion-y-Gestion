@@ -1241,8 +1241,9 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
         assert payload["project"]["educational_download"]["url"] == "https://www.sdelsol.com/paraninfo/"
         assert payload["project"]["educational_download"]["fallback_url"] == "https://www.sdelsol.com/universidades-y-cc-ff/"
         assert payload["project"]["educational_download"]["requires_login"] is False
+        assert payload["project"]["standalone_mode"]["enabled"] is True
         assert payload["project"]["educational_download"]["year"] == 2026
-        assert payload["project"]["version"] == "2026.12"
+        assert payload["project"]["version"] == "2026.13"
         assert payload["scenario"]["company"]["legal_name"] == "ATLÁNTICO GESTIÓN INTEGRAL, S.L."
         assert len(payload["scenario"]["workers"]) == 8
         m05 = next(m for m in payload["project"]["milestones"] if m["key"] == "M05")
@@ -1283,7 +1284,7 @@ def test_nominasol_guided_project_provisions_and_tracks_evidence():
                 headers=auth,
             )
             assert pinned.status_code == 200
-            assert pinned.json()["project"]["version"] == "2026.12"
+            assert pinned.json()["project"]["version"] == "2026.13"
         finally:
             snapshot_source_path.write_text(snapshot_source_original, encoding="utf-8")
 
@@ -3660,3 +3661,18 @@ def test_local_login_requires_existing_authenticated_user_to_create_credentials(
             json={"login": "intruso@example.test", "password": "ClaveSegura-12345"},
         )
         assert missing.status_code == 401
+
+
+def test_nominasol_scorm_has_standalone_mode():
+    root = Path(__file__).resolve().parents[2] / "modules" / "nominasol2026" / "scorm" / "master"
+    manifest = (root / "imsmanifest.xml").read_text(encoding="utf-8")
+    index = (root / "index.html").read_text(encoding="utf-8")
+    standalone = (root / "standalone-data.js").read_text(encoding="utf-8")
+    assert '<file href="standalone-data.js"/>' in manifest
+    assert '<script src="standalone-data.js"></script>' in index
+    assert 'makeLocalRuntime' in index
+    assert 'Modo local / LMS estándar' in index
+    assert 'window.NOMINASOL_STANDALONE_DATA=' in standalone
+    assert '"version": "2026.13"' in standalone
+    assert 'audit-rules' not in standalone
+    assert 'master-state' not in standalone
