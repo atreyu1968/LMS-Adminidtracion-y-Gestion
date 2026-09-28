@@ -46,6 +46,35 @@ jobs:
         env:
           PYTHONPATH: .
         run: python -m pytest -q
+      - name: Package NOMINASOL 2026.13 SCORM
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          OUT="dist/NOMINASOL_2026_Educativa_SCORM_1.2_v2026.13.zip"
+          WORK="dist/nominasol-scorm"
+          rm -rf "$WORK" "$OUT"
+          mkdir -p "$WORK"
+          cp modules/nominasol2026/scorm/master/imsmanifest.xml "$WORK/imsmanifest.xml"
+          cp modules/nominasol2026/scorm/master/index.html "$WORK/index.html"
+          cp modules/nominasol2026/scorm/master/standalone-data.js "$WORK/standalone-data.js"
+          printf '%s\n' '{"project":"nominasol2026","version":"2026.13","commit":"'${GITHUB_SHA}'"}' > "$WORK/guided-version.json"
+          (
+            cd "$WORK"
+            zip -q -r "../$(basename "$OUT")" .
+          )
+          unzip -l "$OUT"
+          unzip -p "$OUT" imsmanifest.xml | grep -q '<schemaversion>1.2</schemaversion>'
+          unzip -p "$OUT" imsmanifest.xml | grep -q 'standalone-data.js'
+          unzip -p "$OUT" index.html | grep -q 'makeLocalRuntime'
+          unzip -p "$OUT" index.html | grep -q 'https://www.sdelsol.com/paraninfo/'
+          unzip -p "$OUT" standalone-data.js | grep -q 'NOMINASOL_STANDALONE_DATA'
+      - name: Upload NOMINASOL SCORM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOMINASOL_2026_Educativa_SCORM_1.2_v2026.13
+          path: dist/NOMINASOL_2026_Educativa_SCORM_1.2_v2026.13.zip
+          if-no-files-found: error
+          retention-days: 30
 
 
   stack-smoke:
