@@ -120,7 +120,127 @@ La vía recomendada para producción es el **bootstrap desatendido**. Puede ejec
 - una URL pública HTTPS, por ejemplo `https://lms.midominio.es`;
 - opcionalmente, un token de Cloudflare Tunnel ya creado.
 
-No es necesario instalar previamente Git, Docker, Docker Compose, PostgreSQL, Python ni Nginx.
+No es necesario instalar previamente Docker, Docker Compose, PostgreSQL, Python ni Nginx. Si el servidor está completamente limpio y todavía no dispone de `git` ni `curl`, prepara primero el sistema como se indica a continuación.
+
+### Servidor Ubuntu totalmente limpio — actualización inicial e instalación de Git y curl
+
+Ejecuta estos comandos como usuario con permisos `sudo`:
+
+```bash
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  ca-certificates \
+  curl \
+  git
+```
+
+Comprueba que ambas herramientas han quedado instaladas:
+
+```bash
+git --version
+curl --version
+```
+
+Si Ubuntu indica que es necesario reiniciar después de la actualización:
+
+```bash
+if [ -f /var/run/reboot-required ]; then
+  sudo reboot
+fi
+```
+
+Tras el reinicio, vuelve a conectarte por SSH y continúa con la instalación del LMS.
+
+> **Importante:** estos comandos solo preparan Ubuntu. No instales manualmente PostgreSQL, Nginx, Python ni Docker antes de ejecutar el bootstrap salvo que tengas una razón concreta. El instalador del proyecto configura automáticamente las versiones y servicios necesarios.
+
+### Instalación desde cero después de preparar el servidor
+
+Con `git` y `curl` ya disponibles, puedes utilizar directamente el bootstrap recomendado:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/atreyu1968/LMS-Adminidtracion-y-Gestion/main/scripts/bootstrap-ubuntu.sh \
+  -o /tmp/lms-bootstrap.sh
+
+sudo bash /tmp/lms-bootstrap.sh \
+  --url https://lms.midominio.es
+```
+
+El bootstrap instala Docker y Docker Compose si todavía no existen, clona el repositorio y completa el despliegue sin intervención.
+
+Si prefieres clonar primero el repositorio manualmente:
+
+```bash
+sudo mkdir -p /opt
+cd /opt
+
+sudo git clone \
+  https://github.com/atreyu1968/LMS-Adminidtracion-y-Gestion.git \
+  lms-administracion-y-gestion
+
+cd /opt/lms-administracion-y-gestion
+
+sudo bash scripts/install-ubuntu.sh \
+  --url https://lms.midominio.es
+```
+
+### Actualizar Ubuntu y el LMS posteriormente
+
+Para una instalación ya existente, conviene diferenciar la actualización del **sistema operativo** de la actualización de la **aplicación**.
+
+Primero actualiza los paquetes de Ubuntu:
+
+```bash
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+```
+
+Si el servidor solicita reinicio:
+
+```bash
+if [ -f /var/run/reboot-required ]; then
+  sudo reboot
+fi
+```
+
+Después de volver a conectarte por SSH, actualiza el LMS con su procedimiento seguro:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/update-ubuntu.sh
+```
+
+`update-ubuntu.sh` realiza automáticamente:
+
+1. una copia de seguridad previa;
+2. `git fetch` y `git pull --ff-only`;
+3. actualización/reconstrucción de los contenedores;
+4. migraciones de base de datos;
+5. espera hasta que la API esté operativa;
+6. `verify-installation.sh`;
+7. conservación de la ruta del backup para poder restaurar si algo falla.
+
+Después de actualizar, comprueba el estado:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/verify-installation.sh
+docker compose ps
+```
+
+El resultado esperado de la verificación termina con:
+
+```text
+OK: instalación interna operativa.
+```
+
+Si por cualquier motivo `git` o `curl` hubieran sido eliminados del servidor, se pueden reinstalar sin afectar al LMS:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates git curl
+```
 
 ### Opción A — una sola orden
 
