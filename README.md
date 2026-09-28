@@ -356,7 +356,38 @@ No publiques ni copies el contenido completo de `.env`.
 
 ---
 
-## 6. Uso docente
+## 6. Acceso al LMS
+
+El LMS admite **dos vías de autenticación paralelas**:
+
+- **CAMPUS / LTI 1.3**: acceso institucional desde Moodle.
+- **Acceso directo local**: usuario y contraseña propios del LMS en `/login.html`.
+
+La identidad es la misma en ambos casos. Un profesor que ya exista por CAMPUS puede entrar una vez mediante LTI, abrir:
+
+```text
+/account.html
+```
+
+o utilizar **Mi acceso directo** desde el panel docente, y crear sus credenciales locales. A partir de ese momento puede entrar directamente en:
+
+```text
+https://TU_DOMINIO/login.html
+```
+
+Las credenciales locales:
+
+- no sustituyen ni modifican la identidad LTI;
+- conservan los mismos grupos, módulos, permisos y progreso;
+- almacenan únicamente un hash PBKDF2-SHA256 con salt aleatorio;
+- bloquean temporalmente el acceso después de varios intentos fallidos;
+- permiten seleccionar el grupo activo cuando el usuario pertenece a más de uno.
+
+La portada `/` permite cambiar de grupo y ofrece acceso tanto al panel docente como a la configuración de credenciales.
+
+---
+
+## 7. Uso docente
 
 El panel principal del profesor se sirve en:
 
