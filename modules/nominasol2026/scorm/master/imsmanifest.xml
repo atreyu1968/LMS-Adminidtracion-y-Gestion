@@ -20,6 +20,7 @@
  <resources>
   <resource identifier="RES1" type="webcontent" adlcp:scormtype="sco" href="index.html">
    <file href="index.html"/>
+   <file href="standalone-data.js"/>
   </resource>
  </resources>
 </manifest>
