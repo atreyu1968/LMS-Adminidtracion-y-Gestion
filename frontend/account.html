@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi acceso · LMS Administración y Gestión</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}
+*{box-sizing:border-box}body{margin:0}.top{background:#10233f;color:#fff;padding:20px 7vw}.wrap{max-width:760px;margin:32px auto;padding:0 20px}.card{background:#fff;border:1px solid #dfe6ef;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(34,55,85,.07)}.muted{color:#64748b;line-height:1.5}form{display:grid;gap:13px;margin-top:18px}label{font-weight:700}input{width:100%;margin-top:6px;border:1px solid #cbd5e1;border-radius:10px;padding:11px;font:inherit}.btn{display:inline-block;border:0;border-radius:10px;background:#18508f;color:#fff;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer}.secondary{background:#e9eef5;color:#203652}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{padding:12px 14px;border-radius:12px;background:#eef6ff;color:#23466f}.ok{background:#ecfdf5;color:#166534}.error{background:#fff1f2;color:#9f1239}
+</style>
+</head>
+<body>
+<header class="top"><h1>Mi acceso al LMS</h1></header>
+<main class="wrap">
+<section class="card">
+  <h2>Credenciales de acceso directo</h2>
+  <p id="identity" class="muted">Comprobando sesión…</p>
+  <p class="muted">Estas credenciales permiten entrar por la web del LMS sin pasar por CAMPUS. No sustituyen ni modifican tu identidad LTI.</p>
+  <div id="status" class="notice">Cargando configuración…</div>
+  <form id="credentialForm">
+    <label>Usuario de acceso
+      <input name="login" minlength="3" maxlength="320" autocomplete="username" required>
+    </label>
+    <label>Nueva contraseña
+      <input name="password" type="password" minlength="10" autocomplete="new-password" required>
+    </label>
+    <label>Repite la contraseña
+      <input name="password2" type="password" minlength="10" autocomplete="new-password" required>
+    </label>
+    <button class="btn">Guardar acceso local</button>
+  </form>
+  <div id="message" style="margin-top:14px" aria-live="polite"></div>
+  <div class="actions"><a class="btn secondary" href="/teacher.html">Volver al panel docente</a><a class="btn secondary" href="/">Inicio</a></div>
+</section>
+</main>
+<script>
+(async()=>{
+  try{
+    const me=await fetch("/api/me",{credentials:"include"});
+    if(!me.ok){location.href="/login.html";return}
+    const d=await me.json();
+    document.querySelector("#identity").textContent=d.user.display_name+(d.user.email?" · "+d.user.email:"");
+    const r=await fetch("/api/auth/local-credential",{credentials:"include"});
+    const c=await r.json();
+    if(c.configured){
+      document.querySelector("#status").textContent="El acceso directo ya está configurado. Puedes cambiar el usuario o la contraseña.";
+      document.querySelector("#status").classList.add("ok");
+      document.querySelector("[name=login]").value=c.login||d.user.email||"";
+    }else{
+      document.querySelector("#status").textContent="Todavía no tienes credenciales locales. Créelas ahora.";
+      document.querySelector("[name=login]").value=d.user.email||"";
+    }
+  }catch(e){location.href="/login.html"}
+})();
+document.querySelector("#credentialForm").addEventListener("submit",async(e)=>{
+  e.preventDefault();
+  const f=e.currentTarget,m=document.querySelector("#message"),button=f.querySelector("button");
+  if(f.password.value!==f.password2.value){m.innerHTML="<div class='notice error'>Las contraseñas no coinciden.</div>";return}
+  button.disabled=true;button.textContent="Guardando…";
+  try{
+    const r=await fetch("/api/auth/local-credential",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({login:f.login.value,password:f.password.value})});
+    const d=await r.json();if(!r.ok)throw new Error(d.detail||"No se pudo guardar");
+    m.innerHTML="<div class='notice ok'>Acceso directo activado. Ya puedes cerrar sesión y entrar desde /login.html.</div>";
+    f.password.value="";f.password2.value="";
+  }catch(err){m.innerHTML="<div class='notice error'>"+escapeHtml(err.message)+"</div>"}
+  finally{button.disabled=false;button.textContent="Guardar acceso local"}
+});
+function escapeHtml(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+</script>
+</body>
+</html>
