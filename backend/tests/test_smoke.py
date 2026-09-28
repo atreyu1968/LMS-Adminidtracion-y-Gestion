@@ -3526,6 +3526,10 @@ def test_schema_migration_upgrades_legacy_tables_without_losing_rows(tmp_path):
     }.issubset(course_cols)
     link_cols = {col["name"] for col in inspector.get_columns("lti_resource_links")}
     assert "learning_result_id" in link_cols
+    assert "local_credentials" in set(inspector.get_table_names())
+    local_cols = {col["name"] for col in inspector.get_columns("local_credentials")}
+    assert {"user_id", "login_normalized", "password_hash", "failed_attempts"}.issubset(local_cols)
+
     scorm_cols = {col["name"] for col in inspector.get_columns("scorm_packages")}
     assert {
         "owner_user_id", "description", "original_filename", "lineage_root_id",
