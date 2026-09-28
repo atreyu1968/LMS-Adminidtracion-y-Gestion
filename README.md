@@ -385,6 +385,32 @@ Las credenciales locales:
 
 La portada `/` permite cambiar de grupo y ofrece acceso tanto al panel docente como a la configuración de credenciales.
 
+### 6.1. Crear el primer administrador cuando no existe ningún usuario
+
+En una instalación nueva sin usuarios activos, crea el administrador directamente desde el servidor:
+
+```bash
+cd /opt/lms-administracion-y-gestion
+sudo bash scripts/create-admin.sh
+```
+
+El asistente solicita:
+
+- nombre del administrador;
+- correo o usuario de acceso;
+- contraseña local de al menos 10 caracteres;
+- confirmación de contraseña.
+
+El script crea o reactiva el usuario, genera su credencial local, crea un contexto interno **Administración del LMS** y le asigna el rol `admin`.
+
+Después puede iniciar sesión en:
+
+```text
+https://TU_DOMINIO/login.html
+```
+
+El procedimiento es idempotente: puede ejecutarse de nuevo para restablecer la contraseña o reactivar el administrador existente.
+
 ---
 
 ## 7. Uso docente
@@ -407,7 +433,7 @@ Desde él se gestionan:
 - configuración personal de IA;
 - evaluación, progreso y disponibilidad.
 
-### 6.1. Biblioteca y edición SCORM
+### 7.1. Biblioteca y edición SCORM
 
 Cada profesor puede:
 
@@ -424,7 +450,7 @@ Los intentos ya iniciados quedan fijados a la revisión con la que comenzaron. P
 
 Documentación: `docs/SCORM_EDITOR.md`.
 
-### 6.2. Espacio docente
+### 7.2. Espacio docente
 
 La arquitectura completa de grupos, permisos, módulos y bibliotecas se documenta en:
 
@@ -436,7 +462,7 @@ docs/TEACHER_WORKSPACE.md
 
 ## 8. Contenidos oficiales
 
-### 7.1. Gestión de Recursos Humanos — GTH / 0652
+### 8.1. Gestión de Recursos Humanos — GTH / 0652
 
 La migración pública incluye:
 
@@ -464,7 +490,7 @@ Los cuatro SCORM finales están disponibles en:
 downloads/gth0652/
 ```
 
-### 7.2. Proyecto guiado NOMINASOL 2026
+### 8.2. Proyecto guiado NOMINASOL 2026
 
 Se incluye un proyecto profesional guiado para **TeamSystem NOMINASOL 2026 · Versión Educativa**.
 
