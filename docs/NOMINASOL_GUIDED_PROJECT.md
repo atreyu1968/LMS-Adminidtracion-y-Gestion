@@ -199,3 +199,24 @@ Como alternativa institucional se mantiene la página de Universidades y centros
 https://www.sdelsol.com/universidades-y-cc-ff/
 
 El SCORM indica expresamente que debe utilizarse **TeamSystem Nominasol 2026 · Versión Educativa para Windows** y evita remitir al alumnado a la Academy cuando lo único que necesita es instalar la aplicación.
+
+
+## Modo local y LMS estándar
+
+La versión 2026.13 elimina la dependencia obligatoria del runtime `LMSGuided` para acceder a la formación.
+
+El paquete SCORM incorpora `standalone-data.js` con únicamente los datos públicos necesarios para impartir el curso: hitos, pasos, documentos del supuesto, glosario, ayuda contextual y una variante demostrativa. No incluye `audit-rules.json`, `teacher-guide.json` ni `master-state.json`.
+
+Cuando el SCORM detecta el LMS Administración y Gestión, utiliza el runtime completo con variantes individuales, evidencias, IA, revisiones docentes y seguimiento centralizado.
+
+Cuando no lo detecta —por ejemplo, al abrirlo en local o importarlo en Moodle u otro LMS SCORM 1.2— entra automáticamente en **modo local / LMS estándar**:
+
+- se puede navegar por los 17 hitos;
+- se muestran teoría, pasos, documentos, capturas, glosario y ayudas;
+- los hitos no quedan bloqueados por depender del servidor;
+- el alumno puede marcar cada hito como revisado;
+- el progreso se conserva en `localStorage`;
+- si existe API SCORM 1.2, se comunica porcentaje y estado completado;
+- la subida de evidencias, la IA y la revisión docente se desactivan con un mensaje explícito.
+
+Esto permite utilizar el paquete tanto de forma autónoma como dentro del LMS completo.
