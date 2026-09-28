@@ -434,7 +434,7 @@ docs/TEACHER_WORKSPACE.md
 
 ---
 
-## 7. Contenidos oficiales
+## 8. Contenidos oficiales
 
 ### 7.1. Gestión de Recursos Humanos — GTH / 0652
 
@@ -500,7 +500,7 @@ curl -X POST \
 
 ---
 
-## 8. Integración con CAMPUS / Moodle
+## 9. Integración con CAMPUS / Moodle
 
 El LMS implementa **LTI 1.3 Advantage**:
 
@@ -531,7 +531,7 @@ Documentación: `docs/CAMPUS_LTI.md`.
 
 ---
 
-## 9. Arquitectura
+## 10. Arquitectura
 
 ```text
 CAMPUS / Moodle
@@ -570,7 +570,7 @@ CAMPUS / Moodle
 
 ---
 
-## 10. Estado funcional
+## 11. Estado funcional
 
 ### Implementado
 
@@ -612,7 +612,7 @@ CAMPUS / Moodle
 
 ---
 
-## 11. Desarrollo local
+## 12. Desarrollo local
 
 ```bash
 cp .env.example .env
@@ -627,7 +627,7 @@ Servicios:
 
 ---
 
-## 12. Estructura del repositorio
+## 13. Estructura del repositorio
 
 ```text
 backend/       API, modelos, evaluación, LTI y runtime
@@ -643,7 +643,7 @@ deploy/        plantillas de despliegue desatendido
 
 ---
 
-## 13. Documentación
+## 14. Documentación
 
 | Documento | Contenido |
 |---|---|
@@ -658,7 +658,7 @@ deploy/        plantillas de despliegue desatendido
 
 ---
 
-## 14. Proyecto de origen
+## 15. Proyecto de origen
 
 El primer módulo migrado procede de:
 
@@ -672,7 +672,7 @@ La migración utiliza un commit fijado para impedir que cambios posteriores en e
 
 ---
 
-## 15. Límites de la release candidata
+## 16. Límites de la release candidata
 
 La versión actual es **1.0.0-rc2**.
 
