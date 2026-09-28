@@ -175,6 +175,9 @@ def _migration_1(engine: Engine) -> None:
 def _migration_2(engine: Engine) -> None:
     """Add local credentials without altering LTI identities or memberships."""
     metadata = MetaData()
+    # Reflect users so SQLAlchemy can resolve the foreign key even when
+    # migrate_schema() is invoked directly in a legacy database test/tool.
+    Table("users", metadata, autoload_with=engine)
     table = Table(
         "local_credentials",
         metadata,
