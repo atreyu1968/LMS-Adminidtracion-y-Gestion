@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router as api_router
+from .auth import router as auth_router
 from .ai import router as ai_router
 from .catalog import router as catalog_router
 from .dashboard import router as dashboard_router
@@ -49,6 +50,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(auth_router)
 app.include_router(ai_router)
 app.include_router(catalog_router)
 app.include_router(dashboard_router)
