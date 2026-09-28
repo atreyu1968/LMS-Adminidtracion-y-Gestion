@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import inspect, text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, inspect, text
 from sqlalchemy.engine import Engine
 
 
@@ -173,12 +173,34 @@ def _migration_1(engine: Engine) -> None:
 
 
 def _migration_2(engine: Engine) -> None:
-    """Register the local-login schema introduced alongside LTI access."""
-    # Base.metadata.create_all() runs before migrations and creates the new
-    # local_credentials table on existing installations. This migration keeps
-    # the explicit schema version aligned with that production change.
-    if "local_credentials" not in set(inspect(engine).get_table_names()):
-        raise RuntimeError("local_credentials table was not created")
+    """Add local credentials without altering LTI identities or memberships."""
+    metadata = MetaData()
+    table = Table(
+        "local_credentials",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        Column("login_display", String(320), nullable=False),
+        Column("login_normalized", String(320), nullable=False),
+        Column("password_hash", String(500), nullable=False),
+        Column("failed_attempts", Integer, nullable=False, default=0),
+        Column("locked_until", DateTime(timezone=True), nullable=True),
+        Column("last_login_at", DateTime(timezone=True), nullable=True),
+        Column("updated_at", DateTime(timezone=True), nullable=True),
+        UniqueConstraint("user_id", name="uq_local_credential_user"),
+        UniqueConstraint("login_normalized", name="uq_local_credential_login"),
+    )
+    table.create(bind=engine, checkfirst=True)
+    _execute(
+        engine,
+        "CREATE INDEX IF NOT EXISTS ix_local_credentials_user_id "
+        "ON local_credentials (user_id)",
+    )
+    _execute(
+        engine,
+        "CREATE INDEX IF NOT EXISTS ix_local_credentials_login_normalized "
+        "ON local_credentials (login_normalized)",
+    )
 
 
 MIGRATIONS = {
