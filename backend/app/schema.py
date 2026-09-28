@@ -4,7 +4,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _columns(engine: Engine, table: str) -> set[str]:
@@ -172,8 +172,18 @@ def _migration_1(engine: Engine) -> None:
         )
 
 
+def _migration_2(engine: Engine) -> None:
+    """Register the local-login schema introduced alongside LTI access."""
+    # Base.metadata.create_all() runs before migrations and creates the new
+    # local_credentials table on existing installations. This migration keeps
+    # the explicit schema version aligned with that production change.
+    if "local_credentials" not in set(inspect(engine).get_table_names()):
+        raise RuntimeError("local_credentials table was not created")
+
+
 MIGRATIONS = {
     1: _migration_1,
+    2: _migration_2,
 }
 
 
