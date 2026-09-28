@@ -3595,3 +3595,64 @@ def test_gth_final_scorms_enter_study_mode_contract():
     )
     assert 'allow="fullscreen"' in player
     assert "allowfullscreen" in player
+
+
+def test_local_login_can_be_enabled_from_existing_lti_session():
+    with TestClient(app) as client:
+        user_id, course_id, _ = teacher_fixture("local-auth")
+        client.cookies.set("lms_session", session_cookie(user_id, course_id))
+
+        configured = client.post(
+            "/api/auth/local-credential",
+            json={"login": "docente.local@example.test", "password": "ClaveLocalSegura-2026"},
+        )
+        assert configured.status_code == 200, configured.text
+        assert configured.json()["configured"] is True
+
+        status = client.get("/api/auth/local-credential")
+        assert status.status_code == 200
+        assert status.json()["login"] == "docente.local@example.test"
+
+        client.cookies.clear()
+        wrong = client.post(
+            "/api/auth/login",
+            json={"login": "docente.local@example.test", "password": "incorrecta"},
+        )
+        assert wrong.status_code == 401
+
+        login = client.post(
+            "/api/auth/login",
+            json={"login": "DOCENTE.LOCAL@example.test", "password": "ClaveLocalSegura-2026"},
+        )
+        assert login.status_code == 200, login.text
+        payload = login.json()
+        assert payload["user"]["id"] == user_id
+        assert payload["role"] == "teacher"
+        assert payload["course_id"] == course_id
+        assert len(payload["courses"]) == 1
+
+        token = login.cookies.get("lms_session")
+        assert token
+        claims = jwt.decode(
+            token,
+            "test-session-secret-0123456789abcdef0123456789abcdef",
+            algorithms=["HS256"],
+        )
+        assert int(claims["sub"]) == user_id
+        assert claims["course_id"] == course_id
+        assert claims["role"] == "teacher"
+
+
+def test_local_login_requires_existing_authenticated_user_to_create_credentials():
+    with TestClient(app) as client:
+        denied = client.post(
+            "/api/auth/local-credential",
+            json={"login": "intruso@example.test", "password": "ClaveSegura-12345"},
+        )
+        assert denied.status_code == 401
+
+        missing = client.post(
+            "/api/auth/login",
+            json={"login": "intruso@example.test", "password": "ClaveSegura-12345"},
+        )
+        assert missing.status_code == 401
